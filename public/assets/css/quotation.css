@@ -1,0 +1,52 @@
+.hr-bold {
+    border: 0;
+    border-top: 1px solid ;
+    opacity:1;
+}
+
+input[type="date"].form-control {
+    height: calc(1.5em + .5rem + 2px);
+}
+
+/* Container utama untuk divider */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 10px 0; /* Memberi jarak atas dan bawah */
+  color: #6c757d; /* Warna teks abu-abu (mirip Bootstrap) */
+}
+
+/* Membuat garis di kiri dan kanan */
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 5px solid #dee2e6; /* Warna garis */
+}
+
+/* Memberi jarak antara garis dan teks */
+.divider::before {
+  margin-right: 10px;
+}
+
+.divider::after {
+  margin-left: 10px;
+}
+
+/* Styling khusus untuk teksnya */
+.devider-text {
+  font-weight: 600; /* Membuat teks agak tebal */
+  font-size: 0.9rem; /* Ukuran font sedikit lebih kecil */
+  text-transform: uppercase; /* Opsi: membuat huruf kapital semua */
+  letter-spacing: 1px; /* Opsi: memberi jarak antar huruf */
+}
+
+.input{
+    margin-top: 15px;
+    margin-bottom: 15px !important;
+}
+
+.sub_contracting{
+    font-size: 1rem;
+}

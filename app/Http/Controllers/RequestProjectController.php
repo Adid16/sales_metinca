@@ -1,0 +1,209 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\RequestProject;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Models\User;
+use Illuminate\Support\Facades\Storage;
+
+class RequestProjectController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(\Illuminate\Http\Request $request)
+    {
+        $filters = $request->only(['start_date','end_date', 'sales_id']);
+
+    // 1. Tambahkan langsung di sini agar berlaku global (Sales & Customer tidak akan melihat data yang sudah ada quotation)
+    $query = RequestProject::with(['assignment.sales'])->whereDoesntHave('quotation');
+
+    // 2. Blok ini sekarang murni untuk mengunci ID customer saja
+    if (Auth::user()->isCustomer()) {
+        $query->where('customer_id', '=', Auth::id());
+    }
+
+        // apply filters
+        if (!empty($filters['start_date'])) {
+            $query->whereDate('created_at', '>=', $filters['start_date']);
+        }
+
+        if (!empty($filters['end_date'])) {
+            $query->whereDate('created_at', '<=', $filters['end_date']);
+        }
+
+        if (!empty($filters['sales_id'])) {
+            $query->whereHas('assignment', function ($q) use ($filters) {
+                $q->where('sales_id', $filters['sales_id']);
+            });
+        }
+
+        $projects = $query->latest()->get();
+
+        $sales = \App\Models\User::where('role','staff')->where('divisi','sales')->get();
+
+        return view('requests-project.index', compact('projects','filters','sales'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        // Tidak perlu kirim list sales ke view
+        return view('requests-project.create');
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'customer_id'  => 'nullable',
+            'name'         => 'nullable',
+            'email'        => 'required|email',
+            'subject'      => 'required',
+            'message'      => 'nullable',
+            'phone'        => 'nullable',
+            'company'      => 'nullable',
+            'attachment'   => 'required|array|min:1',
+            'attachment.*' => 'file|mimes:pdf|max:5048',
+        ]);
+
+        // Set customer_id sebelum create
+        if (Auth::check()) {
+            $validated['customer_id'] = Auth::id();
+        }
+
+        unset($validated['attachment']);
+        $project = RequestProject::create($validated); // ← hanya sekali
+
+        if ($request->hasFile('attachment')) {
+            foreach ($request->file('attachment') as $file) {
+                $originalName = $file->getClientOriginalName();
+                $fileName = time() . '_' . $originalName;
+                $path = $file->storeAs('project-requests/attachment', $fileName, 'public');
+                $project->attachments()->create([
+                    'document_name' => $originalName,
+                    'file_path'     => $path,
+                ]);
+            }
+        }
+
+        return redirect()->back()->with('success', 'Project request created successfully.');
+    }
+    public function getByCustomer($id)
+    {
+        $request = RequestProject::with(['attachments','customer'])->where('customer_id','=',$id)->get();
+        return response()->json([
+            'success' => true,
+            'data' => $request
+        ],200);
+    }
+
+    /**
+     * Export request projects to Excel
+     */
+    public function export(\Illuminate\Http\Request $request)
+    {
+        $filters = $request->only(['start_date','end_date','sales_id']);
+        $filename = 'request-projects-' . now()->format('Ymd_His') . '.xlsx';
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\RequestProjectExport($filters), $filename);
+    }
+
+    public function detail($id)
+    {
+        $request = RequestProject::with(['attachments','customer'])->find($id);
+        return response()->json([
+            'success' => true,
+            'data' => $request
+        ],200);
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(RequestProject $requests_project)
+    {
+        $requestProject = $requests_project->load(['attachments', 'customer', 'assignment.sales']);
+        return view('requests-project.show', compact('requestProject'));
+
+
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit($id)
+    {
+        $project = RequestProject::findOrFail($id);
+        return view('requests-project.edit', compact('project'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, RequestProject $requests_project)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'subject' => 'required',
+            'message' => 'nullable',
+            'phone' => 'nullable',
+            'company' => 'nullable',
+            'attachment'   => 'required|array|min:1', // Harus berupa array & minimal 1 file
+            'attachment.*' => 'file|mimes:pdf|max:2048', // Tiap file harus PDF & max 2MB
+        ]);
+        $requests_project->update($validated);
+
+        if ($request->hasFile('attachment')) {
+            foreach ($request->file('attachment') as $file) {
+                // Ambil nama asli file: "laporan-keuangan.pdf"
+                $originalName = $file->getClientOriginalName();
+
+                // Tambahkan timestamp di depan nama file untuk mencegah duplikasi jika ada nama yang sama
+                $fileName = time() . '_' . $originalName;
+
+                // Simpan dengan nama asli ke folder tujuan
+                $path = $file->storeAs('project-requests/attachment', $fileName, 'public');
+
+                // Simpan $path ke database
+                $requests_project->attachments()->update(['document_name'=> $originalName,'file_path' => $path]);
+            }
+        }
+
+        return redirect()->route('requests-project.index')->with('success', 'Project request updated successfully.');
+    }
+
+    public function assign(Request $request, $id)
+    {
+        $project = RequestProject::findOrFail($id);
+
+        //mengecek apakah sudah ada yang assign
+        if ($project->assignment){
+            return redirect()->back()->with('error', 'Project sudah diambil sales lain.');
+        }
+        $project->assignment()->create([
+            'sales_id'=> Auth::id(),
+        ]);
+        return redirect()->back()->with('success', 'Project berhasil diterima.');
+
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(RequestProject $requests_project)
+    {
+        //$project = RequestProject::findOrFail($id);
+        foreach ($requests_project->attachments as $attachment) {
+            # code...
+            if(Storage::disk('public')->exists($attachment->file_path))
+            {
+                Storage::disk('public')->delete($attachment->file_path);
+            }
+        }
+        $requests_project->delete();
+        return redirect()->route('requests-project.index')->with('success', 'Project request deleted successfully.');
+    }
+}

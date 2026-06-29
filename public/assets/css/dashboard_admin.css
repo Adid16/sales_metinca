@@ -1,0 +1,113 @@
+.stats-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* RAPIN ICON */
+    font-size: 26px;
+    line-height: 1;
+    color: #fff;
+}
+
+.stats-icon i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stats-icon {
+    box-shadow: 0 6px 16px rgba(0,0,0,.15);
+}
+
+.card:hover .stats-icon {
+    transform: scale(1.1) rotate(3deg);
+    transition: .3s ease;
+}
+
+.stats-icon.blue {
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+}
+
+.stats-icon.green {
+    background: linear-gradient(135deg, #22c55e, #4ade80);
+}
+
+.stats-icon.yellow {
+    background: linear-gradient(135deg, #f59e0b, #facc15);
+}
+
+.stats-icon.red {
+    background: linear-gradient(135deg, #ef4444, #f87171);
+}
+
+.stats-icon.purple {
+    background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+}
+
+
+.stats-icon {
+    background: #f1f5f9;
+    color: var(--accent);
+}
+
+/* .label{
+ font-weight: bold;
+} */
+
+.card {
+    border: none;
+    border-radius: 16px;
+    transition: all .3s ease;
+}
+
+.card-label {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.card-blue {
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
+}
+.card-blue .card-label {
+    color: #1d4ed8;
+}
+
+.card-green {
+    background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+}
+.card-green .card-label {
+    color: #047857;
+}
+
+.card-yellow {
+    background: linear-gradient(135deg, #fffbeb, #fef3c7);
+}
+.card-yellow .card-label {
+    color: #b45309;
+}
+
+.card-red {
+    background: linear-gradient(135deg, #fef2f2, #fee2e2);
+}
+.card-red .card-label {
+    color: #b91c1c;
+}
+
+.card-purple {
+    background: linear-gradient(135deg, #f5f3ff, #e9d5ff);
+}
+
+.card-purple .card-label {
+    color: #5b21b6;
+}
+
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0,0,0,.15);
+}
+

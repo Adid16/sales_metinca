@@ -1,0 +1,124 @@
+.card-header {
+    background: linear-gradient(135deg, #111827 0%, #374151 100%);
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+    color: #ffffff;
+    font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.card-sales .card-header{
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+    color: #ffffff;
+    font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.card-sales {
+    border-radius: 14px;
+    border: 2px solid #3b82f6;
+}
+
+.card-quality .card-header{
+ background: linear-gradient(135deg, #16a34a, #22c55e);
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+    color: #ffffff;
+    font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.card-quality {
+    border-radius: 14px;
+    border: 2px solid #22c55e;
+}
+
+.card-ppc .card-header{
+ background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+    color: #ffffff;
+    font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.card-ppc {
+    border-radius: 14px;
+    border: 2px solid #8b5cf6;
+}
+
+.card-development .card-header{
+ background: linear-gradient(135deg, #ea580c, #f97316);
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+    color: #ffffff;
+    font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.card-development {
+    border-radius: 14px;
+    border: 2px solid #f97316;
+}
+
+:root {
+            --orange-primary: #ea580c; /* Warna Oranye Tua */
+            --orange-border: #fb923c;
+            --orange-light: #fff7ed;   /* Background tabel header */
+            --yellow-bg: #fefce8;      /* Background action box */
+            --yellow-border: #fef08a;
+        }
+
+        .border-custom-orange {
+            border: 2px solid var(--orange-border);
+            border-radius: 14px;
+    border: 2px solid #f97316;
+            
+        }
+
+        .bg-custom-orange {
+            background-color: var(--orange-primary);
+            
+        }
+
+        .bg-custom-light {
+            background-color: var(--orange-light);
+        }
+
+        .icon-box {
+            width: 48px;
+            height: 48px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .btn-add-req {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            transition: 0.3s;
+        }
+
+        .btn-add-req:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        .table thead th {
+            background-color: var(--orange-light);
+            color: #4b5563;
+            font-weight: 600;
+            border-bottom: 2px solid #fed7aa;
+        }
+
+        .action-box {
+            background-color: var(--yellow-bg);
+            border: 1px solid var(--yellow-border);
+        }
+
+
+
+
