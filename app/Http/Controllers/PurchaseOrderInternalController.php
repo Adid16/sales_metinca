@@ -19,22 +19,26 @@ class PurchaseOrderInternalController extends Controller
         return $user;
     }
     
-    //GET  Purchase-orders-internal
+        // GET Purchase-orders-internal
     public function index(Request $request)
     {
         $this->authorizeAccess();
         $filters = $request->only(['search', 'start_date', 'end_date']);
 
-        $query = PurchaseOrderInternal::with(['purchaseOrder.customer', 'purchaseOrder.quotation'])
-            ->latest();
+        // Eager-load contract agar pengecekan di Blade lebih cepat tanpa query berulang
+        $query = PurchaseOrderInternal::with([
+            'purchaseOrder.customer', 
+            'purchaseOrder.quotation',
+            'purchaseOrder.contract' // <--- Tambahkan ini
+        ])->latest();
 
         if (!empty($filters['search'])) {
             $query->where(function ($q) use ($filters) {
                 $q->where('item', 'like', '%' . $filters['search'] . '%')
-                  ->orWhere('po_no', 'like', '%' . $filters['search'] . '%')
-                  ->orWhereHas('purchaseOrder.customer', fn($q2) =>
+                ->orWhere('po_no', 'like', '%' . $filters['search'] . '%')
+                ->orWhereHas('purchaseOrder.customer', fn($q2) =>
                         $q2->where('name', 'like', '%' . $filters['search'] . '%'))
-                  ->orWhereHas('purchaseOrder.quotation', fn($q2) =>
+                ->orWhereHas('purchaseOrder.quotation', fn($q2) =>
                         $q2->where('quotation_no', 'like', '%' . $filters['search'] . '%'));
             });
         }
@@ -69,7 +73,7 @@ class PurchaseOrderInternalController extends Controller
     public function store(Request $request, PurchaseOrder $purchaseOrder)
     {
         $this->authorizeAccess();
- 
+
         $request->validate([
             'item.*'          => 'required|string|max:255',
             'material.*'      => 'nullable|string|max:255',

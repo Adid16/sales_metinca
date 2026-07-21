@@ -260,6 +260,19 @@
                                             <a href="{{ route('purchase-orders-internal.index') }}" class='submenu-link'>Data
                                                 PO Internal</a>
                                         </li>
+
+                                         {{-- SUBMENU BARU APPROVAL AMANDEMEN --}}
+                                        <li class="submenu-item {{ Route::is('purchase-orders.approval-amandement') ? 'active' : '' }}">
+                                            <a href="{{ route('purchase-orders.approval-amandement') }}" class='submenu-link d-flex justify-content-between align-items-center'>
+                                                <span>PO Amandemen</span>
+                                                @php
+                                                    $pendingAmandement = \App\Models\PurchaseOrder::where('status', 'amandement')->count();
+                                                @endphp
+                                                @if($pendingAmandement > 0)
+                                                    <span class="badge bg-danger" style="font-size: 0.65rem; padding: 2px 6px;">{{ $pendingAmandement }}</span>
+                                                @endif
+                                            </a>
+                                        </li>
                                     </ul>
                                 </li>
                             @endif

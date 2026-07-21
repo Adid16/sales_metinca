@@ -4,7 +4,6 @@
 
 @section('content')
 
-{{-- Perbaikan: Ditambahkan atribut enctype="multipart/form-data" agar form bisa mengirim file PDF --}}
 <form action="{{ route('contracts.store') }}" method="POST" enctype="multipart/form-data">
     @csrf
 
@@ -22,21 +21,23 @@
                 </div>
 
                 {{-- ================= CARD 2: LEMBAR TINJAUAN KONTRAK + INPUTAN ================= --}}
-                <div class="card mb-0">
+                <div class="card mb-3">
                     <div class="card-header text-center py-3">
                         <h4 class="card-title mb-1 fw-bold">LEMBAR TINJAUAN KONTRAK</h4>
                         <h6 class="mb-0 text-muted">NO : {{ $po->quotation->quotation_no ?? '-' }}</h6>
                     </div>
                     <div class="card-body px-4 py-3">
 
-                        <input type="hidden" name="customer_id" value="{{ $po->customer_id }}">
-                        <input type="hidden" name="quotation_id" value="{{ $po->quotation->id }}">
+                        {{-- HIDDEN INPUTS UTAMA --}}
+                        <input type="hidden" name="customer_id" value="{{ $po->customer_id ?? $po->quotation->customer_id ?? '' }}">
+                        <input type="hidden" name="quotation_id" value="{{ $po->quotation->id ?? '' }}">
+                        <input type="hidden" name="purchase_order_internal_id" value="{{ $selectedItem->id ?? '' }}">
 
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small">CUSTOMER</label>
                                 <input type="text" class="form-control form-control-sm bg-light"
-                                    value="{{ $po->customer->name ?? '' }}" readonly>
+                                    value="{{ $po->customer->name ?? $po->quotation->customer->name ?? '' }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small">DATA RECORD</label>
@@ -49,19 +50,31 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small">PART NO</label>
-                                <input type="text" class="form-control form-control-sm bg-light" id="partNumber" name="part_no" readonly>
+                                <input type="text" class="form-control form-control-sm bg-light" id="partNumber" name="part_no" value="{{ $selectedItem->part_no ?? $selectedItem->article_no ?? '' }}" readonly>
                             </div>
+
+                            {{-- ================= AMANDMENT NO & ALASAN GABUNG ================= --}}
                             <div class="col-md-6">
-                                <label class="form-label mb-1 fw-semibold small">AMANDMENT NO</label>
-                                <input type="text" class="form-control form-control-sm" name="amendment_no">
+                                <label class="form-label mb-1 fw-semibold small">AMANDMENT NO & ALASAN</label>
+
+                                {{-- Tampilan Gabungan Nomor Amandemen & Alasan --}}
+                                <input type="text" 
+                                       class="form-control form-control-sm bg-light text-dark fw-bold" 
+                                       value="{{ isset($amandementNo) && $amandementNo > 0 ? 'Ke-' . $amandementNo . ' (Alasan: ' . ($alasanAmandemen ?? '-') . ')' : '0 (Original)' }}" 
+                                       readonly>
+
+                                {{-- Hidden input agar data murni tetap terkirim ke database --}}
+                                <input type="hidden" name="amandment_no" value="{{ $amandementNo ?? 0 }}">
+                                <input type="hidden" name="alasan_amandemen" value="{{ $alasanAmandemen ?? '' }}">
                             </div>
+
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small">PART NAME</label>
-                                <input type="text" class="form-control form-control-sm bg-light" id="partName" name="part_name" readonly>
+                                <input type="text" class="form-control form-control-sm bg-light" id="partName" name="part_name" value="{{ $selectedItem->item ?? '' }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small">LOCATION</label>
-                                <input type="text" class="form-control form-control-sm bg-light" id="location" name="location" readonly>
+                                <input type="text" class="form-control form-control-sm bg-light" id="location" name="location" value="PT. Metinca (Jakarta)" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small">ARTICLE</label>
@@ -71,10 +84,11 @@
                         </div>
                     </div>
                 </div>
-                {{-- ================= END CARD 2 ================= --}}
 
                 {{-- ================= CARD 3-6: REQUIREMENTS PER DEPARTEMEN ================= --}}
                 @php
+                    $latestContract = $latestContract ?? null;
+
                     $departments = ['sales', 'quality', 'ppc', 'design engineering'];
                     $deptColors  = [
                         'sales'              => '#0d6efd',
@@ -88,21 +102,23 @@
                         'ppc'                => 'bi-gear',
                         'design engineering' => 'bi-pencil-ruler',
                     ];
-                    $deptRequirement = [
+
+                    // Data Default untuk Pembuatan Kontrak Pertama Kali
+                    $defaultRequirements = [
                         'sales' => [
-                            ['requirement' => 'Price',                          'requirement_value' => ''],
-                            ['requirement' => 'Quantity',                       'requirement_value' => ''],
-                            ['requirement' => 'Delivery Required',              'requirement_value' => ''],
-                            ['requirement' => 'Supply Condition',               'requirement_value' => ''],
+                            ['requirement' => 'Price',                         'requirement_value' => $selectedItem ? number_format($selectedItem->subtotal / max($selectedItem->qty, 1), 0, ',', '.') : ''],
+                            ['requirement' => 'Quantity',                      'requirement_value' => $selectedItem->qty ?? ''],
+                            ['requirement' => 'Delivery Required',             'requirement_value' => isset($po->delivery_request) ? \Carbon\Carbon::parse($po->delivery_request)->format('d M Y') : ''],
+                            ['requirement' => 'Supply Condition',              'requirement_value' => ''],
                             ['requirement' => 'Special / Customer Requirement','requirement_value' => ''],
                         ],
                         'quality' => [
-                            ['requirement' => 'Drawing',        'requirement_value' => ''],
-                            ['requirement' => 'Standard / Spec','requirement_value' => ''],
-                            ['requirement' => 'Inspection',     'requirement_value' => ''],
+                            ['requirement' => 'Drawing',       'requirement_value' => ''],
+                            ['requirement' => 'Standard / Spec','requirement_value' => $selectedItem->spesifikasi ?? ''],
+                            ['requirement' => 'Inspection',    'requirement_value' => ''],
                         ],
                         'ppc' => [
-                            ['requirement' => 'Material Requirement','requirement_value' => ''],
+                            ['requirement' => 'Material Requirement','requirement_value' => $selectedItem->material ?? ''],
                             ['requirement' => 'Pattern Wax',         'requirement_value' => ''],
                             ['requirement' => 'Purchasing',          'requirement_value' => ''],
                             ['requirement' => 'Sub Contracting',     'requirement_value' => ''],
@@ -115,13 +131,42 @@
                             ['requirement' => 'Fixtures',       'requirement_value' => ''],
                         ],
                     ];
+
+                    // Cek apakah ada data requirement dari kontrak sebelumnya yang tersimpan di DB
+                    $existingRequirements = ($latestContract && $latestContract->requirements && $latestContract->requirements->count() > 0)
+                        ? $latestContract->requirements->groupBy('requirement_from')
+                        : null;
                 @endphp
 
                 @foreach ($departments as $dept)
                     @php
-                        $requirements = $deptRequirement[$dept] ?? [];
-                        $color        = $deptColors[$dept]       ?? 'black';
-                        $icon         = $deptIcons[$dept]        ?? 'bi-list-ul';
+                        // JIKA ADA KONTRAK SEBELUMNYA: Pakai data riil dari database
+                        if ($existingRequirements && isset($existingRequirements[$dept])) {
+                            $requirements = $existingRequirements[$dept]->map(function($item) use ($selectedItem, $dept) {
+                                $val = $item->requirement_value;
+
+                                // SINKRONISASI AKURAT: Pastikan Quantity & Price selalu membaca data $selectedItem yang sedang dibuka!
+                                if (strtolower($dept) === 'sales') {
+                                    if (strtolower($item->requirement) === 'quantity' && $selectedItem) {
+                                        $val = $selectedItem->qty;
+                                    }
+                                    if (strtolower($item->requirement) === 'price' && $selectedItem) {
+                                        $val = number_format($selectedItem->subtotal / max($selectedItem->qty, 1), 0, ',', '.');
+                                    }
+                                }
+
+                                return [
+                                    'requirement'       => $item->requirement,
+                                    'requirement_value' => $val
+                                ];
+                            })->toArray();
+                        } else {
+                            // JIKA BELUM ADA: Gunakan susunan default
+                            $requirements = $defaultRequirements[$dept] ?? [];
+                        }
+
+                        $color = $deptColors[$dept] ?? 'black';
+                        $icon  = $deptIcons[$dept]  ?? 'bi-list-ul';
                     @endphp
 
                     <div class="card shadow-sm mb-3">
@@ -140,8 +185,8 @@
                             <table class="table table-bordered align-middle mb-0">
                                 <thead style="background:#e9ecef;">
                                     <tr>
-                                        <th width="30%"><center>Requirement</center></th>
-                                        <th><center>Action Required / Remark</center></th>
+                                        <th width="30%" class="text-center">Requirement</th>
+                                        <th class="text-center">Action Required / Remark</th>
                                         <th width="60px" class="text-center">Action</th>
                                     </tr>
                                 </thead>
@@ -184,12 +229,11 @@
                         </h6>
                     </div>
                     <div class="card-body">
-                        <textarea name="others_comment" class="form-control mt-2" rows="3" placeholder="Tulis komentar tambahan..."></textarea>
+                        <textarea name="others_comment" class="form-control mt-2" rows="3" placeholder="Tulis komentar tambahan...">{{ $latestContract->others_comment ?? '' }}</textarea>
 
-                        {{-- Perbaikan: Komponen Input Upload PO PDF Asli ditempatkan di bawah komentar --}}
                         <div class="mt-3">
                             <label class="form-label mb-1 fw-semibold small text-dark">
-                                 UPLOAD DOKUMEN PO (PDF) <span class="text-danger">*</span>
+                                UPLOAD DOKUMEN PO (PDF) <span class="text-danger">*</span>
                             </label>
                             <input type="file" name="po_pdf" class="form-control form-control-sm" accept="application/pdf">
                             <small class="text-muted" style="font-size: 11px;">* Format file wajib PDF (Maksimal 2MB)</small>
@@ -198,7 +242,7 @@
                         {{-- BUTTONS --}}
                         <div class="d-flex justify-content-end mt-3 gap-2">
                             <button type="submit" class="btn btn-sm btn-primary">Save</button>
-                            <a href="{{ route('purchase-orders.index') }}" class="btn btn-sm btn-danger">Back</a>
+                            <a href="{{ route('purchase-orders-internal.index') }}" class="btn btn-sm btn-danger">Back</a>
                         </div>
                     </div>
                 </div>
@@ -254,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // AUTO FILL KETIKA ARTICLE NO DI ENTER
-    document.getElementById('articleInput').addEventListener('keydown', function (e) {
+    document.getElementById('articleInput')?.addEventListener('keydown', function (e) {
         if (e.key !== 'Enter') return;
         e.preventDefault();
 
@@ -288,34 +332,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     };
                     document.getElementById('location').value = locationMap[d.lokasi_pengerjaan] || '';
 
-                    // AUTO FILL PRICE DI KARTU DEPARTEMEN SALES
-                    document.querySelectorAll('input[name^="requirements[sales]"]').forEach(inp => {
-                        if (inp.name.includes('[requirement]') && inp.value.toLowerCase() === 'price') {
-                            const idx = inp.name.match(/requirements\[sales\]\[(\d+)\]\[requirement\]/)[1];
-                            const val = document.querySelector(`input[name="requirements[sales]2[${idx}][requirement_value]"]`) 
-                                     || document.querySelector(`input[name="requirements[sales][${idx}][requirement_value]"]`);
-                            if (val) val.value = d.price || '0';
-                        }
-                    });
-
-                    // Auto fill Drawing di quality
-                    document.querySelectorAll('input[name^="requirements[quality]"]').forEach(inp => {
-                        if (inp.name.includes('[requirement]') && inp.value.toLowerCase() === 'drawing') {
-                            const idx = inp.name.match(/requirements\[quality\]\[(\d+)\]\[requirement\]/)[1];
-                            const val = document.querySelector(`input[name="requirements[quality][${idx}][requirement_value]"]`);
-                            if (val) val.value = d.drawing_no || '';
-                        }
-                    });
-
-                    // Auto fill Material Requirement di ppc
-                    document.querySelectorAll('input[name^="requirements[ppc]"]').forEach(inp => {
-                        if (inp.name.includes('[requirement]') && inp.value.toLowerCase() === 'material requirement') {
-                            const idx = inp.name.match(/requirements\[ppc\]\[(\d+)\]\[requirement\]/)[1];
-                            const val = document.querySelector(`input[name="requirements[ppc][${idx}][requirement_value]"]`);
-                            if (val) val.value = d.material || '';
-                        }
-                    });
-
                     input.classList.add('border-success');
                     setTimeout(() => input.classList.remove('border-success'), 2000);
 
@@ -329,13 +345,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     });
 
-    // FIELD CLEANER FUNCTION
     function clearHeaderFields(input) {
-        document.getElementById('partNumber').value = '';
-        document.getElementById('partName').value   = '';
-        document.getElementById('articleId').value  = '';
-        document.getElementById('location').value   = '';
-
         input.classList.add('border-danger');
         setTimeout(() => input.classList.remove('border-danger'), 2000);
         alert('Nomor Article tidak ditemukan di sistem Pricelist!');

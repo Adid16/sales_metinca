@@ -27,6 +27,30 @@
                     <div class="card-body">
                         <form action="{{ route('purchase-orders.store-amandement', $lastPo->id) }}" method="POST" enctype="multipart/form-data">
                             @csrf 
+                            
+                            {{-- Hidden Input untuk mengunci Item Internal Spesifik --}}
+                            @if(isset($selectedItem))
+                                <input type="hidden" name="purchase_order_internal_id" value="{{ $selectedItem->id }}">
+                            @endif
+
+                            {{-- BOX INFORMASI ITEM YANG SEDANG DIAMANDEMEN --}}
+                            @if(isset($selectedItem))
+                                <div class="alert alert-light-primary border border-primary mb-4 p-3 rounded">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-box-seam-fill fs-5 text-primary me-2"></i>
+                                        <h6 class="text-primary mb-0 fw-bold">Target Amandemen Item:</h6>
+                                    </div>
+                                    <ul class="mb-0 small text-dark">
+                                        <li><strong>Nama Barang / Item:</strong> {{ $selectedItem->item }}</li>
+                                        <li><strong>Part No:</strong> <code>{{ $selectedItem->contract->part_no ?? $selectedItem->part_no ?? '-' }}</code></li>
+                                        <li><strong>Jumlah Qty Saat Ini:</strong> {{ number_format($selectedItem->qty) }} pcs</li>
+                                        @if(isset($contract))
+                                            <li><strong>No. Tinjauan Kontrak Terikat:</strong> <span class="badge bg-primary">{{ $contract->contract_no }}</span></li>
+                                        @endif
+                                    </ul>
+                                </div>
+                            @endif
+
                             <div class="row">
                                 {{-- 1. KANTONG QUOTATION (OTOMATIS & READONLY) --}}
                                 <div class="col-md-6 col-12 mb-3">
@@ -60,7 +84,7 @@
                                 <div class="col-12 mb-3">
                                     <div class="form-group">
                                         <label for="alasan_amandemen" class="form-label font-weight-bold">Alasan / Pesan Perubahan Dokumen <span class="text-danger">*</span></label>
-                                        <textarea name="alasan_amandemen" id="alasan_amandemen" rows="3" class="form-control" placeholder="Tuliskan alasan detail amandemen di sini... (Misal: Lampiran revisi teknis dari customer)" required></textarea>
+                                        <textarea name="alasan_amandemen" id="alasan_amandemen" rows="3" class="form-control" placeholder="Tuliskan alasan detail amandemen di sini... (Misal: Perubahan kuantitas atau spesifikasi teknis item dari customer)" required></textarea>
                                     </div>
                                     @error('alasan_amandemen')
                                         <span class="text-danger small">{{ $message }}</span>
@@ -84,6 +108,7 @@
 
                                 {{-- TOMBOL SUBMIT & RESET --}}
                                 <div class="col-12 d-flex justify-content-end mt-3">
+                                    <a href="{{ route('purchase-orders.index') }}" class="btn btn-secondary me-1 mb-1">Kembali</a>
                                     <button type="submit" class="btn btn-warning me-1 mb-1 font-weight-bold text-white">Kirim Amandemen</button>
                                     <button type="reset" class="btn btn-light-secondary me-1 mb-1">Reset</button>
                                 </div>

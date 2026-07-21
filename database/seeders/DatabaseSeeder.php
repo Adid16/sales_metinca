@@ -94,6 +94,14 @@ class DatabaseSeeder extends Seeder
             'role'     => 'customer',
             'divisi'   => null,
         ]);
+        
+         $customer = User::create([
+            'name'     => 'Adi Dwi Nugroho',
+            'email'    => 'adidwinugroho168@gmail.com',
+            'password' => Hash::make('password'),
+            'role'     => 'customer',
+            'divisi'   => null,
+        ]);
 
 
     }

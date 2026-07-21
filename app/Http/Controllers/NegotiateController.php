@@ -29,7 +29,6 @@ class NegotiateController extends Controller
         $customerAccount = Account::where('user_id', $quotation->customer_id)->first();
         $negotiations    = $quotation->negotiates;
         $lastNegotiation = $negotiations->first();
-        // $lastNegotiation = $negotiations->where('from_customer', true)->first();
  
         return view('quotations.negotiate', compact(
             'quotation',
@@ -55,7 +54,9 @@ class NegotiateController extends Controller
  
         $customerAccount = Account::where('user_id', $quotation->customer_id)->first();
         $negotiations    = $quotation->negotiates;
-        $lastNegotiation = $negotiations->where('from_customer', true)->first();
+        
+        // PERUBAHAN 1: Diubah agar mengambil data paling terbaru (first) supaya harga di form tetap sinkron
+        $lastNegotiation = $negotiations->first();
  
         return view('quotations.show-nego', compact(
             'quotation',
@@ -105,15 +106,10 @@ class NegotiateController extends Controller
             }
  
             // =============================================
-            // ACCEPT & FINALIZE
-            // Tidak buat record baru, cukup:
-            // 1. Update action record terakhir → accept
-            // 2. Update status quotation → accepted
-            // 3. Update harga item sesuai harga nego
+            // ACTION: ACCEPT & FINALIZE
             // =============================================
             if ($request->action === 'accept') {
  
-                // Update record negotiate terakhir → action = accept
                 $lastNegotiate = Negotiate::where('quotation_id', $quotation->id)
                     ->latest()
                     ->first();
@@ -126,13 +122,11 @@ class NegotiateController extends Controller
                     ]);
                 }
  
-                // Update status quotation → accepted
                 $quotation->update([
                     'status'        => 'accepted',
                     'accepted_date' => now(),
                 ]);
  
-                // Update harga item sesuai harga nego yang disubmit
                 foreach ($negotiatedItems as $negItem) {
                     $quotation->items()
                         ->where('id', $negItem['id'])
@@ -140,15 +134,12 @@ class NegotiateController extends Controller
                 }
  
                 $activityMsg = 'Menerima & finalisasi negosiasi quotation ' . $quotation->quotation_no;
-                $msg         = 'Negosiasi diterima. Quotation telah difinalisasi dengan harga yang disepakati.';
+                $msg        = 'Negosiasi diterima. Quotation telah difinalisasi dengan harga yang disepakati.';
  
             // =============================================
-            // SUBMIT NEGOTIATE
-            // Buat record baru, update status → negotiating
+            // ACTION: SUBMIT NEGOTIATE
             // =============================================
             } else {
- 
-                // Upload dokumen pendukung jika ada
                 $supportDocPath = null;
                 if ($request->hasFile('support_document')) {
                     $file           = $request->file('support_document');
@@ -156,7 +147,6 @@ class NegotiateController extends Controller
                     $supportDocPath = $file->storeAs('negotiates', $filename, 'public');
                 }
  
-                // Buat record negotiate baru
                 Negotiate::create([
                     'quotation_id'         => $quotation->id,
                     'user_id'              => Auth::id(),
@@ -170,7 +160,6 @@ class NegotiateController extends Controller
                     'negotiated_items'     => $negotiatedItems,
                 ]);
  
-                // Update status quotation → negotiating
                 $quotation->update(['status' => 'negotiating']);
  
                 $activityMsg = Auth::user()->isCustomer()
@@ -182,7 +171,6 @@ class NegotiateController extends Controller
                     : 'Balasan negosiasi berhasil dikirim.';
             }
  
-            // Catat activity
             HistoryActivity::create([
                 'user_id'       => Auth::id(),
                 'activity'      => $activityMsg,
@@ -193,6 +181,69 @@ class NegotiateController extends Controller
  
         } catch (\Exception $e) {
             Log::error('Negotiate error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * PERUBAHAN 2: Menambahkan fungsi closeNegotiate langsung ke dalam controller ini
+     * Aksi penyepakatan harga akhir / penutupan diskusi transaksi
+     */
+    public function closeNegotiate(Request $request, Quotation $quotation)
+    {
+        try {
+            $lastNego = Negotiate::where('quotation_id', $quotation->id)
+                ->where('action', 'negotiate')
+                ->latest()
+                ->first();
+
+            if (!$lastNego) {
+                return redirect()->back()->with('error', 'Belum ada data negosiasi harga yang bisa disepakati.');
+            }
+
+            // Bongkar item snapshot dari JSON string database
+            $itemsArray = is_array($lastNego->negotiated_items) 
+                ? $lastNego->negotiated_items 
+                : json_decode($lastNego->negotiated_items, true);
+
+            if (is_array($itemsArray)) {
+                foreach ($itemsArray as $negoItem) {
+                    $quotation->items()->where('id', $negoItem['id'])->update([
+                        'price' => $negoItem['negotiated_price']
+                    ]);
+                }
+            }
+
+            // Update data master penawaran mase
+            $quotation->update([
+                'status'               => 'accepted',
+                'accepted_date'        => now(),
+                'payment_terms'        => $lastNego->payment_terms,
+                'target_delivery_date' => $lastNego->target_delivery_date
+            ]);
+
+            // Kunci alur negosiasi ke status 'closed'
+            Negotiate::create([
+                'quotation_id'         => $quotation->id,
+                'user_id'              => Auth::id(),
+                'from_customer'        => Auth::user()->isCustomer(),
+                'message'              => 'Negosiasi resmi disepakati dan ditutup oleh Staff.',
+                'negotiated_total'     => $lastNego->negotiated_total,
+                'payment_terms'        => $lastNego->payment_terms,
+                'target_delivery_date' => $lastNego->target_delivery_date,
+                'action'               => 'closed',
+                'negotiated_items'     => $lastNego->negotiated_items
+            ]);
+
+            HistoryActivity::create([
+                'user_id'       => Auth::id(),
+                'activity'      => 'Menutup & menyepakati negosiasi quotation ' . $quotation->quotation_no,
+                'activity_time' => now()->format('Y-m-d H:i:s')
+            ]);
+
+            return redirect()->route('quotations.show', $quotation->id)->with('success', 'Negosiasi berhasil disepakati dan ditutup.');
+        } catch (\Exception $e) {
+            Log::error('Close negotiate error: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }

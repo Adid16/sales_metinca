@@ -76,6 +76,8 @@ class Quotation extends Model
         'notes',
         'item',
         'qty',
+        'target_delivery_date',
+        'payment_terms',
     ];
 
     public function customer()

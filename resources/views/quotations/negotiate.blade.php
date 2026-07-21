@@ -75,7 +75,9 @@
         <div class="company-name">PT. Metinca Prima Industrial Works</div>
         <div class="company-tagline">Manufacturing & Industrial Solutions</div>
     </div>
-    
+    <a href="{{ route('quotations.show', $quotation->id) }}" class="btn btn-light btn-sm">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
 </div>
  
 @if(session('success'))
@@ -92,11 +94,70 @@
     </div>
 @endif
  
+{{-- Banner Status Accepted --}}
+@if($quotation->status === 'accepted')
+    @php
+        $closedNego = $quotation->negotiates->whereIn('action', ['closed', 'accept'])->first();
+    @endphp
+    <div class="mb-3 d-flex align-items-center gap-3" style="background: linear-gradient(135deg, #d4edda, #c3e6cb); border: 1.5px solid #28a745; border-radius: 10px; padding: 16px;">
+        <div style="font-size: 32px; line-height:1;">
+            <i class="bi bi-patch-check-fill text-success"></i>
+        </div>
+        <div>
+            <div class="fw-bold text-success" style="font-size:15px;">Negosiasi Telah Disetujui</div>
+            <div class="text-muted" style="font-size:12px;">Harga yang disepakati telah difinalisasi. Negosiasi tidak dapat dilanjutkan.</div>
+            
+            @if($quotation->accepted_date)
+                <div class="mt-1" style="font-size:11px; color:#555;">
+                    <i class="bi bi-clock me-1"></i> Ditutup pada: 
+                    <strong>{{ \Carbon\Carbon::parse($quotation->accepted_date)->format('d F Y') }} </strong>
+                </div>
+            @endif
+ 
+            @if($closedNego && $closedNego->negotiated_total)
+                <div class="mt-1" style="font-size:11px; color:#555;">
+                    <i class="bi bi-tag me-1"></i> Total harga final: 
+                    <strong class="text-success">Rp {{ number_format($closedNego->negotiated_total, 0, ',', '.') }}</strong>
+                </div>
+            @endif
+        </div>
+    </div>
+@endif
+ 
+@php
+    // DEKLARASI MASTER: Hitung data history nego dari server-side agar langsung sinkron saat halaman terbuka
+    $isLocked = in_array($quotation->status, ['accepted', 'po']);
+    $origTotal = $quotation->items->sum(fn($i) => $i->price * $i->qty);
+    $initialNegoTotal = 0;
+    $displayPrices = [];
+ 
+    // Bongkar Array JSON agar firstWhere() milik Laravel Collections berfungsi normal mencari ID
+    $lastItems = [];
+    if(isset($lastNegotiation) && $lastNegotiation && $lastNegotiation->negotiated_items) {
+        $lastItems = is_array($lastNegotiation->negotiated_items) 
+            ? $lastNegotiation->negotiated_items 
+            : json_decode($lastNegotiation->negotiated_items, true);
+    }
+    $lastItemsCollection = collect($lastItems);
+ 
+    foreach($quotation->items as $index => $item) {
+        $lastItemData = $lastItemsCollection->firstWhere('id', $item->id);
+        $lastPrice = $lastItemData['negotiated_price'] ?? null;
+        
+        $priceFinal = old("items.{$index}.negotiated_price", $lastPrice ?? $item->price);
+        $displayPrices[$item->id] = $priceFinal;
+        $initialNegoTotal += ($priceFinal * $item->qty);
+    }
+ 
+    $diff = $origTotal - $initialNegoTotal;
+    $pct  = $origTotal > 0 ? number_format(($diff / $origTotal) * 100, 1) : 0;
+    $isAccepted = $quotation->status === 'accepted';
+@endphp
+ 
 <form action="{{ route('negotiate.store', $quotation->id) }}" method="POST" enctype="multipart/form-data">
     @csrf
  
     <div class="row">
- 
         {{-- KIRI --}}
         <div class="col-lg-8">
  
@@ -162,51 +223,55 @@
                         </thead>
                         <tbody>
                             @foreach($quotation->items as $index => $item)
-                            <tr>
-                                <td class="ps-3 text-center">{{ $loop->iteration }}</td>
-                                <td>
-                                    {{ $item->item }}
-                                    <input type="hidden" name="items[{{ $index }}][id]" value="{{ $item->id }}">
-                                </td>
-                                <td class="text-center">{{ $item->qty }}</td>
-                                <td class="text-end">
-                                    <span class="orig-price">Rp {{ number_format($item->price, 0, ',', '.') }}</span>
-                                </td>
-                                <td>
-                                    <div class="input-rp">
-                                        <span class="prefix">Rp</span>
-                                       <input type="number"
-                                            class="form-control form-control-sm negotiated-price"
-                                            name="items[{{ $index }}][negotiated_price]"
-                                            value="{{ old("items.{$index}.negotiated_price", $item->price) }}"
-                                            data-qty="{{ $item->qty }}"
-                                            data-original="{{ $item->price }}"
-                                            min="0"
-                                            {{ $quotation->status === 'accepted' ? 'disabled' : 'required' }}>
-                                    </div>
-                                </td>
-                                <td class="text-end pe-3">
-                                    <span class="subtotal-cell fw-semibold">
-                                        Rp {{ number_format($item->price * $item->qty, 0, ',', '.') }}
-                                    </span>
-                                </td>
-                            </tr>
+                                @php $currentPrice = $displayPrices[$item->id]; @endphp
+                                <tr>
+                                    <td class="ps-3 text-center">{{ $loop->iteration }}</td>
+                                    <td>
+                                        {{ $item->item }}
+                                        <input type="hidden" name="items[{{ $index }}][id]" value="{{ $item->id }}">
+                                        @if($isAccepted)
+                                            <input type="hidden" name="items[{{ $index }}][negotiated_price]" value="{{ $currentPrice }}">
+                                        @endif
+                                    </td>
+                                    <td class="text-center">{{ $item->qty }}</td>
+                                    <td class="text-end">
+                                        <span class="orig-price">Rp {{ number_format($item->price, 0, ',', '.') }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="input-rp">
+                                            <span class="prefix">Rp</span>
+                                            <input type="number"
+                                                class="form-control form-control-sm negotiated-price"
+                                                {{ $isAccepted ? '' : 'name=items['.$index.'][negotiated_price]' }}
+                                                value="{{ $currentPrice }}"
+                                                data-qty="{{ $item->qty }}"
+                                                data-original="{{ $item->price }}"
+                                                min="0" {{ $isAccepted ? 'disabled' : 'required' }}
+                                                style="{{ $isAccepted ? 'background:#f5f5f5;cursor:not-allowed;opacity:0.7;' : '' }}">
+                                        </div>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <span class="subtotal-cell fw-semibold">
+                                            Rp {{ number_format($currentPrice * $item->qty, 0, ',', '.') }}
+                                        </span>
+                                    </td>
+                                </tr>
                             @endforeach
                         </tbody>
                         <tfoot>
                             <tr class="total-row">
                                 <td colspan="4" class="text-end pe-3 py-3">
                                     <div class="orig-total-strike">
-                                        Original: Rp {{ number_format($quotation->items->sum(fn($i) => $i->price * $i->qty), 0, ',', '.') }}
+                                        Original: Rp {{ number_format($origTotal, 0, ',', '.') }}
                                     </div>
                                     <div style="font-size:13px">Negotiated total:</div>
                                 </td>
                                 <td colspan="2" class="text-end pe-3 py-3">
                                     <div class="orig-total-strike" id="origTotalDisplay">
-                                        Rp {{ number_format($quotation->items->sum(fn($i) => $i->price * $i->qty), 0, ',', '.') }}
+                                        Rp {{ number_format($origTotal, 0, ',', '.') }}
                                     </div>
                                     <div class="neg-total" id="negTotalDisplay">
-                                        Rp {{ number_format($quotation->items->sum(fn($i) => $i->price * $i->qty), 0, ',', '.') }}
+                                        Rp {{ number_format($initialNegoTotal, 0, ',', '.') }}
                                     </div>
                                 </td>
                             </tr>
@@ -219,52 +284,62 @@
             <div class="negotiate-card card">
                 <div class="card-header"><i class="bi bi-chat-left-text me-1"></i> Negotiation Message</div>
                 <div class="card-body">
+                    @php
+                        $lastDeliveryDate = old('target_delivery_date', $lastNegotiation?->target_delivery_date 
+                            ? \Carbon\Carbon::parse($lastNegotiation->target_delivery_date)->format('Y-m-d') 
+                            : ($quotation->target_delivery_date ? \Carbon\Carbon::parse($quotation->target_delivery_date)->format('Y-m-d') : ''));
+                        
+                        $lastPayment = old('payment_terms', $lastNegotiation?->payment_terms ?? $quotation->payment_terms ?? '');
+                        $presetValues    = ['cash', 'net_30', 'net_60', 'dp_50', 'installment'];
+                        $isCustomPayment = $lastPayment && !in_array($lastPayment, $presetValues);
+                        $isCustomer      = Auth::user()->isCustomer();
+                        $ptDisabled      = $quotation->status === 'accepted' || $isCustomer;
+                    @endphp
+ 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold" style="font-size:13px">
-                            Reason / Message <span class="text-danger">*</span>
-                        </label>
-                        <textarea name="negotiation_message"
-                            class="form-control @error('negotiation_message') is-invalid @enderror"
-                            rows="4"
-                            placeholder="Tuliskan alasan negosiasi atau pesan tambahan untuk pihak PT..."
-                            {{ $quotation->status === 'accepted' ? 'disabled' : 'required' }}>{{ old('negotiation_message', $quotation->status === 'accepted' && $lastNegotiation ? $lastNegotiation->message : '') }}</textarea>
+                        <label class="form-label fw-semibold" style="font-size:13px">Target Delivery Date</label>
+                        <input type="date" name="target_delivery_date" class="form-control" value="{{ $lastDeliveryDate }}" min="{{ now()->format('Y-m-d') }}" {{ $isAccepted ? 'disabled' : '' }} style="{{ $isAccepted ? 'background:#f5f5f5;cursor:not-allowed;' : '' }}">
+                        @if($isAccepted)
+                            <input type="hidden" name="target_delivery_date" value="{{ $lastDeliveryDate }}">
+                        @endif
+                        <div class="form-text" style="font-size:12px">Opsional — jika ada permintaan khusus terkait jadwal pengiriman.</div>
+                    </div>
+ 
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" style="font-size:13px">Payment Terms</label>
+                        <select name="payment_terms" class="form-select" {{ $ptDisabled ? 'disabled' : '' }} style="{{ $isCustomer ? 'background:#f5f5f5;cursor:not-allowed;' : '' }}">
+                            <option value="">-- Pilih Payment Terms --</option>
+                            <option value="cash" {{ $lastPayment == 'cash' ? 'selected' : '' }}>Cash</option>
+                            <option value="net_30" {{ $lastPayment == 'net_30' ? 'selected' : '' }}>Net 30</option>
+                            <option value="net_60" {{ $lastPayment == 'net_60' ? 'selected' : '' }}>Net 60</option>
+                            <option value="dp_50" {{ $lastPayment == 'dp_50' ? 'selected' : '' }}>DP 50%</option>
+                            <option value="installment" {{ $lastPayment == 'installment' ? 'selected' : '' }}>Installment</option>
+                            @if($isCustomPayment)
+                                <option value="{{ $lastPayment }}" selected>{{ $lastPayment }} (custom)</option>
+                            @endif
+                        </select>
+                        @if($isCustomer || $quotation->status === 'accepted')
+                            <input type="hidden" name="payment_terms" value="{{ $lastPayment }}">
+                        @endif
+                        @if($isCustomer)
+                            <div class="form-text" style="font-size:11px;color:#e65100">
+                                <i class="bi bi-lock-fill"></i> Payment terms hanya bisa diatur oleh staff.
+                            </div>
+                        @endif
+                    </div>
+ 
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" style="font-size:13px">Reason / Message <span class="text-danger">*</span></label>
+                        <textarea name="negotiation_message" class="form-control @error('negotiation_message') is-invalid @enderror" rows="4" placeholder="Tuliskan alasan negosiasi atau pesan tambahan untuk pihak PT..." {{ $isAccepted ? 'disabled' : 'required' }} style="{{ $isAccepted ? 'background:#f5f5f5;cursor:not-allowed;' : '' }}">{{ old('negotiation_message', $lastNegotiation?->message ?? '') }}</textarea>
                         @error('negotiation_message')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
-                        <div class="form-text" style="font-size:12px">
-                            Sampaikan alasan negosiasi harga dengan jelas agar dapat dipertimbangkan.
-                        </div>
+                        <div class="form-text" style="font-size:12px">Sampaikan alasan negosiasi harga dengan jelas agar dapat dipertimbangkan.</div>
                     </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold" style="font-size:13px">Target Delivery Date</label>
-                        <input type="date" name="target_delivery_date"
-                            class="form-control"
-                            value="{{ old('target_delivery_date', $quotation->status === 'accepted' && $lastNegotiation && $lastNegotiation->target_delivery_date ? $lastNegotiation->target_delivery_date->format('Y-m-d') : '') }}"
-                            min="{{ now()->format('Y-m-d') }}"
-                            {{ $quotation->status === 'accepted' ? 'disabled' : '' }}>
-                        <div class="form-text" style="font-size:12px">Opsional — jika ada permintaan khusus terkait jadwal pengiriman.</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold" style="font-size:13px">Payment Terms</label>
-                        <select name="payment_terms" class="form-select" {{ $quotation->status === 'accepted' ? 'disabled' : '' }}>
-                            <option value="">-- Pilih Payment Terms --</option>
-                            @php
-                                $lastPayment = $quotation->status === 'accepted' && $lastNegotiation ? $lastNegotiation->payment_terms : old('payment_terms');
-                            @endphp
-                            <option value="cash"        {{ $lastPayment == 'cash'        ? 'selected' : '' }}>Cash</option>
-                            <option value="net_30"      {{ $lastPayment == 'net_30'      ? 'selected' : '' }}>Net 30</option>
-                            <option value="net_60"      {{ $lastPayment == 'net_60'      ? 'selected' : '' }}>Net 60</option>
-                            <option value="dp_50"       {{ $lastPayment == 'dp_50'       ? 'selected' : '' }}>DP 50%</option>
-                            <option value="installment" {{ $lastPayment == 'installment' ? 'selected' : '' }}>Installment</option>
-                        </select>
-                    </div>
-
+ 
                     <div class="mb-0">
                         <label class="form-label fw-semibold" style="font-size:13px">Supporting Document (Opsional)</label>
-                        @if($quotation->status === 'accepted' && $lastNegotiation && $lastNegotiation->support_document)
-                            {{-- Tampilkan link dokumen terakhir jika sudah accepted --}}
+                        @if($lastNegotiation && $lastNegotiation->support_document)
                             <div class="form-control d-flex align-items-center gap-2" style="background:#f5f5f5">
                                 <i class="bi bi-paperclip"></i>
                                 <a href="{{ asset('storage/' . $lastNegotiation->support_document) }}" target="_blank" style="font-size:13px">
@@ -272,20 +347,16 @@
                                 </a>
                             </div>
                         @else
-                            <input type="file" name="support_document" class="form-control"
-                                accept=".pdf,.doc,.docx,.jpg,.png"
-                                {{ $quotation->status === 'accepted' ? 'disabled' : '' }}>
+                            <input type="file" name="support_document" class="form-control" accept=".pdf,.doc,.docx,.jpg,.png" {{ $isAccepted ? 'disabled' : '' }}>
                         @endif
                         <div class="form-text" style="font-size:12px">Upload dokumen pendukung jika ada (penawaran kompetitor, referensi harga, dll).</div>
                     </div>
                 </div>
             </div>
- 
         </div>
  
         {{-- KANAN --}}
         <div class="col-lg-4">
- 
             {{-- PIC Info --}}
             <div class="negotiate-card card">
                 <div class="card-header"><i class="bi bi-person-badge me-1"></i> PIC Information</div>
@@ -319,24 +390,24 @@
                 <div class="card-body">
                     <div class="summary-item">
                         <span class="lbl">Original total</span>
-                        <span class="fw-semibold" id="summaryOriginal">
-                            Rp {{ number_format($quotation->items->sum(fn($i) => $i->price * $i->qty), 0, ',', '.') }}
-                        </span>
+                        <span class="fw-semibold" id="summaryOriginal">Rp {{ number_format($origTotal, 0, ',', '.') }}</span>
                     </div>
                     <div class="summary-item">
                         <span class="lbl">Negotiated total</span>
-                        <span class="fw-bold" style="color:#e65100" id="summaryNegotiated">
-                            Rp {{ number_format($quotation->items->sum(fn($i) => $i->price * $i->qty), 0, ',', '.') }}
-                        </span>
+                        <span class="fw-bold" style="color:#e65100" id="summaryNegotiated">Rp {{ number_format($initialNegoTotal, 0, ',', '.') }}</span>
                     </div>
                     <hr class="my-2">
                     <div class="summary-item">
                         <span class="lbl">Difference</span>
-                        <span class="fw-bold" id="summaryDiff" style="color:#e65100">Rp 0</span>
+                        <span class="fw-bold" id="summaryDiff" style="color:#e65100">
+                            {{ $diff > 0 ? '-' : '' }}Rp {{ number_format(abs($diff), 0, ',', '.') }}
+                        </span>
                     </div>
                     <div class="summary-item">
                         <span class="lbl">Discount %</span>
-                        <span id="summaryPct" style="color:#43a047;font-size:13px">0%</span>
+                        <span id="summaryPct" style="color:#e65100;font-size:13px">
+                            {{ $diff > 0 ? '-' : '' }}{{ $pct }}%
+                        </span>
                     </div>
                 </div>
             </div>
@@ -373,7 +444,8 @@
             <div class="negotiate-card card">
                 <div class="card-body">
                     <div class="action-grid">
-                        @if($quotation->status === 'accepted')
+                        @php $isLocked = in_array($quotation->status, ['accepted', 'po']); @endphp
+                        @if($isLocked)
                             <button type="button" class="btn btn-warning w-100" disabled>
                                 <i class="bi bi-arrow-left-right"></i> Submit Negotiation
                             </button>
@@ -388,24 +460,29 @@
                                 <i class="bi bi-x-circle"></i> Cancel
                             </a>
                         @endif
-                    </div>
-
-                    {{-- Badge di luar action-grid --}}
-                    @if($quotation->status === 'accepted')
-                    <div class="text-center mt-2">
-                        <span class="badge bg-success px-3 py-2" style="font-size:12px;white-space:normal;line-height:1.5">
-                            <i class="bi bi-check-circle-fill me-1"></i>
-                            Negosiasi telah diterima pada<br>
-                            {{ $quotation->accepted_date 
-                                ? \Carbon\Carbon::parse($quotation->accepted_date)->format('d M Y, H:i') . ' WIB'
+                        {{-- Badge di luar action-grid --}}
+                        @if($quotation->status === 'accepted')
+                        <div class="text-center mb-1">
+                            <span class="badge bg-success px-3 py-2 w-100" style="font-size:12px;white-space:normal;line-height:1.5">
+                                <i class="bi bi-check-circle-fill me-1"></i>
+                                Negosiasi telah diterima pada
+                                {{ $quotation->accepted_date
+                                ? \Carbon\Carbon::parse($quotation->accepted_date)->format('d F Y')
                                 : '-' }}
-                        </span>
+                            </span>
+                        </div>
+                        @endif
                     </div>
-                    @endif
+                        {{-- @else
+                            <button type="submit" name="action" value="negotiate" class="btn btn-warning w-100">
+                                <i class="bi bi-arrow-left-right"></i> Submit Negotiation
+                            </button>
+                            <a href="{{ route('quotations.show', $quotation->id) }}" class="btn btn-outline-secondary w-100">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a> --}}
+                    </div>
 
-                    <div class="text-center mt-2" style="font-size:11px;color:#aaa">
-                        Negotiations will be recorded and sent to the relevant parties.
-                    </div>
+                    
                 </div>
             </div>
  
@@ -413,6 +490,13 @@
     </div>
 </form>
  
+{{-- Form Hidden untuk Aksi Close --}}
+@if($negotiations->count() > 0 && !in_array($quotation->status, ['accepted', 'po']))
+    <form id="closeNegotiateForm" method="POST" action="{{ route('negotiate.close', $quotation->id) }}" style="display:none;">
+        @csrf
+        @method('PATCH')
+    </form>
+@endif
 @endsection
  
 @push('scripts')
@@ -457,5 +541,13 @@
     });
  
     recalculate();
+</script>
+ 
+<script>
+    function submitCloseNegotiate() {
+        if (confirm('Yakin menutup negosiasi?\nHarga nego terakhir jadi harga final.')) {
+            document.getElementById('closeNegotiateForm').submit();
+        }
+    }
 </script>
 @endpush

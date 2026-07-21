@@ -5,14 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\Contract;
 use App\Models\Quotation;
 use App\Models\PurchaseOrder;
-use Exception;
-use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\PurchaseOrderExport;
-use Illuminate\Http\Request;
+use App\Models\PurchaseOrderInternal;
 use App\Models\ContractRequirement;
+use App\Models\HistoryActivity;
+use App\Models\Article;
+use App\Exports\PurchaseOrderExport;
+use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PurchaseOrderController extends Controller
 {
@@ -25,39 +28,39 @@ class PurchaseOrderController extends Controller
         $filename = 'purchase-orders-' . now()->format('Ymd_His') . '.xlsx';
         return Excel::download(new PurchaseOrderExport($filters), $filename);
     }
+
     /**
      * Display a listing of the resource.
+     * Eager-load relasi internals.contract untuk kebutuhan tampilan per-item customer
      */
-    public function index(Request $request)
-    {
-        $filters = $request->only(['start_date','end_date','status']);
+public function index(Request $request)
+{
+    $filters = $request->only(['start_date', 'end_date', 'status']);
 
-        $query = PurchaseOrder::with([
-        'quotation.request.assignment.sales' 
-        ]);
-        
-        $query = PurchaseOrder::query();
-        if (Auth::user()->role == 'customer') {
-            $query->where('customer_id', '=', Auth::user()->id);
-        }
+    $query = PurchaseOrder::with(['customer', 'quotation', 'internals', 'contracts']);
 
-        if (!empty($filters['start_date'])) {
-            $query->whereDate('created_at', '>=', $filters['start_date']);
-        }
-
-        if (!empty($filters['end_date'])) {
-            $query->whereDate('created_at', '<=', $filters['end_date']);
-        }
-
-        if (!empty($filters['status'])) {
-            $query->where('status', $filters['status']);
-            }
-            // else {
-            //     $query->whereIn('status', ['sent', 'amandement', 'review', 'contract']);
-            // }
-        $pos = $query->latest()->get();
-        return view('purchase-orders.index', compact('pos','filters'));
+    if (Auth::user()->role == 'customer') {
+        $query->where('customer_id', Auth::user()->id);
     }
+
+    if (!empty($filters['start_date'])) {
+        $query->whereDate('created_at', '>=', $filters['start_date']);
+    }
+
+    if (!empty($filters['end_date'])) {
+        $query->whereDate('created_at', '<=', $filters['end_date']);
+    }
+
+    if (!empty($filters['status'])) {
+        $query->where('status', $filters['status']);
+    }
+
+    // Menggunakan nama variabel $pos sesuai yang dibutuhkan file Blade
+    $pos = $query->latest()->paginate(10)->appends($filters);
+
+    // Ganti 'purchase-orders.index' jika nama foldermu di resources/views/ menggunakan hyphen (-)
+    return view('purchase-orders.index', compact('pos', 'filters'));
+}
 
     public function schedule(Request $request)
     {
@@ -70,8 +73,6 @@ class PurchaseOrderController extends Controller
             ->get();
         return view('purchase-orders.schedule', compact('pos'));
     }
-
-
 
     public function arrangeSchedule(Request $request)
     {
@@ -87,13 +88,11 @@ class PurchaseOrderController extends Controller
         return back()->with('success','Berhasil mengurutkan kembali po');
     }
 
-
     /**
      * Show the form for creating a new resource.
      */
     public function create(Request $request)
     {
-        //
         $query = Quotation::query();
         if (Auth::user()->role == 'customer') {
             $query->where('customer_id', '=', Auth::user()->id);
@@ -107,43 +106,55 @@ class PurchaseOrderController extends Controller
         return view('purchase-orders.create', compact('quotations', 'selectedQuotation'));
     }
 
-    public function createAmandement($id)
-{
-    $lastPo = PurchaseOrder::find($id);
-    $user = Auth::user();
+    /**
+     * Halaman Pengajuan Amandemen (Mendukung Konteks Item Spesifik via hidden internal_id)
+     */
+    public function createAmandement(Request $request, $id)
+    {
+        $lastPo = PurchaseOrder::findOrFail($id);
+        $user = Auth::user();
 
-    if (! ($user->isAdmin() || ($user->isCustomer() && in_array($lastPo->status, ['sent', 'review', 'contract']))) ) {
-        abort(403, 'Unauthorized action.');
+        if (! ($user->isAdmin() || ($user->isCustomer() && in_array($lastPo->status, ['sent', 'review', 'contract']))) ) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $internalId = $request->query('internal_id');
+        $selectedItem = null;
+
+        if ($internalId) {
+            $selectedItem = PurchaseOrderInternal::find($internalId);
+            $contract = Contract::where('purchase_order_internal_id', $internalId)->first();
+        } else {
+            $contract = Contract::where('order_no', $lastPo->po_no)->first();
+        }
+        
+        $originalQuantity = $contract 
+            ? ContractRequirement::where('contract_id', $contract->id)
+                ->where('requirement', 'LIKE', '%Quantity%')
+                ->value('requirement_value') 
+            : ($selectedItem->qty ?? 0);
+
+        $lastAmendment = Contract::where('order_no', $lastPo->po_no)
+                                 ->orderByDesc('amandement_no')
+                                 ->first();
+                                 
+        $nextAmendmentNo = $lastAmendment ? ($lastAmendment->amandement_no) : 1;
+
+        return view('purchase-orders.create-amandement', compact(
+            'lastPo', 
+            'selectedItem', 
+            'contract', 
+            'originalQuantity', 
+            'nextAmendmentNo'
+        ));
     }
-
-    // 1. Ambil data kontrak awal
-    $contract = \App\Models\Contract::where('order_no', $lastPo->po_no)->first();
-    
-    // 2. Gunakan operator LIKE agar lebih aman dari spasi/perbedaan huruf besar-kecil bray
-    $originalQuantity = $contract 
-        ? \App\Models\ContractRequirement::where('contract_id', $contract->id)
-            ->where('requirement', 'LIKE', '%Quantity%')
-            ->value('requirement_value') 
-        : 0; // Otomatis 0 jika lembar kontrak memang belum di-generate oleh Sales
-
-    // 3. Hitung nomor amandemen berikutnya
-    $lastAmendment = \App\Models\Contract::where('order_no', $lastPo->po_no)
-                             ->orderByDesc('amandement_no')
-                             ->first();
-                             
-    $nextAmendmentNo = $lastAmendment ? ($lastAmendment->amandement_no) : 1;
-
-    return view('purchase-orders.create-amandement', compact('lastPo', 'originalQuantity', 'nextAmendmentNo'));
-}
 
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
-        //
         try {
-            //code...
             $validated = $request->validate([
                 'quotation_id'      => 'required|exists:quotations,id',
                 'po_no'             => 'required|unique:purchase_orders,po_no',
@@ -162,15 +173,12 @@ class PurchaseOrderController extends Controller
 
             if ($request->hasFile('attachments')) {
                 $file = $request->file('attachments');
-
-                //membuat nama file unik
                 $filename = time() . '_' . $file->getClientOriginalName();
-
-                //simpan file ke folder:storage/app/public/uploads
-                $path = $file->storeAs('uploads', $filename, 'public');
+                $file->storeAs('uploads', $filename, 'public');
             } else {
                 $filename = null;
             }
+
             $validated['attachment'] = $filename;
             $validated['customer_id'] = Auth::user()->id;
             $newPO = PurchaseOrder::create($validated);
@@ -178,7 +186,8 @@ class PurchaseOrderController extends Controller
                 'status' => 'po',
                 'po_date' => now()
             ]);
-            \App\Models\HistoryActivity::create([
+
+            HistoryActivity::create([
                 'user_id' => Auth::user()->id,
                 'activity' => 'Membuat PO',
                 'activity_time' => now()->format('Y-m-d H:i:s')
@@ -186,29 +195,38 @@ class PurchaseOrderController extends Controller
 
             return redirect()->route('purchase-orders.index')->with('success', 'Berhasil mengajukan PO');
         } catch (Exception $e) {
-            //throw $th;
             Log::error('Error : ' . $e->getMessage());
-            return redirect()->back()->with('error');
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat membuat PO.');
         }
     }
 
     /**
-     * Display the specified resource.
+     * Display the specified resource (MODAL DETAIL POP-UP).
+     * Mendukung pemanggilan via Ajax/Fetch dengan opsional query internal_id
      */
-   public function show($id)
-{
-    $po = \App\Models\PurchaseOrder::with(['quotation.request.assignment.sales', 'customer'])->findOrFail($id);
-    
-    // Satukan semua role (Customer & Staff) ke file partial karena sama-sama memakai pop-up modal
-    return view('purchase-orders.show-partial', compact('po'));
-}
+    public function show(Request $request, $id)
+    {
+        $po = PurchaseOrder::with([
+            'quotation.request.assignment.sales', 
+            'customer', 
+            'internals.contract'
+        ])->findOrFail($id);
+
+        $internalId = $request->query('internal_id');
+        $selectedItem = null;
+
+        if ($internalId) {
+            $selectedItem = $po->internals->where('id', $internalId)->first();
+        }
+
+        return view('purchase-orders.show-partial', compact('po', 'selectedItem'));
+    }
 
     /**
      * Show the form for editing the specified resource.
      */
     public function edit(PurchaseOrder $purchase_order)
     {
-        // Authorize: admin can edit; staff in sales can edit when PO status is 'contract'
         $user = Auth::user();
         if (! ($user->isAdmin() || ($user->isStaff() && $user->divisi === 'sales' && in_array($purchase_order->status,['contract','review','production','ship']))) ) {
             abort(403, 'Unauthorized action.');
@@ -222,7 +240,6 @@ class PurchaseOrderController extends Controller
      */
     public function update(Request $request, PurchaseOrder $purchaseOrder)
     {
-        // Authorization: admin can update; staff in sales can update
         $user = Auth::user();
         if (! ($user->isAdmin() || ($user->isStaff() && $user->divisi === 'sales')) ) {
             abort(403, 'Unauthorized action.');
@@ -245,30 +262,46 @@ class PurchaseOrderController extends Controller
         //
     }
 
-    public function createContract($idPo)
-    {
-        $po = PurchaseOrder::with(['quotation', 'customer'])->find($idPo);
-
-            $user = Auth::user();
-            if (!($user->isAdmin() || ($user->isStaff() && $user->divisi === 'sales' && $po->status === 'sent'))) {
-                abort(403, 'Unauthorized action.');
-            }
-
-            $articles = \App\Models\Article::select('id', 'internal_part_no', 'part_name')->get();
-
-            return view('contracts.create', compact('po', 'articles'));    }
-
-            /**
-     * Modul Alur Baru: Pelacakan Progress Order Publik 
+    /**
+     * Membuka Form Pembuatan Kontrak Berdasarkan PO dan Item Spesifik
      */
-    public function trackPublic(\Illuminate\Http\Request $request)
+    public function createContract(Request $request, $idPo)
+    {
+       if (!auth()->user()->isAdmin() && strtolower(auth()->user()->divisi) !== 'sales') {
+        abort(403, 'UNAUTHORIZED ACTION.');
+    }
+
+    // Samakan nama variabel $idPo
+    return app(\App\Http\Controllers\ContractController::class)->create($request, $idPo);
+
+        $po = PurchaseOrder::with(['quotation', 'customer', 'internals'])->findOrFail($idPo);
+
+        $internalId = $request->query('internal_id');
+        $selectedItem = null;
+
+        if ($internalId) {
+            $selectedItem = PurchaseOrderInternal::find($internalId);
+        }
+
+        if (!$selectedItem && $po->internals && $po->internals->count() > 0) {
+            $selectedItem = $po->internals->first();
+        }
+
+        $articles = Article::select('id', 'internal_part_no', 'part_name')->get();
+
+        return view('contracts.create', compact('po', 'selectedItem', 'articles'));
+    }
+
+    /**
+     * Pelacakan Progress Order Publik 
+     */
+    public function trackPublic(Request $request)
     {
         $po_no = $request->input('po_no');
         $purchase_order = null;
 
         if ($po_no) {
-            // Mencari data PO beserta relasi customer dan quotation-nya
-            $purchase_order = \App\Models\PurchaseOrder::where('po_no', $po_no)
+            $purchase_order = PurchaseOrder::where('po_no', $po_no)
                 ->with(['customer', 'quotation'])
                 ->first();
         }
@@ -276,49 +309,147 @@ class PurchaseOrderController extends Controller
         return view('customer_home.track', compact('purchase_order', 'po_no'));
     }
 
+    /**
+     * 1. Customer mengajukan Amandemen Spesifik Per-Item (Status = amandement_pending)
+     */
     public function storeAmandement(Request $request, $id)
     {
-        // 1. Cari PO yang akan diamandemen
         $po = PurchaseOrder::findOrFail($id);
-        
-        // Cek apakah PO ini sudah pernah di-review oleh Sales
-        $kontrakAwal = Contract::where('order_no', $po->po_no)->first();
-        if (!$kontrakAwal) {
-            return redirect()->back()->with('error', 'Lembar Tinjauan Kontrak untuk PO ini belum dibuat oleh pihak Sales. Silakan hubungi Sales.');
+        $internalId = $request->input('purchase_order_internal_id');
+
+        // Cari Kontrak Spesifik berdasarkan purchase_order_internal_id
+        if ($internalId) {
+            $kontrakAwal = Contract::where('purchase_order_internal_id', $internalId)->first();
+        } else {
+            $kontrakAwal = Contract::where('order_no', $po->po_no)->first();
         }
 
-        // 2. Ubah status kontrak lama untuk menandakan butuh ditinjau ulang
-       // 2. Ubah status kontrak lama untuk menandakan butuh ditinjau ulang
+        if (!$kontrakAwal) {
+            return redirect()->back()->with('error', 'Lembar Tinjauan Kontrak untuk item ini belum dibuat oleh Sales.');
+        }
+
+        // Catat pengajuan amandemen spesifik pada kontrak item ini
         $kontrakAwal->update([
-            'status' => 'amandement', // <-- Ubah menjadi huruf kecil semua dan akhiran 't'
             'alasan_amandemen' => $request->alasan_amandemen,
-            'amandement_no' => $kontrakAwal->amandement_no + 1,
+            'amandement_no'    => $kontrakAwal->amandement_no + 1,
+            'status'           => 'created', // Reset status ke created untuk ditinjau ulang
         ]);
 
-        // ===================================================================
-        // 3. PROSES PENGATURAN MULTIPLE LAMPIRAN PADA PURCHASE ORDER
-        // ===================================================================
+        // Handle Upload File Lampiran Baru jika ada
         if ($request->hasFile('attachments')) {
             $file = $request->file('attachments');
             $filename = time() . '_' . $file->getClientOriginalName();
             $file->storeAs('uploads', $filename, 'public');
 
-            // Jika sudah ada lampiran sebelumnya, gabungkan dengan koma
-            if (!empty($po->attachment)) {
-                $po->attachment = $po->attachment . ',' . $filename;
-            } else {
-                $po->attachment = $filename;
-            }
+            $po->attachment = !empty($po->attachment) ? $po->attachment . ',' . $filename : $filename;
         }
-        // ===================================================================
 
-        // 4. Perbarui status PO induk menjadi amandement
-        $po->status = 'amandement';
+        // Status PO ditahan di 'amandement_pending'
+        $po->status = 'amandement_pending';
         $po->save();
 
-        return redirect()->route('purchase-orders.index')->with('success', 'Pengajuan Amandemen PO berhasil dikirim. File amandemen telah ditambahkan!');
+        return redirect()->route('purchase-orders.index')->with('success', 'Pengajuan amandemen item berhasil dikirim dan menunggu persetujuan.');
     }
 
+    /**
+     * 2. Halaman Review Amandemen (Untuk Staff / Manager)
+     */
+    public function indexAmandement()
+    {
+        $user = Auth::user();
+
+        if (!($user->isStaff() || $user->isManager() || $user->isAdmin())) {
+            abort(403, 'Akses ditolak. Hanya Staff atau Manager yang dapat mengakses halaman ini.');
+        }
+
+        $pos = PurchaseOrder::with(['customer', 'internals.contract'])
+                ->where('status', 'amandement_pending')
+                ->latest()
+                ->get();
+
+        return view('purchase-orders.approval-amandement', compact('pos'));
+    }
+
+    /**
+     * 3. APPROVE: Amandemen Item disetujui
+     */
+    public function approveAmandement(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        if (!($user->isStaff() || $user->isManager() || $user->isAdmin())) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        $po = PurchaseOrder::findOrFail($id);
+        $internalId = $request->input('purchase_order_internal_id');
+
+        if ($internalId) {
+            $contract = Contract::where('purchase_order_internal_id', $internalId)->first();
+        } else {
+            $contract = Contract::where('order_no', $po->po_no)->first();
+        }
+
+        $po->update(['status' => 'amandement']);
+
+        if ($contract) {
+            $contract->update([
+                'status'           => 'approved',
+                'alasan_penolakan' => null,
+                'catatan_sales'    => $request->input('catatan', 'Amandemen item disetujui.')
+            ]);
+        }
+
+        HistoryActivity::create([
+            'user_id'       => $user->id,
+            'activity'      => 'Menyetujui Amandemen PO No: ' . $po->po_no . ($contract ? ' (Kontrak: ' . $contract->contract_no . ')' : ''),
+            'activity_time' => now()
+        ]);
+
+        return redirect()->back()->with('success', 'Amandemen item berhasil disetujui.');
+    }
+
+    /**
+     * 4. REJECT: Amandemen Item ditolak
+     */
+    public function rejectAmandement(Request $request, $id)
+    {
+        $request->validate([
+            'alasan_penolakan' => 'required|string|max:500'
+        ], [
+            'alasan_penolakan.required' => 'Alasan penolakan wajib diisi!'
+        ]);
+
+        $user = Auth::user();
+
+        if (!($user->isStaff() || $user->isManager() || $user->isAdmin())) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        $po = PurchaseOrder::findOrFail($id);
+        $internalId = $request->input('purchase_order_internal_id');
+
+        if ($internalId) {
+            $contract = Contract::where('purchase_order_internal_id', $internalId)->first();
+        } else {
+            $contract = Contract::where('order_no', $po->po_no)->first();
+        }
+
+        $po->update(['status' => 'contract']);
+
+        if ($contract) {
+            $contract->update([
+                'status'           => 'rejected',
+                'alasan_penolakan' => $request->alasan_penolakan
+            ]);
+        }
+
+        HistoryActivity::create([
+            'user_id'       => $user->id,
+            'activity'      => 'Menolak Amandemen PO No: ' . $po->po_no . ' (Alasan: ' . $request->alasan_penolakan . ')',
+            'activity_time' => now()
+        ]);
+
+        return redirect()->back()->with('success', 'Amandemen item ditolak. Kontrak item lama tetap berlanjut.');
+    }
 }
-
-

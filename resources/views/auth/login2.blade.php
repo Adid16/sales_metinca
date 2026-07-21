@@ -106,87 +106,65 @@
     <script src="https://cdn.jsdelivr.net/npm/axios@1.6.7/dist/axios.min.js"></script>
     <script src="{{ asset('js/app.js') }}"></script>
     <script>
-        // Toggle Password Visibility
-        function togglePassword() {
-            const passwordInput = document.getElementById('password');
-            const toggleIcon = document.getElementById('toggleIcon');
+    // Toggle Password Visibility
+    function togglePassword() {
+        const passwordInput = document.getElementById('password');
+        const toggleIcon = document.getElementById('toggleIcon');
 
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                toggleIcon.classList.remove('bi-eye');
-                toggleIcon.classList.add('bi-eye-slash');
-            } else {
-                passwordInput.type = 'password';
-                toggleIcon.classList.remove('bi-eye-slash');
-                toggleIcon.classList.add('bi-eye');
-            }
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleIcon.classList.remove('bi-eye');
+            toggleIcon.classList.add('bi-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            toggleIcon.classList.remove('bi-eye-slash');
+            toggleIcon.classList.add('bi-eye');
         }
+    }
 
-        // Handle Login Form Submit
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
+    // Handle Login Form Submit
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
 
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            //const remember = document.getElementById('remember').checked;
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
 
-            var formData = new FormData(this);
+        var formData = new FormData(this);
 
-            // Simulate login validation
-            if (username && password) {
-                // Show success message (in real app, this would be an API call)
-                //console.log('Login attempt:', { username, password, remember });
+        if (username && password) {
+            App.loading('Authentication process');
 
-                App.loading('Authentication process');
+            App.ajax('{{ route('login.store') }}', 'POST', formData).then(response => {
+                
+                App.closeLoading(); // Tutup loading gembok terlebih dahulu
 
-                App.ajax('{{ route('login.store') }}', 'POST',formData).then(response => {
-                    // Handle successful login
-                    // For example, redirect to dashboard
-                    Swal.fire({
-                        title: 'Login Success',
-                        // text: 'Welcome back!',
-                        icon: 'success',
-                        confirmButtonText: 'Next'
-                    }).then(() => {
-                    window.location.href = response.data.redirect //'{{ route('dashboard') }}';
-                    });
-                }).catch(error => {
-                    // Handle login error
-                    App.closeLoading();
-                    App.error('Login Failed',error.response.data.message || 'Login failed. Please try again.');
+                Swal.fire({
+                    title: 'Login Success',
+                    icon: 'success',
+                    confirmButtonText: 'Next'
+                }).then(() => {
+                    // =========================================================================
+                    // PERBAIKAN: Lempar langsung ke jembatan route dashboard yang sudah kita buat
+                    // =========================================================================
+                    window.location.href = '{{ route('dashboard') }}';
                 });
-                // Example: Show error
-                // showError('Username atau password salah!');
 
-                // Example: Successful login redirect
-                //alert('Login berhasil! Redirecting...');
-                // window.location.href = 'dashboard.html';
-            }
-        });
-
-        // Show Error Message
-        function showError(message) {
-            const errorAlert = document.getElementById('errorAlert');
-            const errorMessage = document.getElementById('errorMessage');
-
-            errorMessage.textContent = message;
-            errorAlert.classList.remove('d-none');
-
-            // Auto hide after 5 seconds
-            setTimeout(() => {
-                errorAlert.classList.add('d-none');
-            }, 5000);
+            }).catch(error => {
+                // Handle login error
+                App.closeLoading();
+                App.error('Login Failed', error.response.data.message || 'Login failed. Please try again.');
+            });
         }
+    });
 
+    // Hide error alert when user starts typing
+    document.getElementById('username').addEventListener('input', function() {
+        document.getElementById('errorAlert').classList.add('d-none');
+    });
 
-        // Hide error alert when user starts typing
-        document.getElementById('username').addEventListener('input', function() {
-            document.getElementById('errorAlert').classList.add('d-none');
-        });
-
-        document.getElementById('password').addEventListener('input', function() {
-            document.getElementById('errorAlert').classList.add('d-none');
-        });
-    </script>
+    document.getElementById('password').addEventListener('input', function() {
+        document.getElementById('errorAlert').classList.add('d-none');
+    });
+</script>
 </body>
 </html>

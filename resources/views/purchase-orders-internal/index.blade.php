@@ -1,23 +1,144 @@
 {{-- resources/views/purchase-orders-internal/index.blade.php --}}
 @extends('layouts.app')
 @section('title', 'PT. Metinca Prima Industrial Works')
- 
+
 @push('styles')
     <link rel="shortcut icon" href="./assets/compiled/svg/favicon.svg" type="image/x-icon">
-    <link rel="shortcut icon"
-        href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACEAAAAiCAYAAADRcLDBAAAEs2lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS41LjAiPgogPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgeG1sbnM6ZXhpZj0iaHR0cDovL25zLmFkb2JlLmNvbS9leGlmLzEuMC8iCiAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIKICAgIHhtbG5zOnHub3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIKICAgIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIKICAgIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIgogICAgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIKICAgZXhpZjpQaXhlbFhEaW1lbnNpb249IjMzIgogICBleGlmOlBpeGVsWURpbWVuc2lvbj0iMzQiCiAgIGV4aWY6Q29sb3JTcGFjZT0iMSIKICAgdGlmZjpJbWFnZVdpZHRoPSIzMyIKICAgdGlmZjpJbWFnZUxlbmd0aD0iMzQiCiAgIHRpZmY6UmVzb2x1dGlvblVuaXQ9IjIiCiAgIHRpZmY6WFJlc29sdXRpb249Ijk2LjAiCiAgIHRpZmY6WVJlc29sdXRpb249Ijk2LjAiCiAgIHBob3Rvc2hvcDpDb2xvck1vZGU9IjMiCiAgIHBob3Rvc2hvcDpJQ0NQcm9maWxlPSJzUkdCIElFQzYxOTY2LTIuMSIKICAgeG1wOk1vZGlmeURhdGU9IjIwMjItMDMtMzFUMTA6NTA6MjMrMDI6MDAiCiAgIHhtcDpNZXRhZGF0YURhdGU9IjIwMjItMDMtMzFUMTA6NTA6MjMrMDI6MDAiPgogICA8eG1wTU06SGlzdG9yeT4KICAgIDxyZGY6U2VxPgogICAgIDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJjcmVhdGVkIiBzdEV2dDpkaXN0cmlidXRvcj0iQWZmaW5pdHkgRGVzaWduZXIiIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkFmZmluaXR5IERlc2lnbmVyIDEuMTAuMSIgc3RFXZ06d2hlbj0iMjAyMi0wMy0zMVQxMDo1MDoyMyswMjowMCIvPgogICAgPC9yZGY6U2VxPgogICA8L3htcE1NOkhpc3Rvcnk+CiAgPC9yZGY6RGVzY3JpcHRpb24+CiA8L3JkZjpSREY+CjwveDpteG1ldGE+Cjw/eHBhY2tldCBlbmQ9InIiPz5V57uAAAABgmlDQ1BzUkdCIElFQzYxOTY2LTIuMQAAKJF1kc8rRFEUxz9maORHo1hYKC9hISNGTWwsRn4VFmOUX5uZZ36oeTOv954kW2WrKLHxa8FfwFZZK0WkZClrYoOe87ypmWTO7dzzud97z+nec8ETzaiaWd4NWtYyIiNhZWZ2TvE946WZSjqoj6mmPjE1HKWkfdxR5sSbgFOr9Ll/rXoxYapQVik8oOqGJTwqPL5i6Q5vCzeo6dii8KlwpyEXFL519LjLLw6nXP5y2IhGBsFTJ6ykijhexGra0ITl5bRqmWU1fx/nJTWJ7PSUxBbxJkwijBBGYYwhBgnRQ7/MIQIE6ZIVJfK7f/MnyUmuKrPOKgZLpEhj0SnqslRPSEyKnpCRYdXp/9++msneoFu9JgwVT7b91ga+LfjetO3PQ9v+PgLvI1xkC/m5A+h7F32zoLXug38dzi4LWnwHzjeg8UGPGbFfySvuSSbh9QRqZ6H+Gqrm3Z7l9zm+h+iafNUV7O5Bu5z3L/wAdthn7QIme0YAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAJTSURBVFiF7Zi9axRBGIefEw2IdxFBRQsLWUTBaywSK4ubdSGVIY1Y6HZql8ZKCGIqwX/AYLmCgVQKfiDn7jZeEQMWfsSAHAiKqPiB5mIgELWYOW5vzc3O7niHhT/YZvY37/swM/vOzJbIqVq9uQ04CYwCI8AhYAlYAB4Dc7HnrOSJWcoJcBS4ARzQ2F4BZ2LPmTeNuykHwEWgkQGAet9QfiMZjUSt3hwD7psGTWgs9pwH1hC1enMYeA7sKwDxBqjGnvNdZzKZjqmCAKh+U1kmEwi3IEBbIsugnY5avTkEtIAtFhBrQCX2nLVehqyRqFoCAAwBh3WGLAhbgCRIYYinwLubwIrKUwwi9pxV4KUlxKKKUwxC6ZElRCPLYAJxGfhSEOCz6m8HEXvOB2CyIMSk6m8HoXQTmMkJcA2YNTHm3congOvATo3tE3A29pxbpnFzQSiQPcB55IFmFNgFfEQeahaAGZMpsIJIAZWAHcDX2HN+2cT6r39GxmvC9aPNwH5gO1BOPFuBVWAZue0vA9+A12EgjPadnhCuH1WAE8ivYAQ4ohKaagV4gvxi5oG7YSA2vApsCOH60WngKrA3R9IsvQUuhIGY00K4flQG7gHH/mLytB4C42EgfrQb0mV7usMMAAMeBS8mGNMR4nwHamtBB7B4QRNdaS0M8GxDEog7iyoAguvJ0QYSBuAOcAt71Kfl7wA8DcTvZ2KdOlJEr+ByyQtqqhTyHTIeB+ONeqi3brh+VgIN0fohUgWGggizZFTplu12yW8iy/YLOGWMDMTPXnl+Az9vj2HERYqPAAAAAElFTkSuQmCC"
-        type="image/png">
-
-    <link rel="stylesheet" href="assets/extensions/simple-datatables/style.css">
-    <link rel="stylesheet" href="./assets/compiled/css/table-datatable.css">
-    <link rel="stylesheet" href="./assets/compiled/css/app.css">
-    <link rel="stylesheet" href="./assets/compiled/css/app-dark.css">
+    <link rel="stylesheet" href="{{ asset('assets/extensions/simple-datatables/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/compiled/css/table-datatable.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/compiled/css/app.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/compiled/css/app-dark.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    
+    <style>
+        /* ================= TABEL UTAMA (NORMAL) ================= */
+        .table-main th, 
+        .table-main td {
+            vertical-align: middle !important;
+            padding: 0.65rem 0.75rem !important;
+            font-size: 0.875rem !important; /* Normal 14px */
+        }
+
+        /* ================= TABEL DETAIL (100% PASSING NO SCROLL) ================= */
+        .subtable-box {
+            background-color: #f2f5fc;
+            padding: 8px 10px !important;
+            border-left: 4px solid #435ebe !important; /* Garis biru tebal di kiri */
+            overflow-x: hidden !important; /* Menghilangkan scrollbar horizontal */
+            width: 100% !important;
+        }
+
+        .table-detail {
+            width: 100% !important;
+            table-layout: fixed !important; /* Mengunci total lebar tabel pas 100% */
+            font-size: 0.72rem !important; /* Super Compact ~11.5px */
+            background-color: #ffffff;
+            margin-bottom: 0 !important;
+            white-space: normal !important;
+        }
+
+        .table-detail th {
+            background-color: #dbe5ff !important; /* Header indigo/soft blue */
+            color: #2b3a67 !important;
+            font-weight: 700 !important;
+            padding: 6px 6px !important;
+            border-bottom: 1px solid #c5d4fb !important;
+            vertical-align: middle !important;
+        }
+
+        .table-detail td {
+            padding: 5px 6px !important;
+            line-height: 1.25 !important;
+            vertical-align: middle !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+        }
+
+        /* Badge & Tombol Akses di Subtable */
+        .badge-pricelist {
+            background-color: #e6f4ea !important;
+            color: #137333 !important;
+            border: 1px solid #a8dab5 !important;
+            font-size: 0.65rem !important;
+            padding: 2px 5px !important;
+            border-radius: 4px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            white-space: nowrap;
+        }
+
+        .btn-add-pricelist {
+            background-color: #198754 !important;
+            color: #ffffff !important;
+            font-size: 0.65rem !important;
+            padding: 2px 6px !important;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            border: none;
+            white-space: nowrap;
+        }
+
+        .btn-add-pricelist:hover {
+            background-color: #157347 !important;
+            color: #ffffff !important;
+        }
+
+        .btn-buat-kontrak {
+            background-color: #5a6268 !important;
+            color: #ffffff !important;
+            font-size: 0.65rem !important;
+            padding: 2px 6px !important;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            border: none;
+            white-space: nowrap;
+        }
+
+        .btn-buat-kontrak:hover {
+            background-color: #484e53 !important;
+            color: #ffffff !important;
+        }
+
+        .badge-kontrak-dibuat {
+            background-color: #e2e3e5 !important;
+            color: #41464b !important;
+            border: 1px solid #c6c7c8 !important;
+            font-size: 0.65rem !important;
+            padding: 2px 6px !important;
+            border-radius: 4px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            white-space: nowrap;
+        }
+
+        .btn-collapse-toggle .bi-chevron-down {
+            transition: transform 0.2s ease-in-out;
+        }
+        .btn-collapse-toggle[aria-expanded="true"] .bi-chevron-down {
+            transform: rotate(180deg);
+        }
+    </style>
 @endpush
- 
+
 @section('content')
 
-{{-- ================= KOTAK PENCARIAN ARTIKEL ================= --}}
+{{-- ================= KOTAK PENCARIAN ARTIKEL / QC ================= --}}
 <div class="card shadow-sm mb-3" style="border-left: 4px solid #17a2b8;">
     <div class="card-body py-3">
         <div class="row align-items-center">
@@ -41,34 +162,35 @@
     </div>
 </div>
 
+{{-- ================= TABEL PO INTERNAL ================= --}}
 <div class="card shadow-sm">
     <div class="card-header d-flex justify-content-between align-items-center bg-primary py-3">
         <h5 class="mb-0 fw-bold text-white">
             <i class="bi bi-file-earmark-richtext-fill me-2"></i>Purchase Order Internal
         </h5>
     </div>
- 
+
     <div class="card-body">
- 
+
         @if(session('success'))
             <div class="alert alert-success alert-dismissible fade show">
                 <i class="bi bi-check-circle me-1"></i>{{ session('success') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         @endif
- 
-        {{-- Filter --}}
-        <form class="row g-2 align-items-center mb-2 mt-2" method="GET">
-            <div class= "col-md-3">
+
+        {{-- Filter Header --}}
+        <form class="row g-2 align-items-center mb-3 mt-1" method="GET">
+            <div class="col-md-3">
                 <div class="d-flex align-items-center gap-1">
                     <label class="form-label small mb-0 text-nowrap">From : </label>
-                    <input type="date" name="start_date" class="form-control form-control-sm" value="{{ $filters['start_date'] ?? '' }}" placeholder="From">
+                    <input type="date" name="start_date" class="form-control form-control-sm" value="{{ $filters['start_date'] ?? '' }}">
                 </div>
             </div>
-           <div class= "col-md-3">
+            <div class="col-md-3">
                 <div class="d-flex align-items-center gap-1">
                     <label class="form-label small mb-0 text-nowrap">To : </label>
-                    <input type="date" name="end_date" class="form-control form-control-sm" value="{{ $filters['end_date'] ?? '' }}" placeholder="To">
+                    <input type="date" name="end_date" class="form-control form-control-sm" value="{{ $filters['end_date'] ?? '' }}">
                 </div>
             </div>
             <div class="col-md-3">
@@ -80,124 +202,201 @@
                 <button type="submit" class="btn btn-sm btn-primary">
                     <i class="bi bi-search me-1"></i>Filter
                 </button>
-                <a href="{{ route('purchase-orders-internal.index') }}"
-                    class="btn btn-sm btn-outline-secondary">Reset</a>
+                <a href="{{ route('purchase-orders-internal.index') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
             </div>
         </form>
- 
-        <div>
-            <table class="table table-responsive table-hover text-nowrap" id="table1">
+
+        {{-- TABEL UTAMA (TAMPILAN NORMAL) --}}
+        <div class="table-responsive">
+            <table class="table table-hover text-nowrap align-middle table-main mb-0" id="table1">
                 <thead class="bg-light">
                     <tr>
-                        <th class="text-center">No</th>
+                        <th class="text-center" style="width: 45px;">No</th>
                         <th class="text-center">Req Id</th>
-                        <th class="text-center">No PO</th>
                         <th class="text-center">Quotation No</th>
-                        <th class="text-center">Customer</th>
-                        <th class="text-center">Item</th>
-                        <th class="text-center">Material</th>
-                        <th class="text-center">Qty</th>
-                        <th class="text-end">Subtotal</th>
+                        <th class="text-center">Purchase Order No</th>
+                        <th>Customer</th>
+                        <th class="text-center">Items</th>
                         <th class="text-center">Delivery Date</th>
-                        <th class="text-center">Tanggal Input</th>
-                        <th class="text-center">Aksi</th>
+                        <th class="text-center">Entry Date</th>
+                        <th class="text-center" style="width: 90px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody style="color:#212529;">
-                    @forelse($items as $i => $item)
-                        @php
-                            $contract = \App\Models\Contract::where('order_no', $item->purchaseOrder->po_no)->first();
-                            $isAmandemen = $contract && in_array(strtolower($contract->status), ['amandemen', 'amandement']);
-                            
-                            // LOGIKA DETEKSI DINAMIS: Cek apakah amandemen ini sudah disubmit ulang ke PO Internal
-                            $alreadyProcessedInternal = false;
-                            if ($isAmandemen) {
-                                $poLastUpdate = $item->updated_at;
-                                if ($item->purchaseOrder && $item->purchaseOrder->updated_at > $poLastUpdate) {
-                                    $poLastUpdate = $item->purchaseOrder->updated_at;
-                                }
-                                
-                                // Jika waktu update data PO lebih baru dari pembuatan berkas amandemen kontrak, artinya sudah diproses
-                                if ($poLastUpdate > $contract->updated_at) {
-                                    $alreadyProcessedInternal = true;
-                                }
-                            }
-                        @endphp
-                    <tr>
-                        <td class="text-center">{{ $items->firstItem() + $i }}</td>
-                        <td class="text-center"><span class="badge badge-sm bg-light text-dark border">{{ $item->id }}</span></td>
-                        <td class="fw-semibold text-center text-primary">{{ $item->po_no ?? '-' }}</td>
-                        <td class="text-center">{{ $item->purchaseOrder->quotation->quotation_no ?? '-' }}</td>
-                        <td class="text-center">{{ $item->purchaseOrder->customer->name ?? '-' }}</td>
-                        <td class="text-nowrap fw-semibold">{{ $item->item }}</td>
-                        <td class="text-center">{{ $item->material ?? '-' }}</td>
-                        <td class="text-center fw-bold">{{ number_format($item->qty) }} {{ $item->satuan ?? 'Pcs' }}</td>
-                        <td class="text-end fw-semibold text-success">
-                            Rp {{ number_format($item->subtotal, 0, ',', '.') }}
-                        </td>
-                        <td class="text-center text-danger fw-semibold">
-                            {{ $item->delivery_date?->format('d M Y') ?? '-' }}
-                        </td>
-                        <td class="text-center text-muted">{{ $item->created_at->format('d M Y') }}</td>
-                        
-                        <td class="text-center">
-                            {{-- JIKA SEDANG AMANDEMEN DAN BELUM DIPROSES SALES KE INTERNAL --}}
-                            @if($isAmandemen && !$alreadyProcessedInternal)
-                                <span class="badge bg-warning text-black fw-bold px-2 py-1 shadow-sm" style="font-size: 11px;">
-                                    <i class="bi bi-exclamation-circle-fill me-1"></i>Amandemen
-                                </span>
-                            @else
-                                {{-- ALUR NORMAL / AMANDEMEN YANG SUDAH BERHASIL DIPROSES KE INTERNAL (TOMBOL TERBUKA KEMBALI) --}}
-                                <a href="{{ route('purchase-orders-internal.show-item', $item->id) }}"
-                                    class="btn btn-sm btn-info shadow-sm" title="Detail">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                @if(auth()->user()->isAdmin() || (auth()->user()->isStaff() && auth()->user()->divisi == 'sales'))
-                                    
-                                    @if($contract && !$isAmandemen)
-                                        <button class="btn btn-sm btn-secondary shadow-sm" disabled data-bs-toggle="tooltip" title="Kontrak Sudah Selesai">
-                                            <i class="bi bi-check-circle-fill"></i>
-                                        </button>
-                                    @else
-                                        {{-- Jika amandemen sudah diproses ke internal, arahkan tombol untuk update lembar kontrak --}}
-                                        @if($isAmandemen)
-                                            <a href="{{ route('contracts.edit', $contract->id) }}"
-                                                class="btn btn-sm btn-warning text-dark fw-bold shadow-sm" data-bs-toggle="tooltip"
-                                                data-bs-trigger="hover" title="Update Kontrak Amandemen">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </a>
-                                        @else
-                                            <a href="{{ route('purchase-orders.create-contract', $item->purchaseOrder->id) }}"
-                                                class="btn btn-sm btn-dark shadow-sm" data-bs-toggle="tooltip"
-                                                data-bs-trigger="hover" title="Create Contract">
-                                                <i class="bi bi-collection-fill"></i>
-                                            </a>
-                                        @endif
-                                    @endif
+                    @php
+                        $poList = isset($pos) ? $pos : (isset($items) ? $items->groupBy('purchase_order_id') : collect());
+                    @endphp
 
-                                @endif
-                            @endif
-                        </td>
-                    </tr>
+                    @forelse($poList as $key => $poData)
+                        @php
+                            $po = isset($pos) ? $poData : ($poData->first()->purchaseOrder ?? null);
+                            $internals = isset($pos) ? $po->internals : $poData;
+                            $poId = $po->id ?? $key;
+                        @endphp
+
+                        <!-- PARENT ROW -->
+                        <tr>
+                            <td class="text-center fw-semibold text-muted">{{ $loop->iteration }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-primary px-2 py-1">{{ $po->quotation->request_id ?? $po->request_id ?? '-' }}</span>
+                            </td>
+                            <td class="text-center fw-semibold text-secondary">
+                                {{ $po->quotation->quotation_no ?? '-' }}
+                            </td>
+                            <td class="text-center fw-bold text-dark">
+                                {{ $po->po_no ?? '-' }}
+                            </td>
+                            <td class="fw-semibold">
+                                {{ $po->customer->name ?? $po->quotation->customer->name ?? '-' }}
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary px-2 py-1" style="font-size: 11px;">
+                                    {{ $internals->count() }} item
+                                </span>
+                            </td>
+                            <td class="text-center fw-semibold text-danger">
+                                {{ isset($po->delivery_request) ? \Carbon\Carbon::parse($po->delivery_request)->format('d M Y') : '-' }}
+                            </td>
+                            <td class="text-center text-muted">
+                                {{ $po->created_at ? $po->created_at->format('d M Y') : '-' }}
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center align-items-center gap-1">
+                                    <button type="button" class="btn btn-sm btn-info text-white btn-show shadow-sm" data-id="{{ $poId }}" data-bs-toggle="modal" data-bs-target="#previewModal" title="Detail PO">
+                                        <i class="bi bi-eye-fill"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-light border btn-collapse-toggle shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-po-{{ $poId }}" aria-expanded="false" title="Pilih item untuk buat kontrak">
+                                        <i class="bi bi-chevron-down"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- CHILD ROW (EXPANDABLE SUB-TABLE COMPACT & NO SCROLL) -->
+                        <tr class="p-0 border-0">
+                            <td colspan="9" class="p-0 border-0">
+                                <div class="collapse subtable-box" id="collapse-po-{{ $poId }}">
+                                    <table class="table table-bordered align-middle table-detail shadow-sm">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center" style="width: 3%;">#</th>
+                                                <th style="width: 10%;">Part No</th>
+                                                <th style="width: 24%;">Item / Part Name</th>
+                                                <th style="width: 12%;">Material</th>
+                                                <th style="width: 20%;">Spesifikasi</th>
+                                                <th class="text-center text-nowrap" style="width: 8%;">Qty</th>
+                                                <th class="text-end text-nowrap" style="width: 11%;">Subtotal</th>
+                                                <th class="text-center text-nowrap" style="width: 12%;">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($internals as $idx => $internal)
+                                                @php
+                                                    $hasPartNo = !empty($internal->part_no) && $internal->part_no !== '-';
+
+                                                    // CEK KONTRAK SPESIFIK UNTUK ITEM INTERNAL INI
+                                                    $latestContract = \App\Models\Contract::where('purchase_order_internal_id', $internal->id)
+                                                        ->orderByDesc('amandement_no')
+                                                        ->first();
+                                                    
+                                                    $itemStatus = $latestContract ? strtolower($latestContract->status) : 'none';
+                                                @endphp
+                                                <tr>
+                                                    <td class="text-center text-muted fw-semibold">{{ $loop->iteration }}</td>
+                                                    <td class="text-secondary fw-semibold">
+                                                        {{ $hasPartNo ? $internal->part_no : '-' }}
+                                                    </td>
+                                                    <td class="fw-bold text-dark">
+                                                        {{ $internal->item }}
+                                                    </td>
+                                                    <td class="text-muted">
+                                                        {{ $internal->material ?? '-' }}
+                                                    </td>
+                                                    <td class="text-muted">
+                                                        {{ $internal->spesifikasi ?? '-' }}
+                                                    </td>
+                                                    <td class="text-center fw-bold text-nowrap">
+                                                        {{ number_format($internal->qty) }}
+                                                    </td>
+                                                    <td class="text-end fw-semibold text-success text-nowrap">
+                                                        Rp {{ number_format($internal->subtotal ?? ($internal->price * $internal->qty), 0, ',', '.') }}
+                                                    </td>
+
+                                                    {{-- AKSI: MENGGUNAKAN FLEX-COLUMN (MENUMPUK ATAS-BAWAH) --}}
+                                                    <td class="text-center text-nowrap">
+                                                        <div class="d-flex flex-column align-items-center justify-content-center gap-1">
+                                                            
+                                                            {{-- 1. PRICELIST STATUS / BUTTON --}}
+                                                            @if($hasPartNo)
+                                                                <span class="badge-pricelist">
+                                                                    <i class="bi bi-check-circle-fill"></i> Sudah di Pricelist
+                                                                </span>
+                                                            @else
+                                                                <a href="#" class="btn-add-pricelist" title="Tambah ke Pricelist">
+                                                                    <i class="bi bi-plus-circle-fill"></i> Pricelist
+                                                                </a>
+                                                            @endif
+
+                                                            {{-- 2. BUAT KONTRAK STATUS / BUTTON (MURNI SPESIFIK ITEM THIS ID) --}}
+                                                            @if(!$latestContract || in_array($itemStatus, ['created', 'amandement_pending']))
+                                                                {{-- TAMPILKAN TOMBOL BUAT KONTRAK JIKA BELUM DIBUAT ATAU KONTRAK BARU DI-APPROVE (CREATED) --}}
+                                                                <a href="{{ route('purchase-orders.create-contract', ['idPO' => $poId, 'internal_id' => $internal->id]) }}" 
+                                                                   class="btn-buat-kontrak" title="Buat Lembar Review Kontrak Untuk Item Ini">
+                                                                    <i class="bi bi-briefcase-fill"></i> Buat Kontrak
+                                                                </a>
+                                                            @else
+                                                                {{-- JIKA SEDANG REVIEW ATAU SUDAH JADI CONTRACT BERJALAN --}}
+                                                                <span class="badge-kontrak-dibuat" title="Kontrak untuk item ini sedang diproses / disetujui">
+                                                                    <i class="bi bi-check-circle-fill text-success"></i> Sudah Dibuat
+                                                                </span>
+                                                            @endif
+
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="8" class="text-center text-muted fst-italic py-2">
+                                                        Belum ada rincian item internal.
+                                                    </td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
                     @empty
-                    <tr>
-                        <td colspan="12" class="text-center text-muted fst-italic py-4">
-                            <i class="bi bi-folder-x fs-4 d-block mb-1"></i> Belum ada data PO Internal.
-                        </td>
-                    </tr>
+                        <tr>
+                            <td colspan="9" class="text-center text-muted fst-italic py-4">
+                                <i class="bi bi-folder-x fs-4 d-block mb-1"></i> Belum ada data PO Internal.
+                            </td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
- 
+
         <div class="d-flex justify-content-between align-items-center mt-3 px-2">
             <small class="text-muted">
-                Showing {{ $items->firstItem() ?? 0 }}–{{ $items->lastItem() ?? 0 }} of {{ $items->total() }} entries
+                Showing entries
             </small>
-            {{ $items->links() }}
+            @if(isset($items) && method_exists($items, 'links'))
+                {{ $items->links('pagination::bootstrap-5') }}
+            @elseif(isset($pos) && method_exists($pos, 'links'))
+                {{ $pos->links('pagination::bootstrap-5') }}
+            @endif
         </div>
     </div>
 </div>
+
+{{-- Modal Preview Detail --}}
+<div class="modal fade" id="previewModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content" id="modalContent"></div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
@@ -256,12 +455,12 @@
                 });
         }
 
-        btnSearch.addEventListener('click', performQuickSearch);
-        searchInput.addEventListener('keypress', function(e) {
+        btnSearch?.addEventListener('click', performQuickSearch);
+        searchInput?.addEventListener('keypress', function(e) {
             if(e.key === 'Enter') { e.preventDefault(); performQuickSearch(); }
         });
 
-        btnSendQC.addEventListener('click', function() {
+        btnSendQC?.addEventListener('click', function() {
             const article = searchInput.value.trim();
             Swal.fire({
                 title: 'Kirim Permintaan QC?',
@@ -278,6 +477,40 @@
                 }
             });
         });
+
+        // Modal Show Detail Fetch
+        const showBtns = document.querySelectorAll('.btn-show');
+        const modalShowContent = document.getElementById('modalContent');
+
+        showBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.id;
+                modalShowContent.innerHTML = `
+                    <div class="modal-body text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                `;
+
+                fetch(`/purchase-orders/${id}`)
+                    .then(response => response.text())
+                    .then(html => {
+                        modalShowContent.innerHTML = html;
+                    })
+                    .catch(error => {
+                        modalShowContent.innerHTML = `
+                            <div class="modal-body text-danger text-center py-4">
+                                Gagal memuat data detail
+                            </div>
+                        `;
+                    });
+            });
+        });
+
+        // Tooltip Initialization
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
     });
     </script>
 @endpush

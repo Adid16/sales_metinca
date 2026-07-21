@@ -42,6 +42,8 @@ require __DIR__ . '/auth.php';
 // ============================================
 Route::middleware('guest')->group(function () {
 
+
+
     // GET - Show Forms (Custom Views)
     Route::get('login', [AuthViewController::class, 'showLogin'])
         ->name('login');
@@ -137,6 +139,10 @@ Route::post('/requests-project', [RequestProjectController::class, 'store'])->na
 
 
 Route::middleware(['auth'])->group(function () {
+    // Route khusus Approval Amandemen (URL dibuat independen dari /purchase-orders)
+    Route::get('/approval-amandement', [PurchaseOrderController::class, 'indexAmandement'])->name('purchase-orders.approval-amandement');
+    Route::post('/purchase-orders/{id}/approve-amandement', [PurchaseOrderController::class, 'approveAmandement'])->name('purchase-orders.approve-amandement');
+    Route::post('/purchase-orders/{id}/reject-amandement', [PurchaseOrderController::class, 'rejectAmandement'])->name('purchase-orders.reject-amandement');
 
     Route::get('/users/customer', [UserController::class, 'index_customer'])->name('users.customer');
 
@@ -196,14 +202,19 @@ Route::middleware(['auth'])->group(function () {
     
     //negotiate
     Route::get('quotations/{quotation}/negotiate', [NegotiateController::class, 'show'])->name('negotiate.show');
-    Route::post('quotations/{quotation}/negotiate', [NegotiateController::class, 'store'])->name('negotiate.store');    // Export quotations to Excel
+    Route::post('quotations/{quotation}/negotiate', [NegotiateController::class, 'store'])->name('negotiate.store');
     Route::get('/quotations/export', [QuotationController::class, 'export'])->name('quotations.export');
     Route::resource('quotations', QuotationController::class);
 
     //export quotation to pdf
     Route::get('quotations/{quotation}/export-pdf', [QuotationController::class, 'exportPdf'])
-            ->name('quotations.export-pdf');
+                ->name('quotations.export-pdf');
+
+    Route::patch('/quotations/{id}/close-negotiate', [App\Http\Controllers\QuotationController::class, 'closeNegotiate'])->name('negotiate.close');
     
+    // Pastikan rute close mase mengarah ke NegotiateController mase, bukan QuotationController
+    Route::patch('/quotations/{quotation}/close-negotiate', [App\Http\Controllers\NegotiateController::class, 'closeNegotiate'])->name('negotiate.close');
+
     //polistint
     Route::get('/polistint', [PoListController::class, 'polistint'])->name('polistint');
 
@@ -232,5 +243,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/articles/requirements/{articleNo}', [ArticleController::class, 'requirements']);
 
     Route::get('/article-requirements/{partNumber}', [ArticleController::class, 'requirements']);
+
+
     
 });

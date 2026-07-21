@@ -101,6 +101,7 @@
                             <th><center>Company</center></th>
                             <th><center>Email</center></th>
                             <th><center>Subject</center></th>
+                            <th><center>Request Date</center></th>
                             <th><center>Sales PIC</center></th>
                             <th><center>Action</center></th>
                         </tr>
@@ -114,6 +115,7 @@
                                 <td><center>{{ $project->company }}</center></td>
                                 <td><center>{{ $project->email }}</center></td>
                                 <td><center>{{ $project->subject }}</center></td>
+                                <td><center>{{ $project->created_at->format('d F Y ') }}</center></td>
                                 <td><center>
                                     @if($project->assignment)
                                         <span class="badge badge-sm bg-success">{{ $project->assignment->sales->name }}</span>
@@ -147,10 +149,10 @@
                                 </center></td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="6" class="text-center">No data available</td>
-                            </tr>
-                        @endforelse
+    <tr>
+        <td colspan="9" class="text-center">No data available</td>
+    </tr>
+@endforelse
                     </tbody>
                 </table>
             </div>
