@@ -79,54 +79,69 @@
             </div>
         </form>
 
-        <table class="table table-hover" id="table1">
-            <thead>
+        <table class="table table-hover align-middle" id="table1">
+            <thead class="table-light">
                 <tr>
-                    <th><center>No</center></th>
-                    <th><center>Req Id</center></th>
-                    <th><center>No Quotation</center></th>
-                    <th><center>Company</center></th>
-                    <th><center>Quotation Date</center></th>
-                    <th><center>Expired Date</center></th>
-                    <th><center>Sales PIC</center></th>
-                    <th><center>Action</center></th>
-                    <th><center>Status</center></th>
+                    <th class="text-center" width="5%">No</th>
+                    <th class="text-center">Req ID</th>
+                    <th>No Quotation</th>
+                    <th>Customer / Perusahaan</th>
+                    <th class="text-center">Tgl Quotation</th>
+                    <th class="text-center">Tgl Expired</th>
+                    <th class="text-center">Sales PIC</th>
+                    <th class="text-center" width="18%">Aksi</th>
+                    <th class="text-center" width="12%">Status</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse ($quotations as $quotation)
                     <tr>
-                        <td><center>{{ $loop->iteration }}</center></td>
-                        <td><center><span class="badge badge-sm bg-primary"> {{ $quotation->request_id ?? '-' }}</span></center></td>
-                        <td><center>{{ $quotation->quotation_no }}</center></td>
-                        <td><center>{{ $quotation->customer->company }}</center></td>
-                        <td><center>{{ \Carbon\Carbon::parse($quotation->created_at)->format('d F Y') }}</center></td>
-                        <td><center>{{ \Carbon\Carbon::parse($quotation->date_expired)->format('d F Y') }}</center></td>
-                        <td><center>
+                        <td class="text-center fw-bold">{{ $loop->iteration }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-light-primary text-primary fw-bold">{{ $quotation->request_id ?? '-' }}</span>
+                        </td>
+                        <td class="fw-bold text-primary">{{ $quotation->quotation_no }}</td>
+                        <td>
+                            <strong>{{ $quotation->customer->company ?? $quotation->customer->name ?? '-' }}</strong>
+                            @if(!empty($quotation->customer->name) && !empty($quotation->customer->company))
+                                <br><small class="text-muted"><i class="bi bi-person me-1"></i>{{ $quotation->customer->name }}</small>
+                            @endif
+                        </td>
+                        <td class="text-center small">{{ \Carbon\Carbon::parse($quotation->created_at)->format('d M Y') }}</td>
+                        <td class="text-center small">
+                            {{ $quotation->date_expired ? \Carbon\Carbon::parse($quotation->date_expired)->format('d M Y') : '-' }}
+                        </td>
+                        <td class="text-center">
                             @if($quotation->request && $quotation->request->assignment)
-                                <span class="badge badge-sm bg-success">
+                                <span class="badge bg-success">
                                     {{ $quotation->request->assignment->sales->name ?? 'N/A' }}
                                 </span>
                             @else
-                                <span class="text-muted">-</span>
+                                <span class="text-muted small">-</span>
                             @endif    
-                        </center></td>
-                        <td><center>
-                            <a href="{{ route('quotations.show', $quotation->id) }}" class="btn btn-sm btn-info">
-                                <i class="bi bi-eye-fill"></i>
-                            </a>
+                        </td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center align-items-center gap-1">
+                                {{-- TOMBOL UTAMA DETAIL UNTUK MEMBUKA HALAMAN LENGKAP QUOTATION & DATA PO --}}
+                                <a href="{{ route('quotations.show', $quotation->id) }}" 
+                                   class="btn btn-sm btn-info text-white fw-bold px-3 py-1" 
+                                   title="Buka Detail Lengkap Quotation & Data PO Terhubung">
+                                    <i class="bi bi-eye-fill me-1"></i> Detail
+                                </a>
 
-                            @if($quotation->canSend() && auth()->user()->isStaff() && auth()->user()->divisi == 'sales')
-                                <form method="POST" action="{{ route('quotations.send', $quotation->id) }}" class="d-inline">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit" onclick="return confirm('Apakah anda yakin ingin mengirim quotation ini?')" class="btn btn-sm btn-primary">
-                                        <i class="bi bi-send-fill"></i>
-                                    </button>
-                                </form>
-                            @endif
-                        </center></td>
-                        <td><center>
+                                {{-- TOMBOL KIRIM KETIKA STATUS MASIH CAN SEND --}}
+                                @if($quotation->canSend() && auth()->user()->isStaff() && auth()->user()->divisi == 'sales')
+                                    <form method="POST" action="{{ route('quotations.send', $quotation->id) }}" class="d-inline">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit" onclick="return confirm('Apakah anda yakin ingin mengirim quotation ini ke Customer?')" class="btn btn-sm btn-primary px-2 py-1" title="Kirim Ke Customer">
+                                            <i class="bi bi-send-fill"></i> Kirim
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        </td>
+                        <td class="text-center">
                             @php $lastNego = $quotation->negotiates?->first(); @endphp
 
                             @if($quotation->status == 'created')
@@ -163,11 +178,11 @@
                             @else
                                 <span class="badge bg-secondary">{{ $quotation->status }}</span>
                             @endif
-                        </center></td>
+                        </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="text-center">No data available</td>
+                        <td colspan="9" class="text-center text-muted py-4">Belum ada data quotation.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -176,10 +191,13 @@
 </section>
 
 @push('scripts')
-    <script src="assets/extensions/simple-datatables/umd/simple-datatables.js"></script>
-    <script src="assets/static/js/pages/simple-datatables.js"></script>
+    <script src="{{ asset('assets/extensions/simple-datatables/umd/simple-datatables.js') }}"></script>
     <script>
-        let dataTable = new simpleDatatables.DataTable("#table1");
+        document.addEventListener('DOMContentLoaded', function() {
+            if (document.querySelector("#table1")) {
+                let dataTable = new simpleDatatables.DataTable("#table1");
+            }
+        });
     </script>
 @endpush
 @endsection

@@ -463,7 +463,12 @@
                 <div class="card-body">
                     <div class="action-grid">
 
-                    @php $isLocked = in_array($quotation->status, ['accepted', 'po']); @endphp
+                        @php 
+                            $isLocked = in_array($quotation->status, ['accepted', 'po']); 
+                            $lastNegoItem = $negotiations->first();
+                            $canSalesClose = $lastNegoItem && $lastNegoItem->from_customer && !$isLocked;
+                        @endphp
+
                         @if($isLocked)
                             <button type="button" class="btn btn-warning w-100" disabled>
                                 <i class="bi bi-arrow-left-right"></i> Submit Negotiation
@@ -472,35 +477,38 @@
                                 <i class="bi bi-lock-fill"></i> Close Negotiate
                             </button>
                             <a href="{{ route('quotations.show', $quotation->id) }}" class="btn btn-outline-secondary w-100">
-                                <i class="bi bi-arrow-left"></i> Back to Detail
+                                <i class="bi bi-arrow-left"></i> Kembali ke Detail
                             </a>
                         @else
                             <button type="submit" name="action" value="negotiate" class="btn btn-warning w-100">
-                                <i class="bi bi-arrow-left-right"></i> Submit Negotiation
+                                <i class="bi bi-send-fill me-1"></i> Kirim Balasan Tawaran Sales
                             </button>
  
-                            @if($negotiations->count() > 0)
+                            @if($canSalesClose)
                                 <div style="border-top: 1px dashed #e0e6ed; padding-top: 8px; margin-top: 4px;">
-                                    <p class="text-muted mb-2" style="font-size:11px;">
-                                        <i class="bi bi-info-circle me-1"></i> Tutup negosiasi jika harga nego sudah disepakati.
+                                    <p class="text-success mb-2 small fw-semibold">
+                                        <i class="bi bi-info-circle me-1"></i> Customer telah mengajukan tawaran harga. Anda dapat menyetujui dan menutup negosiasi ini.
                                     </p>
-                                    <button type="button" class="btn btn-success w-100" onclick="submitCloseNegotiate()">
-                                        <i class="bi bi-lock-fill"></i> Close Negotiate
+                                    <button type="button" class="btn btn-success w-100 fw-bold" onclick="submitCloseNegotiate()">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Close & Setujui Harga Customer
                                     </button>
                                 </div>
+                            @elseif($lastNegoItem && !$lastNegoItem->from_customer)
+                                <div style="border-top: 1px dashed #e0e6ed; padding-top: 8px; margin-top: 4px;">
+                                    <div class="alert alert-info py-2 px-3 mb-0 small text-center">
+                                        <i class="bi bi-hourglass-split me-1"></i> Menunggu Customer meninjau tawaran harga dari Anda.
+                                    </div>
+                                </div>
                             @endif
- 
+
                             <div style="border-top: 1px dashed #e0e6ed; padding-top: 8px; margin-top: 4px;">
-                                <p class="text-muted mb-2" style="font-size:11px;">
-                                    <i class="bi bi-info-circle me-1"></i> Terima harga quotation langsung tanpa negosiasi.
-                                </p>
                                 <button type="submit" name="action" value="accept" class="btn btn-primary w-100" onclick="return confirm('Yakin menerima quotation ini?\nHarga quotation akan langsung difinalisasi.')">
-                                    <i class="bi bi-check-circle"></i> Accept Quotation
+                                    <i class="bi bi-check-circle me-1"></i> Accept Quotation (Harga Awal)
                                 </button>
                             </div>
- 
+
                             <a href="{{ route('quotations.show', $quotation->id) }}" class="btn btn-outline-secondary w-100">
-                                <i class="bi bi-arrow-left"></i> Back to Detail
+                                <i class="bi bi-arrow-left me-1"></i> Kembali ke Detail
                             </a>
                         @endif
                     </div>

@@ -22,7 +22,7 @@ class QuotationController extends Controller
     {
         $filters = $request->only(['start_date', 'end_date', 'status']);
 
-        $query = Quotation::with(['customer', 'request.assignment.sales']);
+        $query = Quotation::with(['customer', 'items', 'request.assignment.sales']);
 
         if (Auth::user()->isCustomer()) {
             $query->where('customer_id', '=', Auth::id())
@@ -56,6 +56,12 @@ class QuotationController extends Controller
         $customerAccount = null;
 
         if ($request->has('request_id')) {
+            $existingQuotation = Quotation::where('request_id', $request->request_id)->first();
+            if ($existingQuotation) {
+                return redirect()->route('requests-project.show', $request->request_id)
+                    ->with('error', 'Penawaran harga (Quotation #' . $existingQuotation->quotation_no . ') untuk Request ini sudah pernah dibuat.');
+            }
+
             $requestProject = RequestProject::with(['attachments', 'customer', 'assignment.sales'])
                 ->find($request->request_id);
 
@@ -153,14 +159,21 @@ class QuotationController extends Controller
 
     public function show(Quotation $quotation)
     {
-        $quotation->load(['customer', 'items', 'request.attachments', 'negotiates' => function($q) {
-            $q->with('user')->orderBy('created_at', 'desc');
-        }]);
+        $quotation->load([
+            'customer',
+            'items',
+            'purchaseOrder.internals.contract',
+            'request.attachments',
+            'negotiates' => function($q) {
+                $q->with('user')->orderBy('created_at', 'desc');
+            }
+        ]);
 
         $customerAccount = Account::where('user_id', $quotation->customer_id)->first();
         $negotiations = $quotation->negotiates;
+        $po = $quotation->purchaseOrder ?? \App\Models\PurchaseOrder::with(['internals.contract'])->where('quotation_id', $quotation->id)->first();
 
-        return view('quotations.show', compact('quotation', 'customerAccount', 'negotiations'));
+        return view('quotations.show', compact('quotation', 'customerAccount', 'negotiations', 'po'));
     }
 
     public function edit(Quotation $quotation)

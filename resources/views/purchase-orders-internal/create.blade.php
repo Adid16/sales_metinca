@@ -5,7 +5,6 @@
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/compiled/css/app.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/compiled/css/app-dark.css') }}">
-    {{-- CSS SweetAlert2 --}}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 @endpush
  
@@ -30,14 +29,18 @@
                 <span class="fw-bold">{{ $purchaseOrder->po_no ?? '-' }}</span>
             </div>
             <div class="col-md-3">
+                <small class="text-muted d-block">PO No (Internal Item)</small>
+                <span class="fw-bold text-primary">{{ $itemPoNo ?? $purchaseOrder->po_no ?? '-' }}</span>
+            </div>
+            <div class="col-md-2">
                 <small class="text-muted d-block">Quotation No</small>
                 <span class="fw-semibold">{{ $purchaseOrder->quotation->quotation_no ?? '-' }}</span>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <small class="text-muted d-block">Customer</small>
                 <span>{{ $purchaseOrder->customer->name ?? '-' }}</span>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <small class="text-muted d-block">Delivery Request</small>
                 <span class="text-danger fw-semibold">
                     {{ $purchaseOrder->delivery_request
@@ -55,6 +58,33 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 @endif
+
+{{-- BOX CATATAN AMANDEMEN ITEM (JIKA ADA) --}}
+@if(isset($contract) && ($contract->alasan_amandemen || $contract->catatan_sales))
+    <div class="alert alert-warning border-warning shadow-sm d-flex align-items-start mb-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill fs-4 me-3 text-warning"></i>
+        <div class="w-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="alert-heading fw-bold mb-1 text-dark">
+                    <i class="bi bi-pencil-square me-1"></i> Catatan Amandemen Item (Revisi #{{ $contract->amandement_no }})
+                </h6>
+                <span class="badge bg-warning text-dark">Amandemen Active</span>
+            </div>
+            
+            @if($contract->alasan_amandemen)
+                <p class="mb-1 small text-dark">
+                    <strong>Alasan Amandemen Customer:</strong> {{ $contract->alasan_amandemen }}
+                </p>
+            @endif
+            
+            @if($contract->catatan_sales)
+                <p class="mb-0 small text-dark">
+                    <strong>Catatan Tim Sales:</strong> {{ $contract->catatan_sales }}
+                </p>
+            @endif
+        </div>
+    </div>
+@endif
  
 {{-- PDF Attachment --}}
 <div class="card shadow-sm mb-3">
@@ -68,7 +98,6 @@
             $attachments = [];
             $rawAttr = $purchaseOrder->attachment;
             
-            // Ekstrak semua nama file
             if (is_array($rawAttr)) {
                 $attachments = $rawAttr;
             } elseif (is_string($rawAttr)) {
@@ -82,13 +111,11 @@
                 }
             }
 
-            // AMBIL HANYA FILE TERAKHIR (TERBARU)
             $latestFile = count($attachments) > 0 ? end($attachments) : null;
         @endphp
 
         @if($latestFile)
             @php 
-                // Bersihkan karakter spasi dan tanda kutip
                 $cleanFile = trim(trim($latestFile), '"\''); 
             @endphp
             
@@ -111,7 +138,7 @@
     </div>
 </div>
 
-{{-- ================= KOTAK PENCARIAN ARTIKEL BARIS #1 GLOBAL ================= --}}
+{{-- KOTAK PENCARIAN ARTIKEL --}}
 <div class="card shadow-sm mb-3" style="border-left: 4px solid #17a2b8;">
     <div class="card-body py-3">
         <div class="row align-items-center">
@@ -125,7 +152,6 @@
                 <small class="text-muted mt-1 d-block">* Menarik data otomatis ke kolom "Item #1" di form bawah. Anda juga bisa langsung mengetik kode artikel di dalam kolom baris item mana pun lalu tekan Enter.</small>
             </div>
             
-            {{-- Tombol Send to QC (Awalnya disembunyikan menggunakan d-none) --}}
             <div class="col-md-4 text-center mt-3 mt-md-0 d-none" id="qc_action_area">
                 <p class="text-danger small fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill"></i> Data Tidak Ditemukan!</p>
                 <button type="button" class="btn btn-sm btn-danger" id="btn_send_qc" data-bs-toggle="tooltip" title="Kirim notifikasi ke QC untuk melengkapi master data">
@@ -135,7 +161,6 @@
         </div>
     </div>
 </div>
-{{-- ================= END PENCARIAN ================= --}}
 
 {{-- Form Input Item --}}
 <div class="card shadow-sm">
@@ -157,11 +182,27 @@
         <form action="{{ $action }}" method="POST">
             @csrf
             @if($isEdit) @method('PUT') @endif
+            
+            {{-- HIDDEN INPUT UNTUK SPESIFIK ITEM SCOPING --}}
+            <input type="hidden" name="purchase_order_id" value="{{ $purchaseOrder->id }}">
+            @if(isset($selectedItem))
+                <input type="hidden" name="purchase_order_internal_id" value="{{ $selectedItem->id }}">
+            @endif
  
             <div id="item-body">
+                @php
+                    if ($selectedItem) {
+                        $itemsToEdit = collect([$selectedItem]);
+                    } elseif ($quotationItemId) {
+                        $itemsToEdit = collect();
+                    } else {
+                        $itemsToEdit = $purchaseOrder->internals;
+                    }
+                @endphp
                 {{-- MODE EDIT: JIKA DATA PO INTERNAL SUDAH PERNAH DI-INPUT SEBELUMNYA --}}
-                @forelse($purchaseOrder->internals as $index => $item)
+                @forelse($itemsToEdit as $index => $item)
                 <div class="border rounded p-3 mb-3 item-row">
+                    <input type="hidden" name="internal_id[]" value="{{ $item->id }}">
                     <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
                         <span class="fw-bold text-secondary">Item #<span class="row-no">{{ $index + 1 }}</span></span>
                         <button type="button" class="btn btn-sm btn-outline-danger btn-remove"><i class="bi bi-trash"></i> Hapus</button>
@@ -169,7 +210,7 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label mb-1 fw-semibold small">CUSTOMER ORDER NO</label>
-                            <input type="text" name="po_no[]" class="form-control form-control-sm" value="{{ $item->po_no }}" placeholder="No PO">
+                            <input type="text" name="po_no[]" class="form-control form-control-sm" value="{{ $item->po_no ?? $itemPoNo ?? $purchaseOrder->po_no }}" placeholder="No PO">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label mb-1 fw-semibold small text-dark"><i class="bi bi-keyboard text-info"></i> Article (Tekan Enter)</label>
@@ -223,10 +264,14 @@
                     </div>
                 </div>
                 
-                {{-- MODE INPUT BARU: JIKA BELUM ADA DATA, OTOMATIS AMBIL SEMUA ITEM DARI QUOTATION --}}
+                {{-- MODE INPUT BARU --}}
                 @empty
-                    @foreach($purchaseOrder->quotation->items as $qIndex => $qItem)
+                    @php
+                        $qItemsToInput = $qItem ? collect([$qItem]) : ($purchaseOrder->quotation?->items ?? collect());
+                    @endphp
+                    @foreach($qItemsToInput as $qIndex => $qItemRow)
                     <div class="border rounded p-3 mb-3 item-row" style="border-left: 4px solid #0d6efd !important;">
+                        <input type="hidden" name="internal_id[]" value="">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="fw-bold text-primary">Item #<span class="row-no">{{ $qIndex + 1 }}</span></span>
                             <button type="button" class="btn btn-sm btn-danger btn-remove"><i class="bi bi-trash me-1"></i>Hapus</button>
@@ -234,7 +279,7 @@
                         <div class="row g-2">
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small text-muted">No PO</label>
-                                <input type="text" name="po_no[]" class="form-control form-control-sm" value="{{ $purchaseOrder->po_no ?? '' }}" readonly>
+                                <input type="text" name="po_no[]" class="form-control form-control-sm" value="{{ $itemPoNo ?? $purchaseOrder->po_no ?? '' }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small text-dark"><i class="bi bi-keyboard text-info"></i> Article (Tekan Enter)</label>
@@ -242,7 +287,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small text-muted">Nama Item <span class="text-danger">*</span></label>
-                                <input type="text" name="item[]" class="form-control form-control-sm form-item" value="{{ $qItem->item }}" placeholder="Nama item" required>
+                                <input type="text" name="item[]" class="form-control form-control-sm form-item" value="{{ $qItemRow->item }}" placeholder="Nama item" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small text-muted">Material</label>
@@ -254,16 +299,16 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small text-muted">Qty <span class="text-danger">*</span></label>
-                                <input type="number" name="qty[]" class="form-control form-control-sm qty-input" value="{{ $qItem->qty }}" min="1" required>
+                                <input type="number" name="qty[]" class="form-control form-control-sm qty-input" value="{{ $qItemRow->qty }}" min="1" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small text-muted">Unit Price <span class="text-danger">*</span></label>
-                                <input type="number" name="unit_price[]" class="form-control form-control-sm price-input" value="{{ (int)$qItem->price }}" min="0" step="0.01" required>
+                                <input type="number" name="unit_price[]" class="form-control form-control-sm price-input" value="{{ (int)$qItemRow->price }}" min="0" step="0.01" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small text-muted">Subtotal</label>
                                 <input type="text" class="form-control form-control-sm subtotal-cell bg-light fw-semibold" 
-                                    value="Rp {{ number_format($qItem->qty * $qItem->price, 0, ',', '.') }}" readonly>
+                                    value="Rp {{ number_format($qItemRow->qty * $qItemRow->price, 0, ',', '.') }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small text-muted">Delivery Date</label>
@@ -323,10 +368,9 @@
         const qcArea      = document.getElementById('qc_action_area');
         const btnSendQC   = document.getElementById('btn_send_qc');
 
-        // --- 1. FITUR UTAMA: INTERCEPT TEKAN ENTER DI FIELD ARTICLE BARIS MANA PUN ---
         document.getElementById('item-body').addEventListener('keydown', function(e) {
             if (e.target.classList.contains('form-article') && e.key === 'Enter') {
-                e.preventDefault(); // Kunci form agar tidak men-submit otomatis
+                e.preventDefault();
 
                 const inputField = e.target;
                 const articleCode = inputField.value.trim();
@@ -347,7 +391,6 @@
                     })
                     .then(res => {
                         if (res.success && res.data) {
-                            // Isikan data ke kolom yang berada di baris itu saja
                             currentRow.querySelector('.form-item').value = res.data.part_name ?? '';
                             currentRow.querySelector('.form-material').value = res.data.material ?? '';
                             
@@ -360,7 +403,6 @@
                                 currentRow.querySelector('.price-input').value = res.data.total_price || res.data.price;
                             }
 
-                            // Jalankan ulang kalkulator subtotal baris tersebut
                             const qty = parseFloat(currentRow.querySelector('.qty-input').value) || 0;
                             const price = parseFloat(currentRow.querySelector('.price-input').value) || 0;
                             currentRow.querySelector('.subtotal-cell').value = 'Rp ' + (qty * price).toLocaleString('id-ID');
@@ -380,7 +422,6 @@
             }
         });
 
-        // --- 2. FITUR LAMA: TOP GLOBAL SEARCH BAR (TARGET SPESIFIK ITEM #1) ---
         function performSearch() {
             const article = searchInput.value.trim();
             if(article === '') return;
@@ -453,10 +494,10 @@
         updateTotal();
     });
 
-    // --- 3. FITUR MULTI-ROW DYNAMIC APPEND BLOCK ---
     function newRow(no) {
         return `
         <div class="border rounded p-3 mb-3 item-row" style="border-left: 4px solid #0d6efd !important;">
+            <input type="hidden" name="internal_id[]" value="">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="fw-bold text-primary">Item #<span class="row-no">${no}</span></span>
                 <button type="button" class="btn btn-sm btn-danger btn-remove">
@@ -465,7 +506,7 @@
             </div>
             <div class="row g-2">
                 <div class="col-md-6"><label class="form-label small text-muted mb-1">No PO</label>
-                    <input type="text" name="po_no[]" class="form-control form-control-sm" value="{{ $purchaseOrder->po_no ?? '' }}" readonly></div>
+                    <input type="text" name="po_no[]" class="form-control form-control-sm" value="{{ $itemPoNo ?? $purchaseOrder->po_no ?? '' }}" readonly></div>
                 <div class="col-md-6"><label class="form-label small text-muted mb-1 text-dark"><i class="bi bi-keyboard text-info"></i> Article (Tekan Enter)</label>
                     <input type="text" name="article[]" class="form-control form-control-sm form-article text-uppercase fw-semibold" placeholder="Ketik Kode Artikel lalu tekan Enter"></div>            
                 <div class="col-md-6"><label class="form-label small text-muted mb-1">Nama Item <span class="text-danger">*</span></label>

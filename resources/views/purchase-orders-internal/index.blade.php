@@ -308,6 +308,19 @@
                                                     </td>
                                                     <td class="fw-bold text-dark">
                                                         {{ $internal->item }}
+                                                        @if($itemStatus == 'amandement_pending')
+                                                            <span class="badge bg-warning text-dark ms-1" style="font-size: 10px;" title="Pengajuan amandemen item ini sedang dalam peninjauan Sales">
+                                                                <i class="bi bi-clock-history me-1"></i> Pending Amandemen
+                                                            </span>
+                                                        @elseif($itemStatus == 'rejected')
+                                                            <span class="badge bg-danger text-white ms-1" style="font-size: 10px;" title="Pengajuan amandemen item ini ditolak oleh Sales; Kontrak sebelumnya tetap berlaku">
+                                                                <i class="bi bi-x-circle me-1"></i> Amandemen Ditolak
+                                                            </span>
+                                                        @elseif($latestContract && $latestContract->amandement_no > 0)
+                                                            <span class="badge bg-danger text-white ms-1" style="font-size: 10px;" title="Item ini telah mengalami amandemen spesifikasi/qty">
+                                                                <i class="bi bi-pencil-square me-1"></i> Amandemen #{{ $latestContract->amandement_no }}
+                                                            </span>
+                                                        @endif
                                                     </td>
                                                     <td class="text-muted">
                                                         {{ $internal->material ?? '-' }}
@@ -338,16 +351,21 @@
                                                             @endif
 
                                                             {{-- 2. BUAT KONTRAK STATUS / BUTTON (MURNI SPESIFIK ITEM THIS ID) --}}
-                                                            @if(!$latestContract || in_array($itemStatus, ['created', 'amandement_pending']))
-                                                                {{-- TAMPILKAN TOMBOL BUAT KONTRAK JIKA BELUM DIBUAT ATAU KONTRAK BARU DI-APPROVE (CREATED) --}}
+                                                            @if($itemStatus == 'amandement_pending')
+                                                                {{-- JIKA PENGANJUAN AMANDEMEN MASIH PENDING REVIEW SALES --}}
+                                                                <span class="badge-kontrak-dibuat" style="background-color: #fff3cd !important; color: #664d03 !important; border: 1px solid #ffecb5 !important;" title="Pengajuan amandemen item ini sedang dalam peninjauan / persetujuan Sales">
+                                                                    <i class="bi bi-clock-history me-1"></i> Pending Amandemen
+                                                                </span>
+                                                            @elseif(!$latestContract || in_array($itemStatus, ['created', 'amandement']))
+                                                                {{-- TAMPILKAN TOMBOL BUAT KONTRAK JIKA BELUM DIBUAT ATAU MERUPAKAN AMANDEMEN YANG TELAH DI-ACC SALES --}}
                                                                 <a href="{{ route('purchase-orders.create-contract', ['idPO' => $poId, 'internal_id' => $internal->id]) }}" 
                                                                    class="btn-buat-kontrak" title="Buat Lembar Review Kontrak Untuk Item Ini">
                                                                     <i class="bi bi-briefcase-fill"></i> Buat Kontrak
                                                                 </a>
                                                             @else
-                                                                {{-- JIKA SEDANG REVIEW ATAU SUDAH JADI CONTRACT BERJALAN --}}
-                                                                <span class="badge-kontrak-dibuat" title="Kontrak untuk item ini sedang diproses / disetujui">
-                                                                    <i class="bi bi-check-circle-fill text-success"></i> Sudah Dibuat
+                                                                {{-- JIKA KONTRAK SUDAH DIBUAT (TERMASUK STATUS REJECTED/REVIEW/DONE) --}}
+                                                                <span class="badge-kontrak-dibuat" title="Kontrak untuk item ini telah dibuat dan sedang diproses">
+                                                                    <i class="bi bi-check-circle-fill text-success me-1"></i> Sudah Dibuat
                                                                 </span>
                                                             @endif
 

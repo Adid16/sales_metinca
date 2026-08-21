@@ -46,7 +46,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small">ORDER NO <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control form-control-sm bg-light" name="order_no" value="{{ $po->po_no ?? '' }}" readonly>
+                                <input type="text" class="form-control form-control-sm bg-light" name="order_no" value="{{ $selectedItem->po_no ?? ($po->po_no . (isset($selectedItem) ? '-' . $selectedItem->id : '')) }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small">PART NO</label>
@@ -221,26 +221,91 @@
                     </div>
                 @endforeach
 
-                {{-- ================= CARD TERAKHIR: OTHERS COMMENT + UPLOAD FILE ================= --}}
+                {{-- ================= CARD TERAKHIR: OTHERS COMMENT + DOKUMEN PO / AMANDEMEN CUSTOMER ================= --}}
                 <div class="card shadow-sm mb-3">
                     <div class="card-header py-2" style="background:#6c757d;">
                         <h6 class="mb-0 fw-bold text-uppercase" style="font-size:0.82rem; letter-spacing:1px; color:black;">
-                            Others / Comment
+                            Others / Comment & Dokumen Referensi PO
                         </h6>
                     </div>
                     <div class="card-body">
                         <textarea name="others_comment" class="form-control mt-2" rows="3" placeholder="Tulis komentar tambahan...">{{ $latestContract->others_comment ?? '' }}</textarea>
 
-                        <div class="mt-3">
-                            <label class="form-label mb-1 fw-semibold small text-dark">
-                                UPLOAD DOKUMEN PO (PDF) <span class="text-danger">*</span>
+                        @php
+                            $rawAttr = $po->attachment ?? '';
+                            $poAttachments = [];
+                            if (!empty($rawAttr)) {
+                                if (str_contains($rawAttr, '[')) {
+                                    $poAttachments = json_decode($rawAttr, true) ?? [];
+                                } elseif (str_contains($rawAttr, ',')) {
+                                    $poAttachments = explode(',', $rawAttr);
+                                } else {
+                                    $poAttachments = [$rawAttr];
+                                }
+                            }
+                            $latestPoFile = count($poAttachments) > 0 ? trim(end($poAttachments), ' "\'') : null;
+                        @endphp
+
+                        {{-- DISPLAY DOKUMEN PO / AMANDEMEN DARI CUSTOMER --}}
+                        <div class="mt-4 p-3 border rounded bg-light">
+                            <label class="form-label mb-2 fw-bold text-dark">
+                                <i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i> DOKUMEN PO / AMANDEMEN DARI CUSTOMER
                             </label>
-                            <input type="file" name="po_pdf" class="form-control form-control-sm" accept="application/pdf">
-                            <small class="text-muted" style="font-size: 11px;">* Format file wajib PDF (Maksimal 2MB)</small>
+
+                            @if(count($poAttachments) > 0)
+                                <div class="mb-3">
+                                    <span class="small text-muted d-block mb-2">Riwayat Berkas PO & Amandemen Terlampir:</span>
+                                    <div class="d-flex flex-wrap gap-2 mb-3">
+                                        @foreach($poAttachments as $idx => $att)
+                                            @php $cleanAtt = trim(trim($att), '"\''); @endphp
+                                            @if(!empty($cleanAtt))
+                                                <a href="{{ asset('storage/uploads/' . $cleanAtt) }}" target="_blank" 
+                                                   class="btn btn-sm {{ $loop->last ? 'btn-primary' : 'btn-outline-secondary' }}">
+                                                    <i class="bi bi-file-earmark-pdf me-1"></i>
+                                                    {{ $loop->first ? 'PO Utama / Awal' : 'Amandemen #' . $idx }} 
+                                                    <small>({{ basename($cleanAtt) }})</small>
+                                                </a>
+                                            @endif
+                                        @endforeach
+                                    </div>
+
+                                    @if($latestPoFile)
+                                        <div class="card border mb-2 shadow-sm">
+                                            <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+                                                <small class="fw-bold text-primary">
+                                                    <i class="bi bi-eye-fill me-1"></i> Preview Dokumen Terbaru ({{ basename($latestPoFile) }})
+                                                </small>
+                                                <a href="{{ asset('storage/uploads/' . $latestPoFile) }}" target="_blank" class="btn btn-sm btn-outline-primary py-0">
+                                                    <i class="bi bi-box-arrow-up-right me-1"></i>Buka Layar Penuh
+                                                </a>
+                                            </div>
+                                            <div class="card-body p-0">
+                                                <iframe src="{{ asset('storage/uploads/' . $latestPoFile) }}" 
+                                                    width="100%" height="450px" 
+                                                    style="border:none;" class="rounded-bottom"></iframe>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" name="po_attachment_default" value="{{ 'uploads/' . $latestPoFile }}">
+                                    @endif
+                                </div>
+                            @else
+                                <div class="p-3 border rounded text-center bg-white text-muted small mb-3">
+                                    <i class="bi bi-exclamation-circle me-1"></i> Tidak ada file lampiran PO dari customer.
+                                </div>
+                            @endif
+
+                            {{-- UPLOAD FILE CADANGAN / UPDATE HANYA JIKA INGIN MENGGANTI --}}
+                            <div class="mt-3">
+                                <label class="form-label mb-1 fw-semibold small text-dark">
+                                    Upload Dokumen PDF Tambahan / Pengganti (Opsional)
+                                </label>
+                                <input type="file" name="po_pdf" class="form-control form-control-sm" accept="application/pdf">
+                                <small class="text-muted" style="font-size: 11px;">* Pilih file jika ingin mengunggah PDF lembar tinjauan/kontrak terpisah (Maksimal 2MB)</small>
+                            </div>
                         </div>
 
                         {{-- BUTTONS --}}
-                        <div class="d-flex justify-content-end mt-3 gap-2">
+                        <div class="d-flex justify-content-end mt-4 gap-2">
                             <button type="submit" class="btn btn-sm btn-primary">Save</button>
                             <a href="{{ route('purchase-orders-internal.index') }}" class="btn btn-sm btn-danger">Back</a>
                         </div>

@@ -143,6 +143,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/approval-amandement', [PurchaseOrderController::class, 'indexAmandement'])->name('purchase-orders.approval-amandement');
     Route::post('/purchase-orders/{id}/approve-amandement', [PurchaseOrderController::class, 'approveAmandement'])->name('purchase-orders.approve-amandement');
     Route::post('/purchase-orders/{id}/reject-amandement', [PurchaseOrderController::class, 'rejectAmandement'])->name('purchase-orders.reject-amandement');
+    Route::post('/purchase-orders/{id}/acknowledge-amandement', [PurchaseOrderController::class, 'acknowledgeAmandement'])->name('purchase-orders.acknowledge-amandement');
 
     Route::get('/users/customer', [UserController::class, 'index_customer'])->name('users.customer');
 
@@ -210,10 +211,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('quotations/{quotation}/export-pdf', [QuotationController::class, 'exportPdf'])
                 ->name('quotations.export-pdf');
 
-    Route::patch('/quotations/{id}/close-negotiate', [App\Http\Controllers\QuotationController::class, 'closeNegotiate'])->name('negotiate.close');
-    
-    // Pastikan rute close mase mengarah ke NegotiateController mase, bukan QuotationController
-    Route::patch('/quotations/{quotation}/close-negotiate', [App\Http\Controllers\NegotiateController::class, 'closeNegotiate'])->name('negotiate.close');
+    Route::match(['patch', 'post'], '/quotations/{quotation}/close-negotiate', [App\Http\Controllers\NegotiateController::class, 'closeNegotiate'])->name('negotiate.close');
 
     //polistint
     Route::get('/polistint', [PoListController::class, 'polistint'])->name('polistint');

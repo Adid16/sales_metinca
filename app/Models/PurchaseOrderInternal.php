@@ -36,10 +36,18 @@ class PurchaseOrderInternal extends Model
     }
 
     /**
-     * Relasi ke Kontrak Tinjauan Per-Item Spesifik
+     * Relasi ke Kontrak Tinjauan Per-Item Spesifik (Terbaru)
      */
     public function contract()
     {
-        return $this->hasOne(Contract::class, 'purchase_order_internal_id');
+        return $this->hasOne(Contract::class, 'purchase_order_internal_id')->latestOfMany('id');
+    }
+
+    /**
+     * Relasi ke Seluruh Kontrak Tinjauan Per-Item
+     */
+    public function contracts()
+    {
+        return $this->hasMany(Contract::class, 'purchase_order_internal_id');
     }
 }

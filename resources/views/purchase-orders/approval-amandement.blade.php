@@ -51,37 +51,41 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($pos as $index => $po)
+                            @php $counter = 0; @endphp
+                            @forelse($pendingContracts as $contract)
                                 @php
-                                    // Cari kontrak yang punya pengajuan amandemen
-                                    $targetContract = $po->contracts->whereNotNull('alasan_amandemen')->sortByDesc('updated_at')->first() ?? $po->contract;
-                                    $targetInternalId = $targetContract->purchase_order_internal_id ?? null;
-                                    $targetItem = $po->internals->where('id', $targetInternalId)->first();
-                                    $reason = $targetContract->alasan_amandemen ?? $po->reason ?? 'Pengajuan amandemen item.';
+                                    $counter++;
+                                    $targetItem = $contract->purchaseOrderInternal;
+                                    $po = $contract->purchase_order ?? ($targetItem ? $targetItem->purchaseOrder : null);
+                                    $customer = $contract->customer ?? ($po ? $po->customer : null);
+                                    $targetInternalId = $targetItem->id ?? null;
+                                    $reason = $contract->alasan_amandemen ?? 'Pengajuan amandemen item.';
                                 @endphp
-                                <tr>
-                                    <td class="text-center fw-bold">{{ $index + 1 }}</td>
+                                 <tr>
+                                    <td class="text-center fw-bold">{{ $counter }}</td>
                                     <td>
-                                        <strong class="text-primary">{{ $po->po_no }}</strong>
-                                        <br><small class="text-muted">ID: #{{ $po->id }}</small>
+                                        <strong class="text-primary">{{ $targetItem->po_no ?? $po->po_no ?? $contract->order_no ?? '-' }}</strong>
+                                        @if($po)
+                                            <br><small class="text-muted">PO ID: #{{ $po->id }}</small>
+                                        @endif
                                     </td>
                                     <td>
-                                        <strong>{{ $po->customer->name ?? 'Customer' }}</strong>
+                                        <strong>{{ $customer->name ?? '-' }}</strong>
                                     </td>
                                     <td>
                                         @if($targetItem)
-                                            <span class="badge bg-warning text-dark mb-1"><i class="bi bi-box-seam me-1"></i>{{ $targetItem->item }}</span>
+                                            <span class="badge bg-warning text-dark mb-1"><i class="bi bi-box-seam me-1"></i>{{ $targetItem->item }} ({{ number_format($targetItem->qty) }} pcs)</span>
                                             <br>
                                         @endif
-                                        <span class="text-dark fst-italic">"{{ Str::limit($reason, 50) }}"</span>
+                                        <span class="text-dark fst-italic">"{{ Str::limit($reason, 60) }}"</span>
                                     </td>
                                     <td class="text-center small">
-                                        {{ $po->updated_at ? $po->updated_at->format('d-m-Y H:i') : '-' }}
+                                        {{ $contract->updated_at ? $contract->updated_at->format('d-m-Y H:i') : '-' }}
                                     </td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-primary btn-sm px-3 font-weight-bold" 
                                                 data-bs-toggle="modal" 
-                                                data-bs-target="#reviewModal{{ $po->id }}">
+                                                data-bs-target="#reviewModalContract{{ $contract->id }}">
                                             <i class="bi bi-eye-fill me-1"></i> Review Detail
                                         </button>
                                     </td>
@@ -102,23 +106,24 @@
     </section>
 </div>
 
-{{-- MODAL REVIEW DETAIL & AKSI APPROVE/REJECT --}}
-@foreach($pos as $po)
+{{-- MODAL REVIEW DETAIL & AKSI APPROVE/REJECT KHUSUS PER-ITEM CONTRACT --}}
+@foreach($pendingContracts as $contract)
     @php
-        // Mengidentifikasi item spesifik yang sedang dimohonkan amandemennya
-        $targetContract = $po->contracts->whereNotNull('alasan_amandemen')->sortByDesc('updated_at')->first() ?? $po->contract;
-        $targetInternalId = $targetContract->purchase_order_internal_id ?? null;
-        $targetItem = $po->internals->where('id', $targetInternalId)->first();
-        $alasanLengkap = $targetContract->alasan_amandemen ?? $po->reason ?? 'Tidak ada catatan alasan.';
+        $targetItem = $contract->purchaseOrderInternal;
+        $po = $contract->purchase_order ?? ($targetItem ? $targetItem->purchaseOrder : null);
+        $customer = $contract->customer ?? ($po ? $po->customer : null);
+        $targetInternalId = $targetItem->id ?? null;
+        $poId = $po->id ?? $contract->purchase_order_id;
+        $alasanLengkap = $contract->alasan_amandemen ?? 'Tidak ada catatan alasan.';
     @endphp
     
-    <div class="modal fade" id="reviewModal{{ $po->id }}" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="reviewModalContract{{ $contract->id }}" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 {{-- MODAL HEADER --}}
                 <div class="modal-header bg-dark text-white">
                     <h5 class="modal-title text-white">
-                        <i class="bi bi-file-earmark-check-fill text-warning me-2"></i>Review Amandemen PO No: {{ $po->po_no }}
+                        <i class="bi bi-file-earmark-check-fill text-warning me-2"></i>Review Amandemen Item: {{ $targetItem->item ?? $po->po_no ?? $contract->order_no }}
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -130,13 +135,13 @@
                         <div class="col-md-6">
                             <div class="p-2 border rounded bg-light">
                                 <small class="text-muted d-block">Nama Customer:</small>
-                                <strong>{{ $po->customer->name ?? '-' }}</strong>
+                                <strong>{{ $customer->name ?? '-' }}</strong>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="p-2 border rounded bg-light">
-                                <small class="text-muted d-block">No. Quotation Asal:</small>
-                                <strong class="text-primary">{{ $po->quotation->quotation_no ?? '-' }}</strong>
+                                <small class="text-muted d-block">No. PO & Quotation Asal:</small>
+                                <strong class="text-primary">{{ $po->po_no ?? $contract->order_no ?? '-' }}</strong> <small>({{ $po->quotation->quotation_no ?? '-' }})</small>
                             </div>
                         </div>
                     </div>
@@ -150,7 +155,7 @@
                             </div>
                             <div class="ms-4 small text-dark">
                                 <div><strong>Nama Item:</strong> {{ $targetItem->item }}</div>
-                                <div><strong>Part No / Kontrak:</strong> <code>{{ $targetContract->part_no ?? $targetContract->contract_no ?? '-' }}</code></div>
+                                <div><strong>Part No / Kontrak:</strong> <code>{{ $contract->contract_no ?? $targetItem->part_no ?? '-' }}</code></div>
                                 <div><strong>Kuantitas PO:</strong> {{ number_format($targetItem->qty) }} pcs</div>
                             </div>
                         </div>
@@ -242,19 +247,20 @@
                     <h6 class="fw-bold text-dark mb-2"><i class="bi bi-check2-square me-1"></i> Keputusan Persetujuan:</h6>
                     
                     {{-- FORM REJECT (COLLAPSE BOX) --}}
-                    <div class="collapse mb-3" id="rejectCollapse{{ $po->id }}">
+                    <div class="collapse mb-3" id="rejectCollapseContract{{ $contract->id }}">
                         <div class="card card-body bg-light-danger border border-danger p-3">
-                            <form action="{{ route('purchase-orders.reject-amandement', $po->id) }}" method="POST">
+                            <form action="{{ route('purchase-orders.reject-amandement', $poId) }}" method="POST">
                                 @csrf
+                                <input type="hidden" name="contract_id" value="{{ $contract->id }}">
                                 {{-- HIDDEN KEY: MENGUNCI ITEM SPESIFIK --}}
                                 @if($targetInternalId)
                                     <input type="hidden" name="purchase_order_internal_id" value="{{ $targetInternalId }}">
                                 @endif
 
-                                <label for="alasan_penolakan" class="form-label text-danger fw-bold">Alasan Penolakan (Wajib Diisi untuk Customer):</label>
-                                <textarea name="alasan_penolakan" class="form-control mb-2" rows="2" placeholder="Tuliskan alasan penolakan amandemen item ini secara jelas..." required></textarea>
+                                <label for="alasan_penolakan" class="form-label text-danger fw-bold">Alasan Penolakan dari Staff Sales / Manajemen (Wajib Diisi untuk Customer):</label>
+                                <textarea name="alasan_penolakan" class="form-control mb-2" rows="2" placeholder="Tuliskan alasan penolakan amandemen item ini secara jelas oleh Staff Sales untuk disampaikan ke Customer..." required></textarea>
                                 <div class="d-flex justify-content-end gap-2">
-                                    <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="collapse" data-bs-target="#rejectCollapse{{ $po->id }}">Batal</button>
+                                    <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="collapse" data-bs-target="#rejectCollapseContract{{ $contract->id }}">Batal</button>
                                     <button type="submit" class="btn btn-sm btn-danger fw-bold"><i class="bi bi-x-circle-fill me-1"></i> Konfirmasi Tolak Amandemen</button>
                                 </div>
                             </form>
@@ -262,8 +268,9 @@
                     </div>
 
                     {{-- FORM APPROVE --}}
-                    <form action="{{ route('purchase-orders.approve-amandement', $po->id) }}" method="POST" id="approveForm{{ $po->id }}">
+                    <form action="{{ route('purchase-orders.approve-amandement', $poId) }}" method="POST" id="approveFormContract{{ $contract->id }}">
                         @csrf
+                        <input type="hidden" name="contract_id" value="{{ $contract->id }}">
                         {{-- HIDDEN KEY: MENGUNCI ITEM SPESIFIK --}}
                         @if($targetInternalId)
                             <input type="hidden" name="purchase_order_internal_id" value="{{ $targetInternalId }}">
@@ -280,11 +287,11 @@
                 <div class="modal-footer bg-light d-flex justify-content-between">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
                     <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-danger btn-sm font-weight-bold px-3" data-bs-toggle="collapse" data-bs-target="#rejectCollapse{{ $po->id }}">
+                        <button type="button" class="btn btn-danger btn-sm font-weight-bold px-3" data-bs-toggle="collapse" data-bs-target="#rejectCollapseContract{{ $contract->id }}">
                             <i class="bi bi-x-circle me-1"></i> Reject
                         </button>
                         
-                        <button type="submit" form="approveForm{{ $po->id }}" class="btn btn-success btn-sm font-weight-bold px-3">
+                        <button type="submit" form="approveFormContract{{ $contract->id }}" class="btn btn-success btn-sm font-weight-bold px-3">
                             <i class="bi bi-check-circle me-1"></i> Approve
                         </button>
                     </div>

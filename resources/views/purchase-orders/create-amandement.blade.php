@@ -41,6 +41,7 @@
                                         <h6 class="text-primary mb-0 fw-bold">Target Amandemen Item:</h6>
                                     </div>
                                     <ul class="mb-0 small text-dark">
+                                        <li><strong>No. PO External Item:</strong> <span class="badge bg-dark">{{ $itemPoNo }}</span></li>
                                         <li><strong>Nama Barang / Item:</strong> {{ $selectedItem->item }}</li>
                                         <li><strong>Part No:</strong> <code>{{ $selectedItem->contract->part_no ?? $selectedItem->part_no ?? '-' }}</code></li>
                                         <li><strong>Jumlah Qty Saat Ini:</strong> {{ number_format($selectedItem->qty) }} pcs</li>
@@ -67,8 +68,8 @@
                                 {{-- 2. NOMOR PO UTAMA (DIKUNCI / TIDAK BERUBAH) --}}
                                 <div class="col-md-6 col-12 mb-3">
                                     <div class="form-group">
-                                        <label for="po_no">PO Number (Fixed)</label>
-                                        <input type="text" id="po_no" name="po_no" value="{{ $lastPo->po_no }}" readonly class="form-control disabled bg-light">
+                                        <label for="po_no">PO Number (Item External)</label>
+                                        <input type="text" id="po_no" name="po_no" value="{{ $itemPoNo }}" readonly class="form-control disabled bg-light">
                                     </div>
                                 </div>
 
@@ -93,11 +94,11 @@
 
                                 {{-- 5. UPLOAD LAMPIRAN BERKAS BARU --}}
                                 <div class="col-12 mb-3">
-                                    <label class="form-label font-weight-bold">Upload Dokumen Pendukung Amandemen <span class="text-danger">*</span></label>
+                                    <label class="form-label font-weight-bold">Upload Dokumen Pendukung Amandemen <small class="text-muted">(Opsional)</small></label>
                                     <div class="card border">
                                         <div class="card-content">
                                             <div class="card-body">
-                                                <input type="file" name="attachments" class="multiple-files-filepond" required>
+                                                <input type="file" name="attachments" class="multiple-files-filepond">
                                             </div>
                                         </div>
                                     </div>

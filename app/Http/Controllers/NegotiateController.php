@@ -201,6 +201,19 @@ class NegotiateController extends Controller
                 return redirect()->back()->with('error', 'Belum ada data negosiasi harga yang bisa disepakati.');
             }
 
+            $user = Auth::user();
+            $isCustomer = $user->isCustomer();
+
+            // Customer hanya bisa menyetujui jika penawaran terakhir berasal dari Sales (from_customer == false)
+            if ($isCustomer && $lastNego->from_customer) {
+                return redirect()->back()->with('error', 'Anda tidak dapat menyetujui tawaran harga Anda sendiri. Harap tunggu tanggapan dan persetujuan dari Staff Sales.');
+            }
+
+            // Staff/Sales hanya bisa menyetujui jika penawaran terakhir berasal dari Customer (from_customer == true)
+            if (!$isCustomer && !$lastNego->from_customer) {
+                return redirect()->back()->with('error', 'Anda tidak dapat menyetujui penawaran harga Anda sendiri. Harap tunggu tanggapan dan persetujuan dari Customer.');
+            }
+
             // Bongkar item snapshot dari JSON string database
             $itemsArray = is_array($lastNego->negotiated_items) 
                 ? $lastNego->negotiated_items 
@@ -222,12 +235,16 @@ class NegotiateController extends Controller
                 'target_delivery_date' => $lastNego->target_delivery_date
             ]);
 
+            $closedByMessage = $isCustomer 
+                ? 'Negosiasi resmi disepakati dan ditutup oleh Customer.' 
+                : 'Negosiasi resmi disepakati dan ditutup oleh Staff Sales.';
+
             // Kunci alur negosiasi ke status 'closed'
             Negotiate::create([
                 'quotation_id'         => $quotation->id,
                 'user_id'              => Auth::id(),
-                'from_customer'        => Auth::user()->isCustomer(),
-                'message'              => 'Negosiasi resmi disepakati dan ditutup oleh Staff.',
+                'from_customer'        => $isCustomer,
+                'message'              => $closedByMessage,
                 'negotiated_total'     => $lastNego->negotiated_total,
                 'payment_terms'        => $lastNego->payment_terms,
                 'target_delivery_date' => $lastNego->target_delivery_date,
@@ -237,11 +254,11 @@ class NegotiateController extends Controller
 
             HistoryActivity::create([
                 'user_id'       => Auth::id(),
-                'activity'      => 'Menutup & menyepakati negosiasi quotation ' . $quotation->quotation_no,
+                'activity'      => ($isCustomer ? 'Customer' : 'Staff Sales') . ' menutup & menyepakati negosiasi quotation ' . $quotation->quotation_no,
                 'activity_time' => now()->format('Y-m-d H:i:s')
             ]);
 
-            return redirect()->route('quotations.show', $quotation->id)->with('success', 'Negosiasi berhasil disepakati dan ditutup.');
+            return redirect()->route('quotations.show', $quotation->id)->with('success', 'Negosiasi berhasil disepakati dan ditutup dengan harga akhir.');
         } catch (\Exception $e) {
             Log::error('Close negotiate error: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());

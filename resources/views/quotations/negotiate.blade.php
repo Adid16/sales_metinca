@@ -444,28 +444,50 @@
             <div class="negotiate-card card">
                 <div class="card-body">
                     <div class="action-grid">
-                        @php $isLocked = in_array($quotation->status, ['accepted', 'po']); @endphp
+                        @php 
+                            $isLocked = in_array($quotation->status, ['accepted', 'po']); 
+                            $lastNegoItem = $negotiations->first();
+                            $canCustomerClose = $lastNegoItem && !$lastNegoItem->from_customer && !$isLocked;
+                        @endphp
+
                         @if($isLocked)
                             <button type="button" class="btn btn-warning w-100" disabled>
-                                <i class="bi bi-arrow-left-right"></i> Submit Negotiation
+                                <i class="bi bi-arrow-left-right"></i> Submit Counter-Negotiation
                             </button>
                             <a href="{{ route('quotations.show', $quotation->id) }}" class="btn btn-outline-secondary w-100">
-                                <i class="bi bi-x-circle"></i> Cancel
+                                <i class="bi bi-arrow-left"></i> Kembali
                             </a>
                         @else
                             <button type="submit" name="action" value="negotiate" class="btn btn-warning w-100">
-                                <i class="bi bi-arrow-left-right"></i> Submit Negotiation
+                                <i class="bi bi-send-fill me-1"></i> Kirim Tawaran Harga Baru
                             </button>
-                            <a href="{{ route('quotations.show', $quotation->id) }}" class="btn btn-outline-secondary w-100">
-                                <i class="bi bi-x-circle"></i> Cancel
+
+                            @if($canCustomerClose)
+                                <div style="border-top: 1px dashed #e0e6ed; padding-top: 10px; margin-top: 6px;">
+                                    <p class="text-success mb-2 small fw-semibold">
+                                        <i class="bi bi-info-circle me-1"></i> Staff Sales telah mengajukan penawaran harga. Anda dapat menyetujui dan menutup negosiasi ini.
+                                    </p>                                    <button type="button" class="btn btn-success w-100 fw-bold" onclick="if(confirm('Apakah Anda yakin setuju dengan penawaran harga dari Sales dan ingin menutup negosiasi ini?')){ document.getElementById('closeNegotiateForm').submit(); }">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Close & Setujui Harga Sales
+                                    </button>
+                                </div>
+                            @elseif($lastNegoItem && $lastNegoItem->from_customer)
+                                <div style="border-top: 1px dashed #e0e6ed; padding-top: 10px; margin-top: 6px;">
+                                    <div class="alert alert-info py-2 px-3 mb-0 small text-center">
+                                        <i class="bi bi-hourglass-split me-1"></i> Menunggu Staff Sales meninjau tawaran Anda.
+                                    </div>
+                                </div>
+                            @endif
+
+                            <a href="{{ route('quotations.show', $quotation->id) }}" class="btn btn-outline-secondary w-100 mt-1">
+                                <i class="bi bi-x-circle"></i> Batal
                             </a>
                         @endif
-                        {{-- Badge di luar action-grid --}}
+
                         @if($quotation->status === 'accepted')
                         <div class="text-center mb-1">
                             <span class="badge bg-success px-3 py-2 w-100" style="font-size:12px;white-space:normal;line-height:1.5">
                                 <i class="bi bi-check-circle-fill me-1"></i>
-                                Negosiasi telah diterima pada
+                                Negosiasi telah disepakati pada
                                 {{ $quotation->accepted_date
                                 ? \Carbon\Carbon::parse($quotation->accepted_date)->format('d F Y')
                                 : '-' }}
@@ -473,30 +495,18 @@
                         </div>
                         @endif
                     </div>
-                        {{-- @else
-                            <button type="submit" name="action" value="negotiate" class="btn btn-warning w-100">
-                                <i class="bi bi-arrow-left-right"></i> Submit Negotiation
-                            </button>
-                            <a href="{{ route('quotations.show', $quotation->id) }}" class="btn btn-outline-secondary w-100">
-                                <i class="bi bi-x-circle"></i> Cancel
-                            </a> --}}
-                    </div>
-
-                    
                 </div>
             </div>
- 
+
         </div>
     </div>
 </form>
- 
-{{-- Form Hidden untuk Aksi Close --}}
-@if($negotiations->count() > 0 && !in_array($quotation->status, ['accepted', 'po']))
-    <form id="closeNegotiateForm" method="POST" action="{{ route('negotiate.close', $quotation->id) }}" style="display:none;">
-        @csrf
-        @method('PATCH')
-    </form>
-@endif
+
+{{-- Form Hidden untuk Aksi Close (Di Luar Form Utama) --}}
+<form id="closeNegotiateForm" method="POST" action="{{ route('negotiate.close', $quotation->id) }}" style="display:none;">
+    @csrf
+    @method('PATCH')
+</form>
 @endsection
  
 @push('scripts')

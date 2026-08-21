@@ -44,29 +44,85 @@
         <div class="card-body py-3">
             <h6 class="font-weight-bold mb-3 text-dark">
                 <i class="bi bi-geo-alt-fill text-danger me-1"></i> Status Pelacakan Logistik & Produksi:
+                @if(isset($selectedItem) && $selectedItem)
+                    <span class="badge bg-primary text-white ms-1 fw-normal" style="font-size: 0.8rem;">Item: {{ $selectedItem->item }}</span>
+                @endif
             </h6>
             
-            {{-- Logika Penentuan Persentase Dan Warna Bar Berdasarkan Status Riil --}}
+            {{-- Logika Penentuan Persentase Dan Warna Bar Berdasarkan Status Riil Item --}}
             @php
+                $activeStatus = strtolower($po->status ?? 'sent');
+
+                if (isset($selectedItem) && $selectedItem) {
+                    $itemContract = $selectedItem->contract ?? ($selectedItem->contracts ? $selectedItem->contracts->last() : null);
+                    if ($itemContract) {
+                        $cStatus = strtolower($itemContract->status);
+                        if (in_array($cStatus, ['approved', 'done', 'contract'])) {
+                            $activeStatus = in_array(strtolower($po->status), ['production', 'ship']) ? strtolower($po->status) : 'contract';
+                        } elseif ($cStatus === 'rejected') {
+                            $activeStatus = 'rejected';
+                        } elseif ($cStatus === 'amandement_pending') {
+                            $activeStatus = 'amandement_pending';
+                        } elseif (in_array($cStatus, ['amandement', 'amandement_approved'])) {
+                            $activeStatus = 'amandement';
+                        } elseif (in_array($cStatus, ['review', 'created', 'revision'])) {
+                            $activeStatus = 'review';
+                        } else {
+                            $activeStatus = $cStatus;
+                        }
+                    }
+                } else {
+                    if (in_array(strtolower($po->status), ['production', 'ship'])) {
+                        $activeStatus = strtolower($po->status);
+                    } else {
+                        $itemStatuses = [];
+                        foreach ($po->internals as $internal) {
+                            $c = $internal->contract ?? ($internal->contracts ? $internal->contracts->last() : null);
+                            if ($c) {
+                                $itemStatuses[] = strtolower($c->status);
+                            }
+                        }
+                        if (in_array('approved', $itemStatuses) || in_array('done', $itemStatuses) || in_array('contract', $itemStatuses)) {
+                            $activeStatus = 'contract';
+                        } elseif (in_array('amandement', $itemStatuses) || in_array('amandement_approved', $itemStatuses)) {
+                            $activeStatus = 'amandement';
+                        } elseif (in_array('review', $itemStatuses) || in_array('created', $itemStatuses) || in_array('revision', $itemStatuses)) {
+                            $activeStatus = 'review';
+                        } elseif (in_array('amandement_pending', $itemStatuses)) {
+                            $activeStatus = 'amandement_pending';
+                        } elseif (in_array('rejected', $itemStatuses)) {
+                            $activeStatus = 'rejected';
+                        }
+                    }
+                }
+
                 $progressWidth = '15%';
-                $barColor = 'bg-secondary';
-                if ($po->status == 'sent') { 
-                    $progressWidth = '15%'; $barColor = 'bg-info'; 
+                $barColor = 'bg-info';
+                $statusLabel = strtoupper($activeStatus);
+
+                if ($activeStatus == 'sent') { 
+                    $progressWidth = '15%'; $barColor = 'bg-info'; $statusLabel = 'SENT';
                 }
-                elseif ($po->status == 'amandement_pending') { 
-                    $progressWidth = '30%'; $barColor = 'bg-warning text-dark'; 
+                elseif ($activeStatus == 'amandement_pending') { 
+                    $progressWidth = '30%'; $barColor = 'bg-warning text-dark'; $statusLabel = 'REVIEW AMANDEMEN';
                 }
-                elseif (in_array($po->status, ['review', 'amandement'])) { 
-                    $progressWidth = '40%'; $barColor = 'bg-warning text-dark'; 
+                elseif ($activeStatus == 'review') { 
+                    $progressWidth = '45%'; $barColor = 'bg-warning text-dark'; $statusLabel = 'REVIEW KONTRAK';
                 }
-                elseif ($po->status == 'contract') { 
-                    $progressWidth = '65%'; $barColor = 'bg-primary'; 
+                elseif ($activeStatus == 'amandement') { 
+                    $progressWidth = '55%'; $barColor = 'bg-warning text-dark'; $statusLabel = 'AMANDEMEN DISETUJUI';
                 }
-                elseif ($po->status == 'production') { 
-                    $progressWidth = '85%'; $barColor = 'bg-danger'; 
+                elseif ($activeStatus == 'contract') { 
+                    $progressWidth = '65%'; $barColor = 'bg-primary'; $statusLabel = 'KONTRAK DISETUJUI';
                 }
-                elseif ($po->status == 'ship') { 
-                    $progressWidth = '100%'; $barColor = 'bg-success'; 
+                elseif ($activeStatus == 'production') { 
+                    $progressWidth = '85%'; $barColor = 'bg-danger'; $statusLabel = 'PRODUCTION';
+                }
+                elseif ($activeStatus == 'ship') { 
+                    $progressWidth = '100%'; $barColor = 'bg-success'; $statusLabel = 'SHIPPED';
+                }
+                elseif ($activeStatus == 'rejected') { 
+                    $progressWidth = '100%'; $barColor = 'bg-danger'; $statusLabel = 'REJECTED';
                 }
             @endphp
 
@@ -74,7 +130,7 @@
                 <div class="progress-bar {{ $barColor }} progress-bar-striped progress-bar-animated font-weight-bold text-center" 
                      role="progressbar" 
                      style="width: {{ $progressWidth }}; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px;">
-                     {{ $po->status == 'amandement_pending' ? 'Review Amandemen' : $po->status }}
+                     {{ $statusLabel }}
                 </div>
             </div>
 
@@ -85,20 +141,22 @@
                     <div>
                         <strong class="text-dark">Informasi Sistem:</strong>
                         <p class="text-muted small mb-0 mt-1">
-                            @if($po->status == 'sent')
+                            @if($activeStatus == 'sent')
                                 Dokumen PO baru saja Anda kirim ke sistem. Saat ini sedang menunggu antrean verifikasi awal oleh Admin/Sales internal.
-                            @elseif($po->status == 'amandement_pending')
+                            @elseif($activeStatus == 'amandement_pending')
                                 Berkas amandemen baru saja diunggah. Saat ini sedang menunggu verifikasi dan keputusan (Approve/Reject) dari tim Sales / Manager.
-                            @elseif($po->status == 'review')
-                                Dokumen sedang dalam peninjauan ketat secara paralel oleh 4 divisi (Sales, PPC, Quality, dan Dev Engineering).
-                            @elseif($po->status == 'amandement')
+                            @elseif($activeStatus == 'review')
+                                Dokumen kontrak item sedang dalam peninjauan ketat secara paralel oleh 4 divisi (Sales, PPC, Quality, dan Dev Engineering).
+                            @elseif($activeStatus == 'amandement')
                                 Amandemen disetujui! Dokumen resmi diperbarui di sistem PO External dan siap dilanjutkan ke alur produksi.
-                            @elseif($po->status == 'contract')
+                            @elseif($activeStatus == 'contract')
                                 Administrasi & kontrak selesai disahkan! Berkas Anda aman dan pesanan sudah masuk daftar antrean mesin pengecoran pabrik.
-                            @elseif($po->status == 'production')
+                            @elseif($activeStatus == 'production')
                                 <span class="text-danger font-weight-bold">PERINGATAN: Cairan logam sudah mulai dicor di lantai produksi PT. Metinca Prima. Spesifikasi data PO telah DIKUNCI TOTAL demi keselamatan produksi.</span>
-                            @elseif($po->status == 'ship')
+                            @elseif($activeStatus == 'ship')
                                 <span class="text-success font-weight-bold">PRODUKSI SELESAI! Produk pengecoran logam Anda telah lolos uji kualitas penuh dan saat ini dalam perjalanan pengiriman ke lokasi Anda.</span>
+                            @elseif($activeStatus == 'rejected')
+                                <span class="text-danger font-weight-bold">Pengajuan amandemen untuk item ini ditolak. Pesanan/Kontrak sebelumnya tetap berlanjut sesuai kesepakatan.</span>
                             @endif
                         </p>
                     </div>
@@ -203,9 +261,23 @@
         <div class="row mt-2">
             <div class="col-12">
                 <div class="form-group mb-0">
-                    <label class="font-weight-bold text-dark small mb-1">Catatan / Alasan Perubahan Dokumen:</label>
+                    <label class="font-weight-bold text-dark small mb-1">Catatan / Alasan Perubahan Dokumen (Customer):</label>
                     <div class="p-2 border rounded bg-light small text-dark fst-italic">
                         "{{ $po->reason ?? ($po->notes ?? ($latestContract->alasan_amandemen ?? '')) }}"
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- MENAMPILKAN ALASAN PENOLAKAN DARI SALES / MANAJEMEN BILA ADA --}}
+    @if($latestContract && !empty($latestContract->alasan_penolakan))
+        <div class="row mt-2">
+            <div class="col-12">
+                <div class="form-group mb-0">
+                    <label class="font-weight-bold text-danger small mb-1"><i class="bi bi-x-octagon-fill me-1"></i> Catatan Penolakan Amandemen (Sales / Manajemen):</label>
+                    <div class="p-2 border border-danger rounded bg-light-danger small text-danger fw-semibold">
+                        "{{ $latestContract->alasan_penolakan }}"
                     </div>
                 </div>
             </div>
@@ -235,12 +307,18 @@
                             $isHighlight = isset($selectedItem) && $selectedItem->id == $item->id;
                             
                             // Penentuan Status Item secara Dinamis di Modal Detail
-                            if ($item->contract && $item->contract->status === 'approved') {
-                                $displayStatus = in_array($po->status, ['production', 'ship']) ? ucfirst($po->status) : 'Contract';
+                            if ($item->contract && in_array($item->contract->status, ['approved', 'done', 'contract'])) {
+                                $displayStatus = in_array(strtolower($po->status), ['production', 'ship']) ? ucfirst($po->status) : 'Contract';
                                 $badgeClass = 'bg-info text-dark';
                             } elseif ($item->contract && $item->contract->status === 'rejected') {
                                 $displayStatus = 'Rejected';
                                 $badgeClass = 'bg-danger text-white';
+                            } elseif ($item->contract && $item->contract->status === 'amandement_pending') {
+                                $displayStatus = 'Review Amandemen';
+                                $badgeClass = 'bg-warning text-dark';
+                            } elseif ($item->contract && in_array($item->contract->status, ['review', 'created', 'revision'])) {
+                                $displayStatus = 'Review Kontrak';
+                                $badgeClass = 'bg-warning text-dark';
                             } else {
                                 // Jika kontrak 'created' atau belum ada, ikuti status PO Header
                                 $displayStatus = ucfirst($po->status);

@@ -100,7 +100,7 @@ class ContractController extends Controller
         $amandementNo = 0;
         $alasanAmandemen = '-';
 
-        // CARI KONTRAK TERDAHULU KHUSUS UNTUK ITEM INI SAJA
+        // CARI KONTRAK TERDAHULU KHUSUS UNTUK ITEM INI ATAU ORDER_NO PO
         if ($selectedItem) {
             $latestContract = Contract::with('requirements')
                 ->where('purchase_order_internal_id', $selectedItem->id)
@@ -108,16 +108,32 @@ class ContractController extends Controller
                 ->first();
         }
 
-        // JIKA ITEM INI SUDAH MEMILIKI KONTRAK SEBELUMNYA -> MAKA INI AMANDEMEN
+        if (!$latestContract && $po) {
+            $latestContract = Contract::with('requirements')
+                ->where('order_no', $po->po_no)
+                ->orderByDesc('amandement_no')
+                ->first();
+        }
+
+        // JIKA KONTRAK SUDAH ADA / ADA PENGAJUAN AMANDEMEN
         if ($latestContract) {
-            $amandementNo = ((int) $latestContract->amandement_no) + 1;
-            $alasanAmandemen = !empty($latestContract->alasan_amandemen) 
+            $rawAmandementNo = (int) ($latestContract->amandement_no ?? 0);
+
+            // Ambil alasan amandemen dari kontrak atau po
+            $alasanAmandemen = !empty($latestContract->alasan_amandemen) && $latestContract->alasan_amandemen !== '-'
                 ? $latestContract->alasan_amandemen 
                 : ($po->reason ?? '-');
+
+            // Jika status PO/Kontrak sedang amandemen atau alasan amandemen ada tapi no amandemen masih 0
+            if ($rawAmandementNo == 0 && ($po->status === 'amandement_pending' || $po->status === 'amandement' || $alasanAmandemen !== '-')) {
+                $amandementNo = 1;
+            } else {
+                $amandementNo = $rawAmandementNo;
+            }
         } else {
-            // JIKA ITEM BELUM PERNAH MEMILIKI KONTRAK -> KONTRAK BARU (BUKAN AMANDEMEN)
-            $latestContract = null; 
-            $amandementNo = 0;
+            // JIKA BELUM PERNAH ADA KONTRAK (KONTRAK BARU / ORIGINAL)
+            $latestContract  = null; 
+            $amandementNo    = 0;
             $alasanAmandemen = '-';
         }
 
@@ -166,7 +182,7 @@ class ContractController extends Controller
             // 2. CEK STATUS KONTRAK (AMANDEMEN VS REVIEW)
             // =========================================================
             $amandmentNo = (int) ($request->amandment_no ?? $request->amendment_no ?? 0);
-            $statusTarget = ($amandmentNo > 0) ? 'amandement' : 'review';
+            $statusTarget = 'review';
 
             // Siapkan data kontrak
             $dataContract = [
@@ -186,6 +202,8 @@ class ContractController extends Controller
             if ($request->hasFile('po_pdf')) {
                 $filePath = $request->file('po_pdf')->store('contracts/po', 'public');
                 $dataContract['po_pdf'] = $filePath;
+            } elseif ($request->filled('po_attachment_default')) {
+                $dataContract['po_pdf'] = $request->input('po_attachment_default');
             }
 
             // =========================================================
@@ -488,6 +506,11 @@ class ContractController extends Controller
         $contract->status = 'production'; 
         $contract->save();
 
+        if ($contract->purchase_order_internal_id) {
+            PurchaseOrderInternal::where('id', $contract->purchase_order_internal_id)
+                ->update(['status' => 'production']);
+        }
+
         $po = PurchaseOrder::where('po_no', $contract->order_no)->first();
         if ($po) {
             $po->update([
@@ -497,10 +520,30 @@ class ContractController extends Controller
 
         HistoryActivity::create([
             'user_id'       => Auth::user()->id,
-            'activity'      => 'Memfinalisasi kontrak ke tahap produksi untuk PO: ' . $contract->order_no,
-            'activity_time' => now()->format('Y-m-format H:i:s')
+            'activity'      => 'Memfinalisasi kontrak ke status In Production (Dalam Produksi) untuk PO: ' . $contract->order_no,
+            'activity_time' => now()->format('Y-m-d H:i:s')
         ]);
 
-        return redirect()->route('contracts.index')->with('success', 'Kontrak berhasil difinalisasi!');
+        return redirect()->route('contracts.index')->with('success', 'Kontrak berhasil difinalisasi! Status kini In Production (Dalam Produksi).');
+    }
+
+    // DELETE /contracts/{contract}
+    public function destroy($id)
+    {
+        $contract = Contract::findOrFail($id);
+        
+        $contractNo = $contract->contract_no;
+
+        DB::transaction(function () use ($contract) {
+            ContractRequirement::where('contract_id', $contract->id)->delete();
+            $contract->delete();
+        });
+
+        HistoryActivity::create([
+            'user_id'  => Auth::id(),
+            'activity' => 'Menghapus Contract Review Sheet #' . $id . ' (' . $contractNo . ')',
+        ]);
+
+        return redirect()->route('contracts.index')->with('success', 'Contract Review Sheet (' . $contractNo . ') berhasil dihapus!');
     }
 }

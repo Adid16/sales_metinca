@@ -74,17 +74,23 @@
                                 {{-- @else --}}
                                 
                                    @if(auth()->user()->isAdmin() || (auth()->user()->isManager() && auth()->user()->divisi === 'sales') || (auth()->user()->isStaff() && !auth()->user()->isCustomer()))
-    {{-- CEK APAKAH PROJECT SUDAH DIAMBIL SALES ATAU BELUM --}}
-    @if($requestProject->assignment)
-        <a href="{{ route('quotations.create', ['request_id' => $requestProject->id]) }}" class="btn btn-primary btn-sm">
-            <i class="bi bi-pencil"></i> Create Quotation
-        </a>
-    @else
+    {{-- CEK APAKAH PROJECT SUDAH DIAMBIL SALES ATAU BELUM & APAKAH QUOTATION SUDAH DIBUAT --}}
+    @if(!$requestProject->assignment)
         <span data-bs-toggle="tooltip" data-bs-placement="top" title="Project harus diambil terlebih dahulu dengan mengklik tombol (+) di halaman list!">
             <button class="btn btn-secondary btn-sm" disabled>
                 <i class="bi bi-lock-fill"></i> Create Quotation (Belum Di-assign)
             </button>
         </span>
+    @elseif($requestProject->quotation)
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Penawaran harga (Quotation #{{ $requestProject->quotation->quotation_no }}) sudah pernah dibuat untuk request ini.">
+            <button class="btn btn-secondary btn-sm me-1" disabled>
+                <i class="bi bi-check-circle-fill text-success me-1"></i> Quotation Sudah Dibuat
+            </button>
+        </span>
+    @else
+        <a href="{{ route('quotations.create', ['request_id' => $requestProject->id]) }}" class="btn btn-primary btn-sm me-1">
+            <i class="bi bi-pencil"></i> Create Quotation
+        </a>
     @endif
 @endif
                                         

@@ -125,15 +125,36 @@
                                                     </a>
 
                                                     @if($contract->status == 'amended')
-                                                        <span class="badge bg-secondary ms-1 d-flex align-items-center" data-bs-toggle="tooltip" title="Kontrak terunci">
+                                                        <span class="badge bg-secondary ms-1 d-flex align-items-center" data-bs-toggle="tooltip" title="Kontrak terunci (Amended)">
                                                             <i class="bi bi-lock-fill"></i>
                                                         </span>
                                                     @else
-                                                        @if(in_array(auth()->user()->role,['admin','staff']) && in_array(strtolower($contract->status),['created','revision']) )
+                                                        @php
+                                                            $all4Approved = $contract->sales_approver 
+                                                                         && $contract->quality_approver 
+                                                                         && $contract->ppc_approver 
+                                                                         && $contract->dev_engineering_approver;
+                                                        @endphp
+                                                        @if(auth()->user()->isAdmin() || (auth()->user()->isStaff() && auth()->user()->divisi == 'sales'))
+                                                            @if($all4Approved && !in_array($contract->status, ['production', 'done']))
+                                                                <form action="{{ route('contracts.finalize', $contract->id) }}" method="POST" class="d-inline" onsubmit="return confirm('4 Manager telah menyetujui. Memfinalisasi kontrak ini ke tahap In Production (Dalam Produksi)?')">
+                                                                    @csrf
+                                                                    <button type="submit" class="btn btn-sm btn-success text-white fw-bold" data-bs-toggle="tooltip" title="Finalisasi Kontrak ke Tahap In Production (Dalam Produksi)">
+                                                                        <i class="bi bi-gear-fill"></i> Finalisasi
+                                                                    </button>
+                                                                </form>
+                                                            @endif
                                                             <a href="{{ route('contracts.edit', $contract->id) }}"
                                                                 class="btn btn-sm btn-outline-warning" data-bs-toggle="tooltip" title="Edit Kontrak">
                                                                 <i class="bi bi-pencil"></i>
                                                             </a>
+                                                            <form action="{{ route('contracts.destroy', $contract->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus Contract Review Sheet ini?')">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Hapus Kontrak">
+                                                                    <i class="bi bi-trash"></i>
+                                                                </button>
+                                                            </form>
                                                         @endif
                                                     @endif
 

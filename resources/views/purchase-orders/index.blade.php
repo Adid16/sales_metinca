@@ -44,7 +44,7 @@
                     </div>
                 </form>
 
-                <table class="table table-hover text-nowrap" id="table1">
+                <table class="table table-hover align-middle text-nowrap" id="poTable">
                     <thead>
                         <tr>
                             <th><center>No</center></th>
@@ -59,171 +59,351 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @php $rowNo = 1; @endphp
                         @forelse ($pos as $po)
-                            {{-- CEK APAKAH PO MEMILIKI ITEM INTERNAL --}}
-                            @if ($po->internals && $po->internals->count() > 0)
-                                {{-- ITERASI PER-ITEM INTERNAL AGAR SETIAP ITEM BERDIRI SENDIRI --}}
-                                @foreach ($po->internals as $item)
-                                    @php
-                                        // BACA KONTRAK TERKINI SPESIFIK MILIK ITEM INTERNAL INI
-                                        $itemContract  = $item->contract ?? ($item->contracts ? $item->contracts->last() : null);
-                                        $rawStatus     = $itemContract ? $itemContract->status : 'created';
-                                        $itemStatus    = strtolower($rawStatus);
+                            @php
+                                $poStatus       = strtolower($po->status);
+                                $internalsCount = $po->internals ? $po->internals->count() : 0;
+                                $quotationCount = ($po->quotation && $po->quotation->items) ? $po->quotation->items->count() : 0;
+                                
+                                // Total item sebenarnya dari transaksi PO ini
+                                $totalItemCount   = max($internalsCount, $quotationCount, 1);
+                                $isMultiItem      = $totalItemCount > 1;
+                                $isFullyProcessed = ($internalsCount >= $totalItemCount) && ($totalItemCount > 0);
 
-                                        // AMBIL RIWAYAT KONTRAK SPESIFIK UNTUK ITEM INI (Mencegah Error Null)
-                                        $itemHistories = $item->contracts ?? ($po->contracts ? $po->contracts->where('purchase_order_internal_id', $item->id) : collect());
-                                    @endphp
-                                    <tr>
-                                        <td><center>{{ $rowNo++ }}</center></td>
-                                        <td><center><span class="badge badge-sm bg-light">{{ $po->id }}</span></center></td>
-                                        <td><center>{{ $po->quotation->quotation_no ?? '-' }}</center></td>
-                                        
-                                        {{-- NOMOR PO HIBRID UNIK PER ITEM --}}
-                                        <td><center><span class="fw-bold">{{ $po->po_no }}-{{ $item->id }}</span></center></td>
-                                        
-                                        <td>
-                                            <center>
-                                                <span class="fw-bold">{{ $item->item ?? '-' }}</span>
-                                                @if($item->part_no || $item->article_no)
-                                                    <br><small class="text-muted">Part No: {{ $item->part_no ?? $item->article_no }}</small>
-                                                @endif
-                                            </center>
-                                        </td>
-                                        <td><center>{{ \Carbon\Carbon::parse($po->delivery_request)->format('d-m-Y') }}</center></td>
-                                        <td><center>
-                                            @if($po->quotation && $po->quotation->request && $po->quotation->request->assignment)
-                                                <span class="badge badge-sm bg-success">
-                                                    {{ $po->quotation->request->assignment->sales->name ?? '-' }}
-                                                </span>
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </center></td>
-
-                                        {{-- 1. STATUS BADGE SPESIFIK PER-ITEM --}}
-                                        <td>
-                                            <center>
-                                                @if(in_array($itemStatus, ['amandement_pending', 'amandement']))
-                                                    <span class="badge bg-light-danger text-danger">Amandemen Pending</span>
-                                                @elseif(in_array($itemStatus, ['contract', 'approved']))
-                                                    <span class="badge bg-light-info text-info">Contract</span>
-                                                @elseif($itemStatus == 'review')
-                                                    <span class="badge bg-light-warning text-warning">Review</span>
-                                                @elseif($itemStatus == 'production')
-                                                    <span class="badge bg-light-success text-success">In Production </span>
-                                                @elseif($itemStatus == 'ship')
-                                                    <span class="badge bg-success text-white">Shipped </span>
-                                                @elseif(in_array($itemStatus, ['sent', 'created']))
-                                                    <span class="badge bg-light-primary text-primary">Created</span>
-                                                @else
-                                                    <span class="badge bg-light text-secondary">{{ ucfirst($rawStatus) }}</span>
-                                                @endif
-                                            </center>
-                                        </td>
-
-                                        <td>
-                                            <center>
-                                                {{-- 2. DETAIL SPESIFIK PER-ITEM --}}
-                                                <button type="button" class="btn btn-sm btn-info text-white btn-show mb-1"
-                                                    data-id="{{ $po->id }}" data-internal-id="{{ $item->id }}" data-bs-toggle="modal"
-                                                    data-bs-target="#previewModal">
-                                                    <i class="bi bi-file-earmark-text-fill"></i> Detail
-                                                </button>
-
-                                                {{-- 3. HAK AKSES ADMIN / STAFF SALES --}}
-                                                @if (auth()->user()->isAdmin() || (auth()->user()->isStaff() && auth()->user()->divisi == 'sales'))
-                                                    @if(in_array($itemStatus, ['amandement', 'amandement_pending', 'sent', 'created']))
-                                                        <a href="{{ route('purchase-orders-internal.create', ['purchaseOrder' => $po->id, 'internal_id' => $item->id]) }}"
-                                                            class="btn btn-sm btn-primary mb-1" 
-                                                            data-bs-toggle="tooltip" title="Proses Masuk ke Sistem Internal">
-                                                            <i class="bi bi-gear-fill"></i> Proses Internal
-                                                        </a>
-                                                    @else
-                                                        <button class="btn btn-sm btn-secondary mb-1" disabled>
-                                                            <i class="bi bi-check-circle-fill"></i> Sudah Diproses
-                                                        </button>
-                                                    @endif
-                                                @endif
-                                                
-                                                {{-- 4. AMANDEMEN SPESIFIK PER-ITEM (HAK AKSES CUSTOMER) --}}
-                                                @if (auth()->user()->isCustomer())
-                                                    @if (in_array($itemStatus, ['review', 'contract', 'approved']))
-                                                        <a href="{{ route('purchase-orders.create-amandement', ['id' => $po->id, 'internal_id' => $item->id]) }}"
-                                                            class="btn btn-sm btn-warning text-dark font-weight-bold mb-1" data-bs-toggle="tooltip"
-                                                            data-bs-placement="top" title="Ajukan Amandemen Item Ini">
-                                                            <i class="bi bi-pencil-square"></i> Amandemen
-                                                        </a>
-                                                    @else
-                                                        <span data-bs-toggle="tooltip" data-bs-placement="top" 
-                                                            title="{{ in_array($itemStatus, ['created', 'sent']) ? 'PO baru dibuat / baru disetujui amandemen, silakan tunggu proses internal' : 'Item sedang dalam proses amandemen' }}" 
-                                                            class="d-inline-block mb-1">
-                                                            <button class="btn btn-sm btn-secondary" disabled>
-                                                                <i class="bi bi-lock-fill"></i> Locked
-                                                            </button>
-                                                        </span>
-                                                    @endif
-
-                                                    {{-- 5. RIWAYAT SPESIFIK PER-ITEM --}}
-                                                    @if($itemHistories && count($itemHistories) > 0)
-                                                        <button type="button" class="btn btn-sm btn-dark text-white mb-1" data-bs-toggle="modal" data-bs-target="#historyModalItem{{ $item->id }}">
-                                                            <i class="bi bi-clock-history"></i> Riwayat
-                                                        </button>
-                                                    @endif
-                                                @endif
-                                            </center>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            @else
-                                {{-- FALLBACK JIKA PO BELUM MEMILIKI ITEM INTERNAL --}}
-                                @php $poStatus = strtolower($po->status); @endphp
-                                <tr>
-                                    <td><center>{{ $rowNo++ }}</center></td>
-                                    <td><center><span class="badge badge-sm bg-light">{{ $po->id }}</span></center></td>
-                                    <td><center>{{ $po->quotation->quotation_no ?? '-' }}</center></td>
-                                    <td><center>{{ $po->po_no }}</center></td>
-                                    <td><center><span class="text-muted">-</span></center></td>
-                                    <td><center>{{ \Carbon\Carbon::parse($po->delivery_request)->format('d-m-Y') }}</center></td>
-                                    <td><center>
-                                        @if($po->quotation && $po->quotation->request && $po->quotation->request->assignment)
-                                            <span class="badge badge-sm bg-success">
-                                                {{ $po->quotation->request->assignment->sales->name ?? '-' }}
+                                $firstItemName = '-';
+                                if ($po->internals && $po->internals->count() > 0) {
+                                    $firstItemName = $po->internals->first()->item ?? '-';
+                                } elseif ($po->quotation && $po->quotation->items->count() > 0) {
+                                    $firstItemName = $po->quotation->items->first()->item ?? '-';
+                                }
+                            @endphp
+                            
+                            {{-- BARIS UTAMA (1 BARIS PER MASTER PO) --}}
+                            <tr class="table-group-divider">
+                                <td><center>{{ $loop->iteration }}</center></td>
+                                <td><center><span class="badge badge-sm bg-light text-dark">#{{ $po->id }}</span></center></td>
+                                <td><center>{{ $po->quotation->quotation_no ?? '-' }}</center></td>
+                                <td><center><span class="fw-bold text-primary">{{ $po->po_no }}</span></center></td>
+                                <td>
+                                    <center>
+                                        @if($isMultiItem)
+                                            <span class="badge bg-light-primary text-primary fw-bold">
+                                                <i class="bi bi-boxes me-1"></i>{{ $totalItemCount }} Item(s)
                                             </span>
+                                            @if($internalsCount > 0)
+                                                <br><small class="text-success fw-semibold">({{ $internalsCount }}/{{ $totalItemCount }} Diproses)</small>
+                                            @endif
                                         @else
-                                            <span class="text-muted">-</span>
+                                            <span class="fw-bold text-dark">{{ $firstItemName }}</span>
                                         @endif
-                                    </center></td>
-                                    <td>
-                                        <center>
+                                    </center>
+                                </td>
+                                <td><center>{{ \Carbon\Carbon::parse($po->delivery_request)->format('d-m-Y') }}</center></td>
+                                <td><center>
+                                    @if($po->quotation && $po->quotation->request && $po->quotation->request->assignment)
+                                        <span class="badge badge-sm bg-success">
+                                            {{ $po->quotation->request->assignment->sales->name ?? '-' }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </center></td>
+                                <td>
+                                    <center>
+                                        @if($poStatus == 'amandement_pending')
+                                            <span class="badge bg-light-danger text-danger fw-bold"><i class="bi bi-hourglass-split me-1"></i>Amandemen Pending</span>
+                                        @elseif($poStatus == 'amandement')
+                                            <span class="badge bg-danger text-white fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i>Amandemen</span>
+                                        @elseif(in_array($poStatus, ['contract', 'approved']))
+                                            <span class="badge bg-light-info text-info">Contract</span>
+                                        @elseif($poStatus == 'production')
+                                            <span class="badge bg-light-success text-success">In Production</span>
+                                        @elseif($poStatus == 'ship')
+                                            <span class="badge bg-success text-white">Shipped</span>
+                                        @else
                                             <span class="badge bg-light-primary text-primary">{{ ucfirst($po->status) }}</span>
-                                        </center>
-                                    </td>
-                                    <td>
-                                        <center>
-                                            <button type="button" class="btn btn-sm btn-info text-white btn-show mb-1"
-                                                data-id="{{ $po->id }}" data-bs-toggle="modal"
-                                                data-bs-target="#previewModal">
-                                                <i class="bi bi-file-earmark-text-fill"></i> Detail
-                                            </button>
+                                        @endif
+                                    </center>
+                                </td>
+                                <td>
+                                    <center>
+                                        {{-- 1. BUTTON DETAIL PO MASTER --}}
+                                        <button type="button" class="btn btn-sm btn-info text-white btn-show mb-1"
+                                            data-id="{{ $po->id }}" data-bs-toggle="modal"
+                                            data-bs-target="#previewModal">
+                                            <i class="bi bi-file-earmark-text-fill"></i> Detail
+                                        </button>
 
-                                            @if (auth()->user()->isAdmin() || (auth()->user()->isStaff() && auth()->user()->divisi == 'sales'))
-                                                @if(in_array($poStatus, ['sent', 'created', 'amandement', 'amandement_pending']))
-                                                    <a href="{{ route('purchase-orders-internal.create', ['purchaseOrder' => $po->id]) }}"
-                                                        class="btn btn-sm btn-primary mb-1" 
-                                                        data-bs-toggle="tooltip" title="Proses Masuk ke Sistem Internal">
-                                                        <i class="bi bi-gear-fill"></i> Proses Internal
+                                        {{-- 2. AKSI UNTUK CUSTOMER (PO 1 ITEM LANGSUNG PROSES / STATUS AMANDEMEN DI SINI) --}}
+                                        @if(auth()->user()->role == 'customer')
+                                            @if(!$isMultiItem)
+                                                @php
+                                                    $firstInternal = $po->internals->first();
+                                                    $masterContract = $firstInternal ? ($firstInternal->contract ?? ($firstInternal->contracts ? $firstInternal->contracts->last() : null)) : null;
+                                                    if (!$masterContract && $po->contracts) {
+                                                        $masterContract = $po->contracts->where('status', 'rejected')->first() 
+                                                            ?? $po->contracts->whereNotNull('alasan_penolakan')->first()
+                                                            ?? $po->contracts->last();
+                                                    }
+
+                                                    $masterRawStatus  = strtolower($masterContract ? $masterContract->status : '');
+                                                    $masterIsRejected = ($masterRawStatus == 'rejected') || ($masterContract && !empty($masterContract->alasan_penolakan) && $poStatus != 'amandement_pending');
+                                                    $masterIsPending  = ($poStatus == 'amandement_pending' || $masterRawStatus == 'amandement_pending');
+                                                    $masterIsApproved = ($poStatus == 'amandement' || $masterRawStatus == 'amandement');
+                                                @endphp
+
+                                                @if($masterIsRejected)
+                                                    {{-- BILA DITOLAK: TOMBOL BUKA MODAL DETAIL ALASAN PENOLAKAN --}}
+                                                    <button type="button" class="btn btn-sm btn-danger text-white fw-bold mb-1"
+                                                            data-bs-toggle="modal" data-bs-target="#rejectReasonMasterModal{{ $po->id }}">
+                                                        <i class="bi bi-x-circle me-1"></i> Ditolak (Lihat Alasan)
+                                                    </button>
+                                                @elseif($masterIsPending)
+                                                    <button class="btn btn-sm btn-secondary mb-1 fw-semibold" disabled title="Pengajuan amandemen sedang dalam peninjauan Sales & Manager">
+                                                        <i class="bi bi-clock-history me-1"></i> Pending Review
+                                                    </button>
+                                                @elseif($masterIsApproved)
+                                                    <button class="btn btn-sm btn-success text-white mb-1 fw-semibold" disabled title="Amandemen telah disetujui dan sedang diproses Sales">
+                                                        <i class="bi bi-check-circle me-1"></i> Disetujui
+                                                    </button>
+                                                @else
+                                                    <a href="{{ route('purchase-orders.create-amandement', ['id' => $po->id, 'internal_id' => $firstInternal->id ?? null]) }}"
+                                                       class="btn btn-sm btn-warning mb-1 text-dark fw-semibold"
+                                                       data-bs-toggle="tooltip" title="Ajukan Amandemen Perubahan PO">
+                                                        <i class="bi bi-pencil-square me-1"></i> Ajukan Amandemen
                                                     </a>
                                                 @endif
                                             @endif
-                                        </center>
+                                        @endif
+
+                                        {{-- 3. AKSI UNTUK SALES / ADMIN (PO 1 ITEM) --}}
+                                        @if(!$isMultiItem)
+                                            @if (auth()->user()->isAdmin() || (auth()->user()->isStaff() && auth()->user()->divisi == 'sales'))
+                                                @if($poStatus == 'amandement_pending' || ($masterContract && $masterContract->status == 'amandement_pending'))
+                                                    <button class="btn btn-sm btn-secondary mb-1 fw-semibold" disabled title="PO / Kontrak sedang dalam proses pengajuan amandemen oleh Customer. Harap selesaikan review di menu PO Amandement.">
+                                                        <i class="bi bi-clock-history me-1 text-warning"></i> Amandemen Pending
+                                                    </button>
+                                                @elseif(in_array($poStatus, ['amandement']) || ($masterContract && $masterContract->status == 'amandement'))
+                                                    <a href="{{ route('purchase-orders-internal.create', ['purchaseOrder' => $po->id, 'internal_id' => $firstInternal->id ?? null]) }}"
+                                                        class="btn btn-sm btn-warning text-dark fw-bold mb-1" 
+                                                        data-bs-toggle="tooltip" title="Amandemen disetujui. Klik untuk memproses ulang ke Sistem Internal">
+                                                        <i class="bi bi-arrow-repeat me-1"></i> Proses Internal (Amandemen)
+                                                    </a>
+                                                @elseif(!$isFullyProcessed && in_array($poStatus, ['sent', 'created']))
+                                                    <a href="{{ route('purchase-orders-internal.create', ['purchaseOrder' => $po->id]) }}"
+                                                        class="btn btn-sm btn-primary mb-1" 
+                                                        data-bs-toggle="tooltip" title="Proses Masuk ke Sistem Internal">
+                                                        <i class="bi bi-gear-fill me-1"></i> Proses Internal
+                                                    </a>
+                                                @else
+                                                    <button class="btn btn-sm btn-secondary mb-1" disabled>
+                                                        <i class="bi bi-check-circle-fill me-1"></i> Sudah Diproses
+                                                    </button>
+                                                @endif
+                                            @endif
+                                        @else
+                                            {{-- 4. AKSI UNTUK PO MULTI-ITEM (PAKAI DROPDOWN RINCIAN ITEM) --}}
+                                            <button class="btn btn-sm btn-outline-primary mb-1" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapsePoItems{{ $po->id }}" 
+                                                    aria-expanded="false">
+                                                <i class="bi bi-chevron-down me-1"></i> Rincian Item ({{ $totalItemCount }})
+                                            </button>
+                                        @endif
+                                    </center>
+                                </td>
+                            </tr>
+
+                            {{-- SUB-BARIS DROPDOWN HANYA DITAMPILKAN JIKA PO MULTI-ITEM (2+ ITEM) --}}
+                            @if($isMultiItem)
+                                <tr class="collapse border-0 bg-light" id="collapsePoItems{{ $po->id }}">
+                                    <td colspan="9" class="p-3">
+                                        <div class="card shadow-sm border mb-0">
+                                            <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+                                                <strong class="text-dark small"><i class="bi bi-list-nested me-1 text-primary"></i> RINCIAN ITEM UNTUK PO: {{ $po->po_no }}</strong>
+                                                <small class="text-muted">Status: {{ $internalsCount }}/{{ $totalItemCount }} Item Diproses</small>
+                                            </div>
+                                            <div class="card-body p-0">
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm table-bordered align-middle mb-0 small">
+                                                        <thead class="table-secondary text-secondary">
+                                                            <tr>
+                                                                <th class="text-center" width="40px">#</th>
+                                                                <th class="text-center" width="160px">Sub-PO / ID Item</th>
+                                                                <th>Nama Item / Part Name</th>
+                                                                <th class="text-center" width="100px">Qty</th>
+                                                                <th class="text-center" width="130px">Harga Satuan</th>
+                                                                <th class="text-center" width="120px">Status Item</th>
+                                                                <th class="text-center" width="220px">Aksi Item</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @php
+                                                                $quotationItems = ($po->quotation && $po->quotation->items->count() > 0) ? $po->quotation->items : collect();
+                                                                $internalsItems = $po->internals ?? collect();
+
+                                                                // Jika Sales menambah item baru di PO Internal sehingga internals > quotation
+                                                                $displayItems = ($internalsItems->count() > $quotationItems->count()) ? $internalsItems : $quotationItems;
+                                                            @endphp
+                                                            @foreach($displayItems as $subIdx => $qItem)
+                                                                @php
+                                                                    $qItemId = $qItem->id ?? null;
+                                                                    $targetPoNo = $po->po_no . '-' . ($subIdx + 1);
+
+                                                                    // 1. Match spesifik berdasarkan Sub-PO No (PO-xxxx-1, PO-xxxx-2)
+                                                                    $internalItem = $po->internals ? $po->internals->firstWhere('po_no', $targetPoNo) : null;
+
+                                                                    // 2. Fallback match berdasarkan urutan slot (index ke-N) jika po_no cocok/default
+                                                                    if (!$internalItem && $po->internals && $po->internals->values()->has($subIdx)) {
+                                                                        $candidate = $po->internals->values()->get($subIdx);
+                                                                        if ($candidate && ($candidate->po_no === $targetPoNo || !$candidate->po_no || $candidate->po_no === $po->po_no)) {
+                                                                            $internalItem = $candidate;
+                                                                        }
+                                                                    }
+
+                                                                    // 3. Fallback pencocokan berdasarkan nama item jika belum ditemukan
+                                                                    if (!$internalItem && $po->internals && isset($qItem->item)) {
+                                                                        $internalItem = $po->internals->first(function($i) use ($qItem) {
+                                                                            return strtolower(trim($i->item)) === strtolower(trim($qItem->item));
+                                                                        });
+                                                                    }
+
+                                                                    $itemContract  = $internalItem ? ($internalItem->contract ?? ($internalItem->contracts ? $internalItem->contracts->last() : null)) : null;
+                                                                    if (!$itemContract && $po->contracts) {
+                                                                        $itemContract = $po->contracts->first(function($c) use ($qItem, $targetPoNo) {
+                                                                            return ($c->order_no === $targetPoNo) || (isset($c->part_name) && isset($qItem->item) && strtolower(trim($c->part_name)) === strtolower(trim($qItem->item)));
+                                                                        });
+                                                                    }
+
+                                                                    $itemRawStatus = strtolower($itemContract ? $itemContract->status : ($internalItem ? 'created' : 'belum_diproses'));
+                                                                    $isPendingAmandement = ($itemRawStatus == 'amandement_pending');
+                                                                    $isApprovedAmandement = ($itemRawStatus == 'amandement' || $itemRawStatus == 'amandement_approved');
+                                                                    $isRejectedAmandement = ($itemRawStatus == 'rejected');
+                                                                @endphp
+                                                                <tr>
+                                                                    <td class="text-center fw-bold">{{ $subIdx + 1 }}</td>
+                                                                    <td class="text-center">
+                                                                        <span class="badge {{ $internalItem ? 'bg-dark' : 'bg-secondary' }}">
+                                                                            {{ $internalItem->po_no ?? $targetPoNo }}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td>
+                                                                        <strong class="text-dark">{{ $internalItem->item ?? $qItem->item ?? '-' }}</strong>
+                                                                        @if($internalItem && ($internalItem->part_no || $internalItem->article_no))
+                                                                            <br><small class="text-muted">Part No: {{ $internalItem->part_no ?? $internalItem->article_no }}</small>
+                                                                        @endif
+                                                                    </td>
+                                                                    <td class="text-center fw-bold">{{ number_format($internalItem->qty ?? $qItem->qty ?? 1) }} pcs</td>
+                                                                    <td class="text-center">Rp {{ number_format($internalItem->unit_price ?? $qItem->price ?? 0, 0, ',', '.') }}</td>
+                                                                    <td class="text-center">
+                                                                        @if(in_array($itemRawStatus, ['contract', 'approved']))
+                                                                            <span class="badge bg-light-info text-info"><i class="bi bi-file-earmark-check me-1"></i>Contract</span>
+                                                                        @elseif($itemRawStatus == 'review')
+                                                                            <span class="badge bg-light-warning text-warning"><i class="bi bi-search me-1"></i>Review</span>
+                                                                        @elseif($itemRawStatus == 'production')
+                                                                            <span class="badge bg-light-success text-success"><i class="bi bi-gear-wide-connected me-1"></i>In Production</span>
+                                                                        @elseif($itemRawStatus == 'ship')
+                                                                            <span class="badge bg-success text-white"><i class="bi bi-truck me-1"></i>Shipped</span>
+                                                                        @elseif(in_array($itemRawStatus, ['created', 'sent']))
+                                                                            <span class="badge bg-light-primary text-primary"><i class="bi bi-check-circle me-1"></i>Created</span>
+                                                                        @else
+                                                                            <span class="badge bg-light text-secondary">Belum Diproses</span>
+                                                                        @endif
+                                                                    </td>
+                                                                    <td class="text-center">
+                                                                         @if (auth()->user()->isAdmin() || (auth()->user()->isStaff() && auth()->user()->divisi == 'sales'))
+                                                                             @if($isPendingAmandement)
+                                                                                 {{-- BILA SEDANG DIAMANDEMEN: TOMBOL PROSES INTERNAL / KONTRAK DISABLED UNTUK SALES --}}
+                                                                                 <button class="btn btn-xs btn-secondary me-1 mb-1 fw-semibold" disabled title="Item ini sedang dalam proses pengajuan amandemen oleh Customer. Harap selesaikan review di menu PO Amandement.">
+                                                                                     <i class="bi bi-clock-history me-1 text-warning"></i> Amandemen Pending
+                                                                                 </button>
+                                                                                 <button type="button" class="btn btn-xs btn-info text-white btn-show me-1 mb-1"
+                                                                                     data-id="{{ $po->id }}" @if($internalItem) data-internal-id="{{ $internalItem->id }}" @endif data-bs-toggle="modal"
+                                                                                     data-bs-target="#previewModal">
+                                                                                     <i class="bi bi-eye"></i> Detail
+                                                                                 </button>
+                                                                             @elseif($itemRawStatus == 'amandement')
+                                                                                {{-- BILA AMANDEMEN TELAH DI-ACC SALES: TOMBOL PROSES INTERNAL ULANG DIAKTIFKAN KEMBALI --}}
+                                                                                <a href="{{ route('purchase-orders-internal.create', ['purchaseOrder' => $po->id, 'internal_id' => $internalItem->id ?? null, 'quotation_item_id' => $qItemId]) }}"
+                                                                                   class="btn btn-xs btn-warning text-dark fw-bold mb-1 me-1"
+                                                                                   data-bs-toggle="tooltip" title="Amandemen item telah disetujui. Klik untuk memproses ulang data amandemen ke PO Internal.">
+                                                                                    <i class="bi bi-arrow-repeat me-1"></i> Proses Internal (Amandemen)
+                                                                                </a>
+                                                                                <button type="button" class="btn btn-xs btn-info text-white btn-show me-1 mb-1"
+                                                                                    data-id="{{ $po->id }}" @if($internalItem) data-internal-id="{{ $internalItem->id }}" @endif data-bs-toggle="modal"
+                                                                                    data-bs-target="#previewModal">
+                                                                                    <i class="bi bi-eye"></i> Detail
+                                                                                </button>
+                                                                            @elseif($internalItem)
+                                                                                <button class="btn btn-xs btn-secondary me-1 mb-1" disabled title="Item ini sudah diproses ke PO Internal">
+                                                                                    <i class="bi bi-check-circle-fill me-1"></i> Sudah Diproses
+                                                                                </button>
+                                                                                <button type="button" class="btn btn-xs btn-info text-white btn-show me-1 mb-1"
+                                                                                    data-id="{{ $po->id }}" data-internal-id="{{ $internalItem->id }}" data-bs-toggle="modal"
+                                                                                    data-bs-target="#previewModal">
+                                                                                    <i class="bi bi-eye"></i> Detail
+                                                                                </button>
+                                                                                <a href="{{ route('purchase-orders-internal.create', ['purchaseOrder' => $po->id, 'internal_id' => $internalItem->id]) }}" 
+                                                                                   class="btn btn-xs btn-outline-secondary mb-1">
+                                                                                    <i class="bi bi-pencil"></i> Edit PO Int
+                                                                                </a>
+                                                                            @else
+                                                                                <a href="{{ route('purchase-orders-internal.create', ['purchaseOrder' => $po->id, 'quotation_item_id' => $qItemId]) }}"
+                                                                                   class="btn btn-xs btn-primary mb-1">
+                                                                                    <i class="bi bi-gear-fill me-1"></i> Proses Internal
+                                                                                </a>
+                                                                            @endif
+                                                                        @else
+                                                                            {{-- AKSI UNTUK CUSTOMER DI DALAM RINCIAN ITEM DROPDOWN --}}
+                                                                            <button type="button" class="btn btn-xs btn-info text-white btn-show me-1 mb-1"
+                                                                                data-id="{{ $po->id }}" @if($internalItem) data-internal-id="{{ $internalItem->id }}" @endif data-bs-toggle="modal"
+                                                                                data-bs-target="#previewModal">
+                                                                                <i class="bi bi-eye"></i> Detail
+                                                                            </button>
+
+                                                                            @if($isRejectedAmandement)
+                                                                                {{-- BILA DITOLAK: TAMPILKAN TOMBOL BUKA MODAL DETAIL ALASAN PENOLAKAN --}}
+                                                                                <button type="button" class="btn btn-xs btn-danger text-white fw-bold mb-1 me-1"
+                                                                                        data-bs-toggle="modal" data-bs-target="#rejectReasonModal{{ $po->id }}_{{ $subIdx }}">
+                                                                                    <i class="bi bi-x-circle me-1"></i> Ditolak (Lihat Alasan)
+                                                                                </button>
+                                                                            @elseif($isPendingAmandement)
+                                                                                {{-- BILA PENDING: TOMBOL DISABLED --}}
+                                                                                <button class="btn btn-xs btn-secondary mb-1 fw-semibold" disabled title="Pengajuan amandemen sedang dalam peninjauan Sales & Manager">
+                                                                                    <i class="bi bi-clock-history me-1"></i> Pending Review
+                                                                                </button>
+                                                                            @elseif($isApprovedAmandement)
+                                                                                {{-- BILA APPROVED: TOMBOL DISABLED SEMENTARA DIPROSES SALES --}}
+                                                                                <button class="btn btn-xs btn-success text-white mb-1 fw-semibold" disabled title="Amandemen telah disetujui dan sedang diproses Sales">
+                                                                                    <i class="bi bi-check-circle me-1"></i> Disetujui
+                                                                                </button>
+                                                                            @elseif(!$internalItem || !$itemContract)
+                                                                                {{-- OPSI A: BILA PO BARU DITERBITKAN & BELUM DIPROSES SALES --}}
+                                                                                <button class="btn btn-xs btn-secondary mb-1 fw-semibold" disabled title="PO baru diterbitkan, menunggu Sales memproses PO Internal / Kontrak pertama kali">
+                                                                                    <i class="bi bi-clock-history me-1"></i> Menunggu Review Sales
+                                                                                </button>
+                                                                            @else
+                                                                                {{-- BILA KONTRAK AWAL SUDAH DIBUAT SALES: TOMBOL AJUKAN AMANDEMEN AKTIF --}}
+                                                                                <a href="{{ route('purchase-orders.create-amandement', ['id' => $po->id, 'internal_id' => $internalItem->id ?? null]) }}"
+                                                                                   class="btn btn-xs btn-warning text-dark mb-1 fw-semibold"
+                                                                                   data-bs-toggle="tooltip" title="Ajukan Amandemen Khusus Item Ini">
+                                                                                    <i class="bi bi-pencil-square me-1"></i> Ajukan Amandemen
+                                                                                </a>
+                                                                            @endif
+                                                                        @endif
+                                                                    </td>
+                                                                </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             @endif
-
                         @empty
                             <tr>
-                                <td colspan="9"><center>No data available</center></td>
+                                <td colspan="9" class="text-center py-4 text-muted">No data available</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -254,7 +434,7 @@
                             <div class="modal-content">
                                 <div class="modal-header bg-dark text-white">
                                     <h5 class="modal-title" id="historyModalLabel{{ $item->id }}">
-                                        <i class="bi bi-clock-history me-2"></i>Tracking History Amandemen - {{ $po->po_no }}-{{ $item->id }} ({{ $item->item }})
+                                        <i class="bi bi-clock-history me-2"></i>Tracking History Amandemen - {{ $item->po_no ?? ($po->po_no . '-' . $item->id) }} ({{ $item->item }})
                                     </h5>
                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
@@ -311,12 +491,158 @@
             @endif
         @endforeach
 
+        {{-- MODAL DETAIL ALASAN PENOLAKAN AMANDEMEN (DITARUH DI LUAR TABEL AGAR TIDAK BENTROK DATATABLES DOM) --}}
+        @if(auth()->check() && auth()->user()->role == 'customer')
+            @foreach($pos as $po)
+                @php
+                    $quotationItems = ($po->quotation && $po->quotation->items->count() > 0) ? $po->quotation->items : collect();
+                    $internalsItems = $po->internals ?? collect();
+                    $displayItems = ($internalsItems->count() > $quotationItems->count()) ? $internalsItems : $quotationItems;
+
+                    // Cari kontrak penolakan untuk master PO
+                    $firstInternal = $po->internals->first();
+                    $masterContract = $firstInternal ? ($firstInternal->contract ?? ($firstInternal->contracts ? $firstInternal->contracts->last() : null)) : null;
+                    if (!$masterContract && $po->contracts) {
+                        $masterContract = $po->contracts->whereNotNull('alasan_penolakan')->sortByDesc('updated_at')->first()
+                            ?? $po->contracts->where('status', 'rejected')->first()
+                            ?? $po->contracts->last();
+                    }
+
+                    $reasonTextMaster = $masterContract->alasan_penolakan ?? null;
+                    if (empty($reasonTextMaster) && $po->contracts) {
+                        $cWithReason = $po->contracts->firstWhere('alasan_penolakan', '!=', null);
+                        if ($cWithReason) {
+                            $reasonTextMaster = $cWithReason->alasan_penolakan;
+                        }
+                    }
+                @endphp
+                <div class="modal fade text-start" id="rejectReasonMasterModal{{ $po->id }}" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title text-white"><i class="bi bi-exclamation-triangle-fill me-2"></i> Penolakan Amandemen PO</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-dark">
+                                <div class="mb-3">
+                                    <small class="text-muted d-block fw-bold">Nomor Purchase Order (PO):</small>
+                                    <span class="badge bg-dark fs-6">{{ $po->po_no }}</span>
+                                </div>
+
+                                @if($masterContract && !empty($masterContract->alasan_amandemen))
+                                    <div class="alert alert-light border mb-3">
+                                        <small class="text-muted d-block fw-bold mb-1"><i class="bi bi-chat-left-text me-1"></i> Alasan Amandemen Anda:</small>
+                                        <span class="fst-italic text-dark">"{{ $masterContract->alasan_amandemen }}"</span>
+                                    </div>
+                                @endif
+
+                                <div class="alert alert-danger border border-danger mb-3 shadow-sm">
+                                    <h6 class="fw-bold text-danger mb-2"><i class="bi bi-x-octagon-fill me-1"></i> Alasan Penolakan dari Staff Sales / Manajemen:</h6>
+                                    <div class="p-3 bg-white rounded border border-danger text-danger fw-bold fs-6">
+                                        "{{ !empty($reasonTextMaster) ? $reasonTextMaster : 'Pengajuan amandemen tidak dapat disetujui oleh Staff Sales saat ini.' }}"
+                                    </div>
+                                </div>
+
+                                <div class="p-3 bg-light rounded border mb-0">
+                                    <p class="small text-dark mb-0">
+                                        <i class="bi bi-info-circle-fill text-primary me-1"></i> <strong>Tujuan & Konfirmasi:</strong><br>
+                                        Dengan mengeklik <strong>"Saya Mengerti (OK)"</strong>, Anda menyetujui/mengonfirmasi telah membaca alasan penolakan ini. Status penolakan item akan di-reset sehingga Anda dapat mengajukan amandemen baru bila diperlukan.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="modal-footer bg-light">
+                                <form action="{{ route('purchase-orders.acknowledge-amandement', $po->id) }}" method="POST" id="ackMasterForm{{ $po->id }}">
+                                    @csrf
+                                    @if($firstInternal)
+                                        <input type="hidden" name="purchase_order_internal_id" value="{{ $firstInternal->id }}">
+                                    @endif
+                                    <button type="button" class="btn btn-secondary btn-sm me-1" data-bs-dismiss="modal">Tutup</button>
+                                    <button type="submit" class="btn btn-danger btn-sm fw-bold">
+                                        <i class="bi bi-check-circle me-1"></i> Saya Mengerti (OK)
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- 2. MODAL REJECT UNTUK RINCIAN ITEM DROPDOWN --}}
+                @foreach($displayItems as $subIdx => $qItem)
+                    @php
+                        $targetPoNo = $po->po_no . '-' . ($subIdx + 1);
+                        $internalItem = $po->internals ? $po->internals->firstWhere('po_no', $targetPoNo) : null;
+                        if (!$internalItem && $po->internals && $po->internals->values()->has($subIdx)) {
+                            $internalItem = $po->internals->values()->get($subIdx);
+                        }
+
+                        $itemContract = $internalItem 
+                            ? \App\Models\Contract::where('purchase_order_internal_id', $internalItem->id)->latest('id')->first()
+                            : \App\Models\Contract::where('order_no', $targetPoNo)->latest('id')->first();
+
+                        if (!$itemContract) {
+                            $itemContract = \App\Models\Contract::where('order_no', $po->po_no)->latest('id')->first();
+                        }
+
+                        $reasonTextItem = ($itemContract && $itemContract->status === 'rejected') ? $itemContract->alasan_penolakan : null;
+                    @endphp
+
+                    <div class="modal fade text-start" id="rejectReasonModal{{ $po->id }}_{{ $subIdx }}" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header bg-danger text-white">
+                                    <h5 class="modal-title text-white"><i class="bi bi-exclamation-triangle-fill me-2"></i> Penolakan Amandemen Item PO</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body text-dark">
+                                    <div class="mb-3">
+                                        <small class="text-muted d-block fw-bold">Nomor PO & Item Target:</small>
+                                        <span class="badge bg-dark fs-6">{{ $po->po_no }}</span> - <strong class="fs-6 text-primary">{{ $internalItem->item ?? $qItem->item ?? '-' }}</strong>
+                                    </div>
+
+                                    @if($itemContract && !empty($itemContract->alasan_amandemen))
+                                        <div class="alert alert-light border mb-3">
+                                            <small class="text-muted d-block fw-bold mb-1"><i class="bi bi-chat-left-text me-1"></i> Alasan Amandemen Anda:</small>
+                                            <span class="fst-italic text-dark">"{{ $itemContract->alasan_amandemen }}"</span>
+                                        </div>
+                                    @endif
+
+                                    <div class="alert alert-danger border border-danger mb-3 shadow-sm">
+                                        <h6 class="fw-bold text-danger mb-2"><i class="bi bi-x-octagon-fill me-1"></i> Alasan Penolakan dari Staff Sales / Manajemen:</h6>
+                                        <div class="p-3 bg-white rounded border border-danger text-danger fw-bold fs-6">
+                                            "{{ !empty($reasonTextItem) ? $reasonTextItem : 'Pengajuan amandemen tidak dapat disetujui oleh Staff Sales saat ini.' }}"
+                                        </div>
+                                    </div>
+
+                                    <div class="p-3 bg-light rounded border mb-0">
+                                        <p class="small text-dark mb-0">
+                                            <i class="bi bi-info-circle-fill text-primary me-1"></i> <strong>Tujuan & Konfirmasi:</strong><br>
+                                            Dengan mengeklik <strong>"Saya Mengerti (OK)"</strong>, Anda menyetujui/mengonfirmasi telah membaca alasan penolakan ini. Status penolakan item akan di-reset sehingga Anda dapat mengajukan amandemen baru bila diperlukan.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="modal-footer bg-light">
+                                    <form action="{{ route('purchase-orders.acknowledge-amandement', $po->id) }}" method="POST" id="ackForm{{ $po->id }}_{{ $subIdx }}">
+                                        @csrf
+                                        @if($internalItem)
+                                            <input type="hidden" name="purchase_order_internal_id" value="{{ $internalItem->id }}">
+                                        @endif
+                                        <button type="button" class="btn btn-secondary btn-sm me-1" data-bs-dismiss="modal">Tutup</button>
+                                        <button type="submit" class="btn btn-danger btn-sm fw-bold">
+                                            <i class="bi bi-check-circle me-1"></i> Saya Mengerti (OK)
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            @endforeach
+        @endif
+
     </section>
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/extensions/simple-datatables/umd/simple-datatables.js') }}"></script>
-    <script src="{{ asset('assets/static/js/pages/simple-datatables.js') }}"></script>
     <script>
         const showBtns = document.querySelectorAll('.btn-show');
         const modalShowContent = document.getElementById('modalContent');

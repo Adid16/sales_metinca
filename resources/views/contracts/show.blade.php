@@ -162,33 +162,64 @@
                     @endif
 
                     {{-- TOMBOL OPERASIONAL HALAMAN UTAMA --}}
+                    @php
+                        $all4Approved = $contract->sales_approver 
+                                     && $contract->ppc_approver 
+                                     && $contract->quality_approver 
+                                     && $contract->dev_engineering_approver;
+
+                        $userDiv = strtolower(auth()->user()->divisi ?? '');
+                        $isManagerOrAdmin = in_array(auth()->user()->role, ['manager', 'admin']);
+                        $isSalesStaffOrAdmin = (auth()->user()->role == 'staff' && $userDiv == 'sales') || auth()->user()->role == 'admin';
+
+                        $managerAlreadyApproved = false;
+                        if ($userDiv == 'sales' && $contract->sales_approver) $managerAlreadyApproved = true;
+                        if ($userDiv == 'quality' && $contract->quality_approver) $managerAlreadyApproved = true;
+                        if (in_array($userDiv, ['ppc', 'ppic']) && $contract->ppc_approver) $managerAlreadyApproved = true;
+                        if (in_array($userDiv, ['design engineering', 'de']) && $contract->dev_engineering_approver) $managerAlreadyApproved = true;
+                    @endphp
+
                     <div class="mt-4 text-end">                                
-                        
-                        {{-- TOMBOL FINALISASI: Khusus Staff Sales & Aktif jika 4 Manager sudah Approve --}}
-@if(auth()->user()->role == 'staff' && strtolower(auth()->user()->divisi) == 'sales')
-    {{-- PERBAIKAN: Menambahkan 'done' ke dalam array agar tombol mau muncul --}}
-    @if($contract->sales_approver && $contract->ppc_approver && $contract->quality_approver && $contract->dev_engineering_approver && in_array(strtolower($contract->status), ['created', 'amandement', 'revision', 'done']))
-        <form action="{{ route('contracts.finalize', $contract->id) }}" method="POST" class="d-inline">
-            @csrf
-            <button type="submit" class="btn btn-sm btn-primary fw-bold px-3 shadow-sm" onclick="return confirm('Finalisasi kontrak ini dan teruskan ke tahap Produksi?')">
-                <i class="bi bi-send-check-fill me-1"></i> Finalisasi ke Produksi
-            </button>
-        </form>
-    @endif
-@endif
-                        {{-- 2. TOMBOL REJECT & APPROVE (Untuk Manager & Admin) --}}
-                        @if (in_array(auth()->user()->role, ['manager', 'admin']) && in_array($contract->status, ['created', 'revision']))
-                            <button type="button" data-bs-target="#rejectModal" data-bs-toggle="modal" class="btn btn-sm btn-danger px-3 shadow-sm me-1">
-                                <i class="bi bi-x-circle-fill me-1"></i> Reject
-                            </button>
-                            
-                            <button type="button" class="btn btn-sm btn-success px-3 shadow-sm me-1" data-bs-toggle="modal" data-bs-target="#approveModal">
-                                <i class="bi bi-check-circle-fill me-1"></i> Approve
-                            </button>
+                        {{-- 1. INDIKATOR ATAU TOMBOL UNTUK MANAGER APPROVE --}}
+                        @if ($isManagerOrAdmin && !in_array($contract->status, ['production', 'done']))
+                            @if ($managerAlreadyApproved)
+                                <span class="badge bg-success py-2 px-3 me-1 fs-6">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Divisi {{ strtoupper(auth()->user()->divisi ?? 'Manager') }} Sudah Approve
+                                </span>
+                            @else
+                                <button type="button" data-bs-target="#rejectModal" data-bs-toggle="modal" class="btn btn-sm btn-danger px-3 shadow-sm me-1">
+                                    <i class="bi bi-x-circle-fill me-1"></i> Reject / Revisi
+                                </button>
+                                <button type="button" class="btn btn-sm btn-success px-3 shadow-sm me-1 fw-bold" data-bs-toggle="modal" data-bs-target="#approveModal">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Approve Divisi {{ strtoupper(auth()->user()->divisi ?? '') }}
+                                </button>
+                            @endif
+                        @endif
+
+                        {{-- 2. TOMBOL FINALISASI UNTUK STAFF SALES / ADMIN --}}
+                        @if ($isSalesStaffOrAdmin)
+                            @if (in_array($contract->status, ['production', 'done']))
+                                <span class="badge bg-success py-2 px-3 me-1 fs-6">
+                                    <i class="bi bi-gear-wide-connected me-1"></i> In Production (Dalam Produksi)
+                                </span>
+                            @elseif ($all4Approved)
+                                <form action="{{ route('contracts.finalize', $contract->id) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-success text-white fw-bold px-3 shadow-sm me-1" onclick="return confirm('Seluruh 4 Manager telah menyetujui. Apakah Anda yakin ingin memfinalisasi kontrak ini ke tahap In Production?')">
+                                        <i class="bi bi-gear-fill me-1"></i> Finalisasi ke Produksi (In Production)
+                                    </button>
+                                </form>
+                            @else
+                                <span data-bs-toggle="tooltip" title="Finalisasi baru dapat dilakukan setelah 4 Manager (Sales, Quality, PPIC, DE) memberikan Approve.">
+                                    <button class="btn btn-sm btn-secondary px-3 shadow-sm me-1" disabled>
+                                        <i class="bi bi-clock-history me-1 text-warning"></i> Finalisasi (Menunggu 4 Manager)
+                                    </button>
+                                </span>
+                            @endif
                         @endif
 
                         {{-- 3. TOMBOL EDIT (Admin & Staff Sales) --}}
-                        @if (in_array(auth()->user()->role, ['admin', 'staff']) && in_array($contract->status, ['created', 'revision']))
+                        @if (in_array(auth()->user()->role, ['admin', 'staff']) && in_array($contract->status, ['created', 'revision', 'review']))
                             <a href="{{ route('contracts.edit', $contract->id) }}" class="btn btn-sm btn-warning px-3 shadow-sm me-1">
                                 <i class="bi bi-pencil-square me-1"></i> Edit
                             </a>

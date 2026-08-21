@@ -18,6 +18,7 @@ class Contract extends Model
         'article_id',
         'amandement_no',
         'alasan_amandemen',
+        'alasan_penolakan',
         'others_comment',
         'po_pdf',
         'sales_approver',
@@ -54,6 +55,16 @@ class Contract extends Model
     public function internalItem()
     {
         return $this->belongsTo(PurchaseOrderInternal::class, 'purchase_order_internal_id');
+    }
+
+    public function purchaseOrderInternal()
+    {
+        return $this->belongsTo(PurchaseOrderInternal::class, 'purchase_order_internal_id');
+    }
+
+    public function purchaseOrder()
+    {
+        return $this->belongsTo(PurchaseOrder::class, 'order_no', 'po_no');
     }
 
     public function isDone()

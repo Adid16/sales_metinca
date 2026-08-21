@@ -4,32 +4,32 @@ namespace App\Http\Controllers;
 
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderInternal;
+use App\Models\Contract;
+use App\Models\HistoryActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class PurchaseOrderInternalController extends Controller
 {
-    //
     private function authorizeAccess()
     {
         $user = Auth::user();
-        if(!($user->isAdmin() || $user->isStaff())){
+        if (!($user->isAdmin() || $user->isStaff())) {
             abort(403, 'Unauthorized.');
         }
         return $user;
     }
     
-        // GET Purchase-orders-internal
+    // GET /purchase-orders-internal
     public function index(Request $request)
     {
         $this->authorizeAccess();
         $filters = $request->only(['search', 'start_date', 'end_date']);
 
-        // Eager-load contract agar pengecekan di Blade lebih cepat tanpa query berulang
         $query = PurchaseOrderInternal::with([
             'purchaseOrder.customer', 
             'purchaseOrder.quotation',
-            'purchaseOrder.contract' // <--- Tambahkan ini
+            'purchaseOrder.contract'
         ])->latest();
 
         if (!empty($filters['search'])) {
@@ -55,17 +55,58 @@ class PurchaseOrderInternalController extends Controller
     }
 
     // GET /purchase-orders-internal/{purchaseOrder}/create
-    public function create(PurchaseOrder $purchaseOrder)
+    public function create(Request $request, PurchaseOrder $purchaseOrder)
     {
         $this->authorizeAccess();
         
-        // Tarik data customer, quotation, beserta seluruh item barang di dalamnya
+        $internalId      = $request->query('internal_id');
+        $quotationItemId = $request->query('quotation_item_id');
+
         $purchaseOrder->load(['customer', 'quotation.items', 'internals']);
-        
-        // Kirim kedua nama variabel agar tidak ada error 'undefined variable' di Blade
+
+        $selectedItem = null;
+        $contract     = null;
+        $qItem        = null;
+
+        if ($internalId) {
+            $selectedItem = PurchaseOrderInternal::where('purchase_order_id', $purchaseOrder->id)
+                ->where('id', $internalId)
+                ->first();
+
+            $contract = Contract::where('purchase_order_internal_id', $internalId)
+                ->orderByDesc('amandement_no')
+                ->first();
+        } elseif ($quotationItemId && $purchaseOrder->quotation) {
+            $qItem = $purchaseOrder->quotation->items->where('id', $quotationItemId)->first();
+        }
+
+        // Proteksi: Jika item / PO sedang dalam status amandement_pending, alihkan dan minta Sales menyelesaikan review amandemen
+        if (($contract && $contract->status === 'amandement_pending') || ($purchaseOrder->status === 'amandement_pending' && !$selectedItem)) {
+            return redirect()->route('purchase-orders.index')->with('error', 'PO / Item ini sedang dalam proses pengajuan amandemen oleh Customer. Harap setujui atau tolak pengajuan amandemen terlebih dahulu pada menu PO Amandement.');
+        }
+
+        $qItemIndex = 1;
+        if ($qItem && $purchaseOrder->quotation && $purchaseOrder->quotation->items) {
+            $foundIndex = $purchaseOrder->quotation->items->values()->search(function($item) use ($qItem) {
+                return $item->id == $qItem->id;
+            });
+            $qItemIndex = ($foundIndex !== false) ? ($foundIndex + 1) : 1;
+        }
+
+        // Format PO No spesifik item (Contoh: PO-2026-07-002-1)
+        $itemPoNo = $selectedItem 
+            ? ($selectedItem->po_no ?? ($purchaseOrder->po_no . '-' . $selectedItem->id)) 
+            : ($qItem ? ($purchaseOrder->po_no . '-' . $qItemIndex) : $purchaseOrder->po_no);
+
         return view('purchase-orders-internal.create', [
-            'purchaseOrder' => $purchaseOrder,
-            'po'            => $purchaseOrder
+            'purchaseOrder'   => $purchaseOrder,
+            'po'              => $purchaseOrder,
+            'selectedItem'    => $selectedItem,
+            'contract'        => $contract,
+            'itemPoNo'        => $itemPoNo,
+            'internalId'      => $internalId,
+            'quotationItemId' => $quotationItemId,
+            'qItem'           => $qItem
         ]);
     }
  
@@ -88,45 +129,61 @@ class PurchaseOrderInternalController extends Controller
             'company_buyer.*' => 'nullable|string|max:255',
             'notes.*'         => 'nullable|string|max:500',
         ]);
- 
-        $purchaseOrder->internals()->delete();
- 
+
+
+
         foreach ($request->item as $index => $itemName) {
             if (empty($itemName)) continue;
             $qty       = $request->qty[$index] ?? 1;
             $unitPrice = $request->unit_price[$index] ?? 0;
-            $purchaseOrder->internals()->create([
+
+            // Generate default No PO Sub-Item jika tidak diisi manual
+            $defaultItemPoNo = $purchaseOrder->po_no . '-' . ($index + 1);
+            $itemPoNo        = !empty($request->po_no[$index]) ? $request->po_no[$index] : $defaultItemPoNo;
+            $existingId      = !empty($request->internal_id[$index]) ? $request->internal_id[$index] : null;
+
+            $itemData = [
                 'item'          => $itemName,
                 'material'      => $request->material[$index]      ?? null,
                 'spesifikasi'   => $request->spesifikasi[$index]   ?? null,
-                'satuan'        => $request->satuan[$index]        ?? null,
+                'article'       => $request->article[$index]       ?? null,
                 'qty'           => $qty,
                 'unit_price'    => $unitPrice,
                 'subtotal'      => $qty * $unitPrice,
                 'delivery_date' => $request->delivery_date[$index] ?? null,
                 'supplier'      => $request->supplier[$index]      ?? null,
-                'po_no'         => $request->po_no[$index]         ?? null,
+                'po_no'         => $itemPoNo,
                 'pic_buyer'     => $request->pic_buyer[$index]     ?? null,
                 'company_buyer' => $request->company_buyer[$index] ?? null,
                 'notes'         => $request->notes[$index]         ?? null,
-            ]);
+            ];
+
+            if ($existingId && $purchaseOrder->internals()->where('id', $existingId)->exists()) {
+                $purchaseOrder->internals()->where('id', $existingId)->update($itemData);
+                
+                // Update status kontrak item dari amandement ke created agar tombol pada PO External menjadi 'Sudah Diproses'
+                $itemContract = \App\Models\Contract::where('purchase_order_internal_id', $existingId)->first();
+                if ($itemContract && strtolower($itemContract->status) === 'amandement') {
+                    $itemContract->update([
+                        'status' => 'created'
+                    ]);
+                }
+            } else {
+                $purchaseOrder->internals()->create($itemData);
+            }
         }
  
-        \App\Models\HistoryActivity::create([
+        HistoryActivity::create([
             'user_id'       => Auth::id(),
             'activity'      => 'Input PO Internal untuk PO ' . $purchaseOrder->po_no,
             'activity_time' => now()->format('Y-m-d H:i:s'),
         ]);
 
-        // ===================================================================
-        // KODE TAMBAHAN: JIKA PO AMANDEMEN, UBAH STATUS JADI ANTREAN (SENT)
-        // ===================================================================
         if ($purchaseOrder->status == 'amandement') {
             $purchaseOrder->update([
-                'status' => 'sent' // Mengubah status menjadi Antrean agar tombol kontrak muncul di halaman PO External
+                'status' => 'sent'
             ]);
         }
-        // ===================================================================
  
         return redirect()
             ->route('purchase-orders-internal.show', $purchaseOrder->id)
@@ -156,11 +213,9 @@ class PurchaseOrderInternalController extends Controller
     }
 
     // GET /purchase-orders-internal/{purchaseOrder}/edit
-    public function edit(PurchaseOrder $purchaseOrder)
+    public function edit(Request $request, PurchaseOrder $purchaseOrder)
     {
-        $this->authorizeAccess();
-        $purchaseOrder->load(['customer', 'quotation', 'internals']);
-        return view('purchase-orders-internal.create', compact('purchaseOrder'));
+        return $this->create($request, $purchaseOrder);
     }
  
     // PUT /purchase-orders-internal/{purchaseOrder}

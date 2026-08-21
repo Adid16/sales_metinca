@@ -111,7 +111,7 @@
                 </div>
                 
                 <div class="ms-auto d-flex flex-column gap-1 text-center">
-                    @if(auth()->user()->isCustomer())
+                    @if(auth()->check() && auth()->user()->isCustomer())
                         <a href="{{ route('purchase-orders.create', ['quotation_id' => $quotation->id]) }}" class="btn btn-success btn-sm fw-semibold">
                             <i class="bi bi-bag-check me-1"></i> Buat PO Sekarang
                         </a>
@@ -131,7 +131,7 @@
             
             <div class="d-flex gap-1 align-items-center">
                 {{-- Actions Menu untuk Customer --}}
-                @if(auth()->user()->isCustomer())
+                @if(auth()->check() && auth()->user()->isCustomer())
                     <a href="{{ route('negotiate.show', ['quotation' => $quotation->id]) }}" class="btn btn-sm btn-warning">
                         @if($quotation->status === 'accepted')
                             <i class="bi bi-lock-fill me-1"></i>View Negotiate
@@ -149,7 +149,7 @@
                 @endif
  
                 {{-- Actions Menu untuk Internal Staff / Management --}}
-                @if(auth()->user()->isStaff() || auth()->user()->isManager() || auth()->user()->isAdmin())
+                @if(auth()->check() && (auth()->user()->isStaff() || auth()->user()->isManager() || auth()->user()->isAdmin()))
                     @if($quotation->status == 'created')
                         <a href="{{ route('quotations.edit', $quotation->id) }}" class="btn btn-warning btn-sm text-dark fw-bold">
                             <i class="bi bi-pencil-square"></i> Edit Quotation
@@ -195,8 +195,12 @@
                         <div class="d-flex mb-1">
                             <span class="text-muted col-4">Expired Date</span><span class="text-muted col-1">:</span>
                             <div class="fw-semibold col-7">
-                                {{ \Carbon\Carbon::parse($quotation->date_expired)->format('d F Y') }}
-                                <span class="badge bg-danger small ms-1">{{ \Carbon\Carbon::parse($quotation->date_expired)->diffForHumans() }}</span>
+                                @if($quotation->date_expired)
+                                    {{ \Carbon\Carbon::parse($quotation->date_expired)->format('d F Y') }}
+                                    <span class="badge bg-danger small ms-1">{{ \Carbon\Carbon::parse($quotation->date_expired)->diffForHumans() }}</span>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -213,12 +217,88 @@
                     <div class="card-body py-2 px-3">
                         <div class="d-flex mb-1"><span class="text-muted col-3">PIC</span><span class="text-muted col-1">:</span><span class="col-8">{{ $quotation->customer->name ?? '-' }}</span></div>
                         <div class="d-flex mb-1"><span class="text-muted col-3">Email</span><span class="text-muted col-1">:</span><span class="col-8">{{ $quotation->customer->email ?? '-' }}</span></div>
-                        <div class="d-flex mb-1"><span class="text-muted col-3">Company</span><span class="text-muted col-1">:</span><span class="col-8">{{ $customerAccount->company ?? '-' }}</span></div>
+                        <div class="d-flex mb-1"><span class="text-muted col-3">Company</span><span class="text-muted col-1">:</span><span class="col-8">{{ $customerAccount->company ?? $quotation->customer->company ?? '-' }}</span></div>
                         <div class="d-flex mb-1"><span class="text-muted col-3">Phone</span><span class="text-muted col-1">:</span><span class="col-8">{{ $customerAccount->phone ?? '-' }}</span></div>
                     </div>
                 </div>
             </div>
         </div>
+
+        {{-- Seksi Informasi PO & Amandemen Item (Jika PO Sudah Terbit) --}}
+        @if(isset($po) && $po)
+            <div class="card border border-warning mb-4">
+                <div class="card-header px-3 py-2 bg-light-warning d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold text-dark text-uppercase" style="letter-spacing: 1px; font-size: 0.78rem;">
+                        <i class="bi bi-file-earmark-richtext-fill text-warning me-1"></i> Terhubung Dengan Purchase Order (PO) & Status Amandemen Item
+                    </h6>
+                    <span class="badge bg-warning text-dark fw-bold">PO No: {{ $po->po_no }}</span>
+                </div>
+                <div class="card-body p-3">
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Nomor PO External:</small>
+                            <strong>{{ $po->po_no }}</strong>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Status PO Master:</small>
+                            <span class="badge bg-primary text-uppercase">{{ $po->status }}</span>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-dark mb-2 small"><i class="bi bi-boxes me-1"></i> Rincian Item PO & Status Amandemen:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered align-middle mb-0">
+                            <thead class="table-secondary text-uppercase small">
+                                <tr>
+                                    <th class="text-center" width="5%">#</th>
+                                    <th>Nama Item</th>
+                                    <th class="text-center" width="15%">Qty PO</th>
+                                    <th class="text-center" width="25%">Status Amandemen Item</th>
+                                    <th>Catatan Alasan Amandemen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($po->internals as $i => $item)
+                                    @php
+                                        $contract = $item->contract;
+                                        $contractStatus = $contract ? strtolower($contract->status) : 'none';
+                                    @endphp
+                                    <tr>
+                                        <td class="text-center">{{ $i + 1 }}</td>
+                                        <td class="fw-bold">{{ $item->item }}</td>
+                                        <td class="text-center fw-bold">{{ number_format($item->qty) }} pcs</td>
+                                        <td class="text-center">
+                                            @if($contractStatus == 'amandement')
+                                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> Amandemen Disetujui</span>
+                                            @elseif($contractStatus == 'amandement_pending')
+                                                <span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i> Pending Review</span>
+                                            @elseif($contractStatus == 'rejected')
+                                                <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i> Amandemen Ditolak</span>
+                                            @elseif($contract && !empty($contract->alasan_amandemen))
+                                                <span class="badge bg-info text-dark"><i class="bi bi-pencil-square me-1"></i> Diamandemen</span>
+                                            @else
+                                                <span class="badge bg-secondary">Normal</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($contract && !empty($contract->alasan_amandemen))
+                                                <span class="small text-dark fst-italic">"{{ $contract->alasan_amandemen }}"</span>
+                                            @else
+                                                <span class="text-muted small">-</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted small py-2">Belum ada item internal pada PO ini.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        @endif
  
         {{-- Item Quotation Table --}}
         <div class="card border mb-4">
@@ -385,13 +465,17 @@
                         </h6>
                     </div>
                     <div class="d-flex gap-1 align-content-start py-2 px-3">
-                        @forelse ($quotation->request->attachments as $reqs)
-                            <a href="/storage/{{ $reqs->file_path }}" target="_blank">
-                                <i class="bi bi-file-earmark-pdf me-1"></i>{{ $reqs->document_name }}
-                            </a>
-                        @empty
+                        @if($quotation->request && $quotation->request->attachments)
+                            @forelse ($quotation->request->attachments as $reqs)
+                                <a href="/storage/{{ $reqs->file_path }}" target="_blank">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i>{{ $reqs->document_name }}
+                                </a>
+                            @empty
+                                <span class="text-muted fst-italic">Tidak ada lampiran.</span>
+                            @endforelse
+                        @else
                             <span class="text-muted fst-italic">Tidak ada lampiran.</span>
-                        @endforelse
+                        @endif
                     </div>
                 </div>
             </div>
