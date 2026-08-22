@@ -132,7 +132,8 @@
                                     <label for="name" class="form-label required-field">Name</label>
                                     <input type="text" class="form-control @error('name') is-invalid @enderror"
                                         id="name" name="name" value="{{ old('name') ?? auth()->user()->name }}"
-                                        placeholder="Enter requester name" required>
+                                        placeholder="Enter requester name" required
+                                        {{ auth()->user()->isCustomer() ? 'readonly' : '' }}>
                                     @error('name')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
@@ -143,34 +144,43 @@
                                     <label for="email" class="form-label required-field">Email Address</label>
                                     <input type="email" class="form-control @error('email') is-invalid @enderror"
                                         id="email" name="email" value="{{ old('email') ?? auth()->user()->email }}"
-                                        placeholder="Enter email address" required>
+                                        placeholder="Enter email address" required
+                                        {{ auth()->user()->isCustomer() ? 'readonly' : '' }}>
                                     @error('email')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
                                 </div>
 
-                                {{-- Phone (Optional) --}}
+                                {{-- Phone (Auto-fill dari Account jika Customer) --}}
                                 <div class="mb-3">
                                     <label for="phone" class="form-label">Phone Number</label>
                                     <input type="tel" class="form-control @error('phone') is-invalid @enderror"
-                                        id="phone" name="phone" value="{{ old('phone') }}"
-                                        placeholder="Enter phone number (e.g., +62 xxx xxxx xxxx)">
+                                        id="phone" name="phone" 
+                                        value="{{ old('phone') ?? (auth()->user()->account->phone ?? '') }}"
+                                        placeholder="Enter phone number (e.g., +62 xxx xxxx xxxx)"
+                                        {{ auth()->user()->isCustomer() ? 'readonly' : '' }}>
                                     @error('phone')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
                                 </div>
 
-                                {{-- Company (Optional) --}}
+                                {{-- Company (Auto-fill dari User jika Customer) --}}
                                 <div class="mb-3">
                                     <label for="company" class="form-label">Company Name</label>
                                     <input type="text" class="form-control @error('company') is-invalid @enderror"
                                         id="company" name="company"
-                                        value="{{ old('company') ?? auth()->user()->company }}"
-                                        placeholder="Enter company name">
+                                        value="{{ old('company') ?? (auth()->user()->account->company ?? auth()->user()->company ?? '') }}"
+                                        placeholder="Enter company name"
+                                        {{ auth()->user()->isCustomer() ? 'readonly' : '' }}>
                                     @error('company')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
                                 </div>
+
+                                {{-- Hidden: customer_id --}}
+                                @if(auth()->user()->isCustomer())
+                                    <input type="hidden" name="customer_id" value="{{ auth()->id() }}">
+                                @endif
 
                                 <h6 class="form-section-title">
                                     <i class="bi bi-file-text"></i> Request Details

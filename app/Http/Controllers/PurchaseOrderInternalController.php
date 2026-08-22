@@ -8,6 +8,7 @@ use App\Models\Contract;
 use App\Models\HistoryActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PurchaseOrderInternalController extends Controller
 {
@@ -130,61 +131,60 @@ class PurchaseOrderInternalController extends Controller
             'notes.*'         => 'nullable|string|max:500',
         ]);
 
+        // ====================================================================
+        // MODUL 6: Wrap proses simpan multi-item dalam DB::transaction
+        // ====================================================================
+        DB::transaction(function () use ($request, $purchaseOrder) {
+            foreach ($request->item as $index => $itemName) {
+                if (empty($itemName)) continue;
+                $qty       = $request->qty[$index] ?? 1;
+                $unitPrice = $request->unit_price[$index] ?? 0;
 
+                // Generate default No PO Sub-Item format konsisten: {PO_NO}-{index}
+                $defaultItemPoNo = $purchaseOrder->po_no . '-' . ($index + 1);
+                $itemPoNo        = !empty($request->po_no[$index]) ? $request->po_no[$index] : $defaultItemPoNo;
+                $existingId      = !empty($request->internal_id[$index]) ? $request->internal_id[$index] : null;
 
-        foreach ($request->item as $index => $itemName) {
-            if (empty($itemName)) continue;
-            $qty       = $request->qty[$index] ?? 1;
-            $unitPrice = $request->unit_price[$index] ?? 0;
+                $itemData = [
+                    'item'          => $itemName,
+                    'material'      => $request->material[$index]      ?? null,
+                    'spesifikasi'   => $request->spesifikasi[$index]   ?? null,
+                    'article'       => $request->article[$index]       ?? null,
+                    'qty'           => $qty,
+                    'unit_price'    => $unitPrice,
+                    'subtotal'      => $qty * $unitPrice,
+                    'delivery_date' => $request->delivery_date[$index] ?? null,
+                    'supplier'      => $request->supplier[$index]      ?? null,
+                    'po_no'         => $itemPoNo,
+                    'pic_buyer'     => $request->pic_buyer[$index]     ?? null,
+                    'company_buyer' => $request->company_buyer[$index] ?? null,
+                    'notes'         => $request->notes[$index]         ?? null,
+                ];
 
-            // Generate default No PO Sub-Item jika tidak diisi manual
-            $defaultItemPoNo = $purchaseOrder->po_no . '-' . ($index + 1);
-            $itemPoNo        = !empty($request->po_no[$index]) ? $request->po_no[$index] : $defaultItemPoNo;
-            $existingId      = !empty($request->internal_id[$index]) ? $request->internal_id[$index] : null;
-
-            $itemData = [
-                'item'          => $itemName,
-                'material'      => $request->material[$index]      ?? null,
-                'spesifikasi'   => $request->spesifikasi[$index]   ?? null,
-                'article'       => $request->article[$index]       ?? null,
-                'qty'           => $qty,
-                'unit_price'    => $unitPrice,
-                'subtotal'      => $qty * $unitPrice,
-                'delivery_date' => $request->delivery_date[$index] ?? null,
-                'supplier'      => $request->supplier[$index]      ?? null,
-                'po_no'         => $itemPoNo,
-                'pic_buyer'     => $request->pic_buyer[$index]     ?? null,
-                'company_buyer' => $request->company_buyer[$index] ?? null,
-                'notes'         => $request->notes[$index]         ?? null,
-            ];
-
-            if ($existingId && $purchaseOrder->internals()->where('id', $existingId)->exists()) {
-                $purchaseOrder->internals()->where('id', $existingId)->update($itemData);
-                
-                // Update status kontrak item dari amandement ke created agar tombol pada PO External menjadi 'Sudah Diproses'
-                $itemContract = \App\Models\Contract::where('purchase_order_internal_id', $existingId)->first();
-                if ($itemContract && strtolower($itemContract->status) === 'amandement') {
-                    $itemContract->update([
-                        'status' => 'created'
-                    ]);
+                if ($existingId && $purchaseOrder->internals()->where('id', $existingId)->exists()) {
+                    $purchaseOrder->internals()->where('id', $existingId)->update($itemData);
+                    
+                    // Update status kontrak item dari amandement ke created
+                    $itemContract = Contract::where('purchase_order_internal_id', $existingId)->first();
+                    if ($itemContract && strtolower($itemContract->status) === 'amandement') {
+                        $itemContract->update(['status' => 'created']);
+                    }
+                } else {
+                    $purchaseOrder->internals()->create($itemData);
                 }
-            } else {
-                $purchaseOrder->internals()->create($itemData);
             }
-        }
- 
-        HistoryActivity::create([
-            'user_id'       => Auth::id(),
-            'activity'      => 'Input PO Internal untuk PO ' . $purchaseOrder->po_no,
-            'activity_time' => now()->format('Y-m-d H:i:s'),
-        ]);
 
-        if ($purchaseOrder->status == 'amandement') {
-            $purchaseOrder->update([
-                'status' => 'sent'
+            HistoryActivity::create([
+                'user_id'       => Auth::id(),
+                'activity'      => 'Input PO Internal untuk PO ' . $purchaseOrder->po_no,
+                'activity_time' => now()->format('Y-m-d H:i:s'),
             ]);
-        }
- 
+
+            if ($purchaseOrder->status == 'amandement') {
+                $purchaseOrder->update(['status' => 'sent']);
+            }
+        });
+
         return redirect()
             ->route('purchase-orders-internal.show', $purchaseOrder->id)
             ->with('success', 'PO Internal berhasil disimpan.');

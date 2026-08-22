@@ -20,6 +20,34 @@
         </div>
     <section class="content">
             <div class="card-body">
+                {{-- ====================================================================
+                     MODUL 5: Tab Navigation — PO Baru vs PO Amandemen
+                     ==================================================================== --}}
+                @php
+                    $currentType = request('type', '');
+                @endphp
+                <ul class="nav nav-tabs mb-3" id="poTypeTabs">
+                    <li class="nav-item">
+                        <a class="nav-link {{ $currentType == '' ? 'active' : '' }}" 
+                           href="{{ route('purchase-orders.index', array_merge(request()->except('type','page'), [])) }}">
+                            <i class="bi bi-list-ul me-1"></i>Semua PO
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ $currentType == 'new' ? 'active' : '' }}" 
+                           href="{{ route('purchase-orders.index', array_merge(request()->except('type','page'), ['type' => 'new'])) }}">
+                            <i class="bi bi-plus-circle me-1"></i>PO Baru
+                            <span class="badge bg-success ms-1">New</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ $currentType == 'amandement' ? 'active' : '' }}" 
+                           href="{{ route('purchase-orders.index', array_merge(request()->except('type','page'), ['type' => 'amandement'])) }}">
+                            <i class="bi bi-arrow-repeat me-1"></i>PO Amandemen
+                            <span class="badge bg-warning text-dark ms-1">Revisi</span>
+                        </a>
+                    </li>
+                </ul>
                 <form class="row g-2 align-items-center mb-3" method="GET" action="{{ route('purchase-orders.index') }}">
                     <div class="col-auto">
                         <input type="date" name="start_date" class="form-control form-control-sm" value="{{ $filters['start_date'] ?? '' }}" placeholder="From">
@@ -83,7 +111,23 @@
                                 <td><center>{{ $loop->iteration }}</center></td>
                                 <td><center><span class="badge badge-sm bg-light text-dark">#{{ $po->id }}</span></center></td>
                                 <td><center>{{ $po->quotation->quotation_no ?? '-' }}</center></td>
-                                <td><center><span class="fw-bold text-primary">{{ $po->po_no }}</span></center></td>
+                                <td><center><span class="fw-bold text-primary">{{ $po->po_no }}</span>
+                                    {{-- MODUL 5: Badge Visual PO Baru vs Amandemen --}}
+                                    @php
+                                        $hasAmendment = $po->internals && $po->internals->flatMap(function($i) {
+                                            return \App\Models\Contract::where('purchase_order_internal_id', $i->id)
+                                                ->where('amandement_no', '>', 0)->get();
+                                        })->count() > 0;
+                                        $maxAmendNo = $po->internals ? $po->internals->flatMap(function($i) {
+                                            return \App\Models\Contract::where('purchase_order_internal_id', $i->id)->pluck('amandement_no');
+                                        })->max() : 0;
+                                    @endphp
+                                    @if($hasAmendment)
+                                        <br><span class="badge bg-warning text-dark mt-1" style="font-size:0.68rem;"><i class="bi bi-arrow-repeat me-1"></i>Amandemen Rev #{{ $maxAmendNo }}</span>
+                                    @elseif(in_array($poStatus, ['sent','review']))
+                                        <br><span class="badge bg-success mt-1" style="font-size:0.68rem;"><i class="bi bi-plus-circle me-1"></i>PO Baru</span>
+                                    @endif
+                                </center></td>
                                 <td>
                                     <center>
                                         @if($isMultiItem)
@@ -243,28 +287,25 @@
 
                                                                 // Jika Sales menambah item baru di PO Internal sehingga internals > quotation
                                                                 $displayItems = ($internalsItems->count() > $quotationItems->count()) ? $internalsItems : $quotationItems;
+                                                                $usedInternalIds = [];
                                                             @endphp
                                                             @foreach($displayItems as $subIdx => $qItem)
                                                                 @php
                                                                     $qItemId = $qItem->id ?? null;
                                                                     $targetPoNo = $po->po_no . '-' . ($subIdx + 1);
 
-                                                                    // 1. Match spesifik berdasarkan Sub-PO No (PO-xxxx-1, PO-xxxx-2)
-                                                                    $internalItem = $po->internals ? $po->internals->firstWhere('po_no', $targetPoNo) : null;
+                                                                    // 1. Match spesifik berdasarkan Sub-PO No (PO-xxxx-1, PO-xxxx-2, dst)
+                                                                    $internalItem = $po->internals ? $po->internals->reject(fn($i) => in_array($i->id, $usedInternalIds))->firstWhere('po_no', $targetPoNo) : null;
 
-                                                                    // 2. Fallback match berdasarkan urutan slot (index ke-N) jika po_no cocok/default
-                                                                    if (!$internalItem && $po->internals && $po->internals->values()->has($subIdx)) {
-                                                                        $candidate = $po->internals->values()->get($subIdx);
-                                                                        if ($candidate && ($candidate->po_no === $targetPoNo || !$candidate->po_no || $candidate->po_no === $po->po_no)) {
-                                                                            $internalItem = $candidate;
-                                                                        }
-                                                                    }
-
-                                                                    // 3. Fallback pencocokan berdasarkan nama item jika belum ditemukan
+                                                                    // 2. Fallback pencocokan berdasarkan nama item jika belum ditemukan via Sub-PO No
                                                                     if (!$internalItem && $po->internals && isset($qItem->item)) {
-                                                                        $internalItem = $po->internals->first(function($i) use ($qItem) {
+                                                                        $internalItem = $po->internals->reject(fn($i) => in_array($i->id, $usedInternalIds))->first(function($i) use ($qItem) {
                                                                             return strtolower(trim($i->item)) === strtolower(trim($qItem->item));
                                                                         });
+                                                                    }
+
+                                                                    if ($internalItem) {
+                                                                        $usedInternalIds[] = $internalItem->id;
                                                                     }
 
                                                                     $itemContract  = $internalItem ? ($internalItem->contract ?? ($internalItem->contracts ? $internalItem->contracts->last() : null)) : null;
@@ -530,16 +571,18 @@
                                 </div>
 
                                 @if($masterContract && !empty($masterContract->alasan_amandemen))
-                                    <div class="alert alert-light border mb-3">
+                                    <div class="card border mb-3 p-3 bg-light rounded">
                                         <small class="text-muted d-block fw-bold mb-1"><i class="bi bi-chat-left-text me-1"></i> Alasan Amandemen Anda:</small>
                                         <span class="fst-italic text-dark">"{{ $masterContract->alasan_amandemen }}"</span>
                                     </div>
                                 @endif
 
-                                <div class="alert alert-danger border border-danger mb-3 shadow-sm">
-                                    <h6 class="fw-bold text-danger mb-2"><i class="bi bi-x-octagon-fill me-1"></i> Alasan Penolakan dari Staff Sales / Manajemen:</h6>
-                                    <div class="p-3 bg-white rounded border border-danger text-danger fw-bold fs-6">
-                                        "{{ !empty($reasonTextMaster) ? $reasonTextMaster : 'Pengajuan amandemen tidak dapat disetujui oleh Staff Sales saat ini.' }}"
+                                <div class="card border border-danger mb-3 shadow-sm bg-light-danger" style="background-color: #fff5f5 !important;">
+                                    <div class="card-body p-3">
+                                        <h6 class="fw-bold text-danger mb-2"><i class="bi bi-x-octagon-fill me-1"></i> Alasan Penolakan dari Staff Sales / Manajemen:</h6>
+                                        <div class="p-3 bg-white rounded border border-danger text-danger fw-bold fs-6">
+                                            "{{ !empty($reasonTextMaster) ? $reasonTextMaster : 'Pengajuan amandemen tidak dapat disetujui oleh Staff Sales saat ini.' }}"
+                                        </div>
                                     </div>
                                 </div>
 
@@ -600,16 +643,18 @@
                                     </div>
 
                                     @if($itemContract && !empty($itemContract->alasan_amandemen))
-                                        <div class="alert alert-light border mb-3">
+                                        <div class="card border mb-3 p-3 bg-light rounded">
                                             <small class="text-muted d-block fw-bold mb-1"><i class="bi bi-chat-left-text me-1"></i> Alasan Amandemen Anda:</small>
                                             <span class="fst-italic text-dark">"{{ $itemContract->alasan_amandemen }}"</span>
                                         </div>
                                     @endif
 
-                                    <div class="alert alert-danger border border-danger mb-3 shadow-sm">
-                                        <h6 class="fw-bold text-danger mb-2"><i class="bi bi-x-octagon-fill me-1"></i> Alasan Penolakan dari Staff Sales / Manajemen:</h6>
-                                        <div class="p-3 bg-white rounded border border-danger text-danger fw-bold fs-6">
-                                            "{{ !empty($reasonTextItem) ? $reasonTextItem : 'Pengajuan amandemen tidak dapat disetujui oleh Staff Sales saat ini.' }}"
+                                    <div class="card border border-danger mb-3 shadow-sm bg-light-danger" style="background-color: #fff5f5 !important;">
+                                        <div class="card-body p-3">
+                                            <h6 class="fw-bold text-danger mb-2"><i class="bi bi-x-octagon-fill me-1"></i> Alasan Penolakan dari Staff Sales / Manajemen:</h6>
+                                            <div class="p-3 bg-white rounded border border-danger text-danger fw-bold fs-6">
+                                                "{{ !empty($reasonTextItem) ? $reasonTextItem : 'Pengajuan amandemen tidak dapat disetujui oleh Staff Sales saat ini.' }}"
+                                            </div>
                                         </div>
                                     </div>
 

@@ -78,6 +78,7 @@ class Quotation extends Model
         'qty',
         'target_delivery_date',
         'payment_terms',
+        'negotiation_override_quota',
     ];
 
     public function customer()

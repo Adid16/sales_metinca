@@ -10,9 +10,11 @@ use App\Models\ContractRequirement;
 use App\Models\HistoryActivity;
 use App\Models\Article;
 use App\Exports\PurchaseOrderExport;
+use App\Services\SystemSettingService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
@@ -335,6 +337,27 @@ class PurchaseOrderController extends Controller
         $po = PurchaseOrder::findOrFail($id);
         $internalId = $request->input('purchase_order_internal_id');
 
+        // ====================================================================
+        // MODUL 7: Cek batas maksimal amandemen per item
+        // ====================================================================
+        $maxAmendmentLimit = SystemSettingService::maxAmendmentLimit();
+
+        if ($internalId) {
+            $currentAmendmentCount = Contract::where('purchase_order_internal_id', $internalId)
+                ->where('amandement_no', '>', 0)
+                ->max('amandement_no') ?? 0;
+        } else {
+            $currentAmendmentCount = Contract::where('order_no', $po->po_no)
+                ->where('amandement_no', '>', 0)
+                ->max('amandement_no') ?? 0;
+        }
+
+        if ($currentAmendmentCount >= $maxAmendmentLimit) {
+            return redirect()->back()->with('error', 
+                'Kuota amandemen telah habis (' . $currentAmendmentCount . '/' . $maxAmendmentLimit . ' kali). '
+                . 'Tidak dapat mengajukan amandemen baru untuk item ini.');
+        }
+
         // Cari Kontrak Spesifik berdasarkan purchase_order_internal_id
         if ($internalId) {
             $kontrakAwal = Contract::where('purchase_order_internal_id', $internalId)->first();
@@ -342,36 +365,36 @@ class PurchaseOrderController extends Controller
             $kontrakAwal = Contract::where('order_no', $po->po_no)->first();
         }
 
-        if (!$kontrakAwal) {
-            // Jika kontrak belum dibuat oleh Sales, buatkan record kontrak awal berstatus amandement_pending
-            $kontrakAwal = Contract::create([
-                'customer_id'                => $po->customer_id,
-                'quotation_id'               => $po->quotation_id,
-                'purchase_order_internal_id' => $internalId,
-                'order_no'                   => $po->po_no,
-                'contract_no'                => 'CTR-' . $po->po_no . ($internalId ? '-' . $internalId : ''),
-                'status'                     => 'amandement_pending',
-                'alasan_amandemen'           => $request->alasan_amandemen,
-                'amandement_no'              => 1,
-            ]);
-        } else {
-            // Catat pengajuan amandemen spesifik HANYA pada kontrak item ini
-            $kontrakAwal->update([
-                'alasan_amandemen' => $request->alasan_amandemen,
-                'amandement_no'    => ($kontrakAwal->amandement_no ?? 0) + 1,
-                'status'           => 'amandement_pending', // Status amandemen pending khusus item ini
-            ]);
-        }
+        DB::transaction(function () use ($request, $po, $internalId, $kontrakAwal) {
+            if (!$kontrakAwal) {
+                $kontrakAwal = Contract::create([
+                    'customer_id'                => $po->customer_id,
+                    'quotation_id'               => $po->quotation_id,
+                    'purchase_order_internal_id' => $internalId,
+                    'order_no'                   => $po->po_no,
+                    'contract_no'                => 'CTR-' . $po->po_no . ($internalId ? '-' . $internalId : ''),
+                    'status'                     => 'amandement_pending',
+                    'alasan_amandemen'           => $request->alasan_amandemen,
+                    'amandement_no'              => 1,
+                ]);
+            } else {
+                $kontrakAwal->update([
+                    'alasan_amandemen' => $request->alasan_amandemen,
+                    'amandement_no'    => ($kontrakAwal->amandement_no ?? 0) + 1,
+                    'status'           => 'amandement_pending',
+                ]);
+            }
 
-        // Handle Upload File Lampiran Baru jika ada
-        if ($request->hasFile('attachments')) {
-            $file = $request->file('attachments');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $file->storeAs('uploads', $filename, 'public');
+            // Handle Upload File Lampiran Baru jika ada
+            if ($request->hasFile('attachments')) {
+                $file = $request->file('attachments');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $file->storeAs('uploads', $filename, 'public');
 
-            $po->attachment = !empty($po->attachment) ? $po->attachment . ',' . $filename : $filename;
-            $po->save();
-        }
+                $po->attachment = !empty($po->attachment) ? $po->attachment . ',' . $filename : $filename;
+                $po->save();
+            }
+        });
 
         return redirect()->route('purchase-orders.index')->with('success', 'Pengajuan amandemen item berhasil dikirim dan menunggu persetujuan.');
     }
@@ -421,21 +444,45 @@ class PurchaseOrderController extends Controller
                 ?? Contract::where('order_no', $po->po_no)->latest('id')->first();
         }
 
-        if ($contract) {
-            $contract->update([
-                'status'           => 'amandement',
-                'alasan_penolakan' => null,
-                'catatan_sales'    => $request->input('catatan', 'Amandemen item disetujui.')
+        DB::transaction(function () use ($request, $po, $contract, $user) {
+            if ($contract) {
+                $contract->update([
+                    'status'           => 'amandement',
+                    'alasan_penolakan' => null,
+                    'catatan_sales'    => $request->input('catatan', 'Amandemen item disetujui.')
+                ]);
+
+                // ====================================================================
+                // MODUL 7: Sinkronisasi kuantitas, harga, dan subtotal baru ke PO Internal
+                // ====================================================================
+                if ($contract->purchase_order_internal_id) {
+                    $internalItem = PurchaseOrderInternal::find($contract->purchase_order_internal_id);
+                    if ($internalItem) {
+                        $newQty = $request->input('new_qty', $internalItem->qty);
+                        $newPrice = $request->input('new_unit_price', $internalItem->unit_price);
+                        $internalItem->update([
+                            'qty'       => $newQty,
+                            'unit_price'=> $newPrice,
+                            'subtotal'  => $newQty * $newPrice,
+                        ]);
+                    }
+                }
+            }
+
+            // Sync PO master status jika tidak ada lagi amandement_pending
+            $hasPending = Contract::where('order_no', $po->po_no)->where('status', 'amandement_pending')->exists();
+            if (!$hasPending && $po->status === 'amandement_pending') {
+                $po->update(['status' => 'amandement']);
+            }
+
+            HistoryActivity::create([
+                'user_id'       => $user->id,
+                'activity'      => 'Menyetujui Amandemen PO No: ' . ($contract->order_no ?? $po->po_no) . ($contract ? ' (Kontrak: ' . $contract->contract_no . ')' : ''),
+                'activity_time' => now()
             ]);
-        }
+        });
 
-        HistoryActivity::create([
-            'user_id'       => $user->id,
-            'activity'      => 'Menyetujui Amandemen PO No: ' . ($contract->order_no ?? $po->po_no) . ($contract ? ' (Kontrak: ' . $contract->contract_no . ')' : ''),
-            'activity_time' => now()
-        ]);
-
-        return redirect()->back()->with('success', 'Amandemen item berhasil disetujui. Status item diperbarui.');
+        return redirect()->back()->with('success', 'Amandemen item berhasil disetujui. Status item dan data PO Internal telah diperbarui.');
     }
 
     /**
@@ -469,28 +516,42 @@ class PurchaseOrderController extends Controller
                 ?? Contract::where('order_no', $po->po_no)->latest('id')->first();
         }
 
-        if ($contract) {
-            $contract->update([
-                'status'           => 'rejected',
-                'alasan_penolakan' => $request->alasan_penolakan
-            ]);
-            if ($contract->purchase_order_internal_id) {
-                Contract::where('purchase_order_internal_id', $contract->purchase_order_internal_id)->update([
+        DB::transaction(function () use ($request, $po, &$contract, $user, $internalId) {
+            if ($contract) {
+                $contract->update([
                     'status'           => 'rejected',
                     'alasan_penolakan' => $request->alasan_penolakan
                 ]);
+                if ($contract->purchase_order_internal_id) {
+                    Contract::where('purchase_order_internal_id', $contract->purchase_order_internal_id)->update([
+                        'status'           => 'rejected',
+                        'alasan_penolakan' => $request->alasan_penolakan
+                    ]);
+                }
+            } else {
+                $contract = Contract::create([
+                    'customer_id'                => $po->customer_id,
+                    'quotation_id'               => $po->quotation_id,
+                    'purchase_order_internal_id' => $internalId,
+                    'order_no'                   => $po->po_no,
+                    'contract_no'                => 'CTR-' . $po->po_no,
+                    'status'                     => 'rejected',
+                    'alasan_penolakan'           => $request->alasan_penolakan,
+                ]);
             }
-        } else {
-            $contract = Contract::create([
-                'customer_id'                => $po->customer_id,
-                'quotation_id'               => $po->quotation_id,
-                'purchase_order_internal_id' => $internalId,
-                'order_no'                   => $po->po_no,
-                'contract_no'                => 'CTR-' . $po->po_no,
-                'status'                     => 'rejected',
-                'alasan_penolakan'           => $request->alasan_penolakan,
+
+            // Sync PO master status jika tidak ada lagi amandement_pending
+            $hasPending = Contract::where('order_no', $po->po_no)->where('status', 'amandement_pending')->exists();
+            if (!$hasPending && $po->status === 'amandement_pending') {
+                $po->update(['status' => 'sent']);
+            }
+
+            HistoryActivity::create([
+                'user_id'       => $user->id,
+                'activity'      => 'Menolak Amandemen PO No: ' . ($contract->order_no ?? $po->po_no) . ' (Alasan: ' . $request->alasan_penolakan . ')',
+                'activity_time' => now()
             ]);
-        }
+        });
 
         if ($po->customer) {
             try {
@@ -499,12 +560,6 @@ class PurchaseOrderController extends Controller
                 // notification log
             }
         }
-
-        HistoryActivity::create([
-            'user_id'       => $user->id,
-            'activity'      => 'Menolak Amandemen PO No: ' . ($contract->order_no ?? $po->po_no) . ' (Alasan: ' . $request->alasan_penolakan . ')',
-            'activity_time' => now()
-        ]);
 
         return redirect()->back()->with('success', 'Amandemen item berhasil ditolak. Notifikasi penolakan telah dikirimkan ke Customer.');
     }

@@ -93,6 +93,67 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 @endif
+
+{{-- ====================================================================
+     MODUL 1 & 4: NEGOTIATION COUNTER & MANAGER OVERRIDE BADGE
+     ==================================================================== --}}
+@php
+    $currentNegoCount = \App\Models\Negotiate::where('quotation_id', $quotation->id)->where('action', 'negotiate')->count();
+    $effectiveLimit = \App\Services\SystemSettingService::effectiveNegotiationLimit($quotation);
+    $quotaExceeded = $currentNegoCount >= $effectiveLimit;
+@endphp
+
+<div class="alert {{ $quotaExceeded ? 'alert-danger' : 'alert-info' }} d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <i class="bi {{ $quotaExceeded ? 'bi-exclamation-octagon-fill text-danger' : 'bi-info-circle-fill text-info' }} me-2 fs-5"></i>
+        <strong>Batas Negosiasi Harga:</strong> Counter Negosiasi Ke-<strong>{{ $currentNegoCount }}</strong> dari Maksimal <strong>{{ $effectiveLimit }}x</strong>
+        @if($quotation->negotiation_override_quota > 0)
+            <span class="badge bg-warning text-dark ms-1">(Termasuk Override +{{ $quotation->negotiation_override_quota }}x)</span>
+        @endif
+        @if($quotaExceeded)
+            <br><small class="text-danger">Kuota negosiasi telah habis. Form negosiasi dikunci.</small>
+        @endif
+    </div>
+    
+    {{-- TOMBOL MANAGER OVERRIDE --}}
+    @if(auth()->user()->isAdmin() || (auth()->user()->isManager() && auth()->user()->divisi === 'sales'))
+        <button type="button" class="btn btn-sm btn-warning text-dark fw-bold ms-3 text-nowrap" data-bs-toggle="modal" data-bs-target="#overrideModal">
+            <i class="bi bi-plus-circle-fill me-1"></i> Manager Override (+Kuota)
+        </button>
+    @endif
+</div>
+
+{{-- MODAL MANAGER OVERRIDE --}}
+@if(auth()->user()->isAdmin() || (auth()->user()->isManager() && auth()->user()->divisi === 'sales'))
+<div class="modal fade" id="overrideModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold"><i class="bi bi-shield-lock-fill me-2"></i>Manager Override Kuota Negosiasi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ route('quotations.override-nego-limit', $quotation->id) }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <p class="small text-muted mb-2">Gunakan fitur ini untuk menambah kuota negosiasi harga bagi customer pada Quotation <strong>#{{ $quotation->quotation_no }}</strong>.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Jumlah Kuota Tambahan:</label>
+                        <select name="additional_quota" class="form-select form-select-sm" required>
+                            <option value="1">+1 Kali Negosiasi Tambahan</option>
+                            <option value="2">+2 Kali Negosiasi Tambahan</option>
+                            <option value="3">+3 Kali Negosiasi Tambahan</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-sm btn-warning fw-bold text-dark"><i class="bi bi-check-lg me-1"></i> Tambahkan Kuota</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
  
 {{-- Banner Status Accepted --}}
 @if($quotation->status === 'accepted')

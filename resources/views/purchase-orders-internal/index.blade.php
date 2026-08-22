@@ -352,12 +352,18 @@
 
                                                             {{-- 2. BUAT KONTRAK STATUS / BUTTON (MURNI SPESIFIK ITEM THIS ID) --}}
                                                             @if($itemStatus == 'amandement_pending')
-                                                                {{-- JIKA PENGANJUAN AMANDEMEN MASIH PENDING REVIEW SALES --}}
+                                                                {{-- JIKA PENGAJUAN AMANDEMEN MASIH PENDING REVIEW SALES --}}
                                                                 <span class="badge-kontrak-dibuat" style="background-color: #fff3cd !important; color: #664d03 !important; border: 1px solid #ffecb5 !important;" title="Pengajuan amandemen item ini sedang dalam peninjauan / persetujuan Sales">
                                                                     <i class="bi bi-clock-history me-1"></i> Pending Amandemen
                                                                 </span>
-                                                            @elseif(!$latestContract || in_array($itemStatus, ['created', 'amandement']))
-                                                                {{-- TAMPILKAN TOMBOL BUAT KONTRAK JIKA BELUM DIBUAT ATAU MERUPAKAN AMANDEMEN YANG TELAH DI-ACC SALES --}}
+                                                            @elseif($itemStatus == 'amandement')
+                                                                {{-- JIKA AMANDEMEN DISUTUJI TAPI BELUM DIPROSES ULANG KE PO INTERNAL --}}
+                                                                <a href="{{ route('purchase-orders-internal.create', ['purchaseOrder' => $poId, 'internal_id' => $internal->id]) }}" 
+                                                                   class="btn-buat-kontrak" style="background-color: #ffc107 !important; color: #000 !important; font-weight: 700;" title="Amandemen telah disetujui. Harap proses ulang data amandemen ke PO Internal terlebih dahulu sebelum membuat kontrak baru">
+                                                                    <i class="bi bi-arrow-repeat me-1"></i> Proses Internal Amandemen
+                                                                </a>
+                                                            @elseif(!$latestContract || $itemStatus == 'created')
+                                                                {{-- TAMPILKAN TOMBOL BUAT KONTRAK HANYA JIKA BELUM DIBUAT ATAU SUDAH DIPROSES KE PO INTERNAL --}}
                                                                 <a href="{{ route('purchase-orders.create-contract', ['idPO' => $poId, 'internal_id' => $internal->id]) }}" 
                                                                    class="btn-buat-kontrak" title="Buat Lembar Review Kontrak Untuk Item Ini">
                                                                     <i class="bi bi-briefcase-fill"></i> Buat Kontrak

@@ -70,13 +70,25 @@ class RequestProjectController extends Controller
             'attachment.*' => 'file|mimes:pdf|max:5048',
         ]);
 
-        // Set customer_id sebelum create
+        // ====================================================================
+        // MODUL 2: Auto-fill profil customer dari data user yang login
+        // ====================================================================
         if (Auth::check()) {
-            $validated['customer_id'] = Auth::id();
+            $user = Auth::user();
+            $validated['customer_id'] = $user->id;
+            $validated['name']    = $user->name;
+            $validated['email']   = $user->email;
+            $validated['company'] = $user->company;
+
+            // Ambil phone dari Account profile jika tersedia
+            $account = $user->account;
+            if ($account && $account->phone) {
+                $validated['phone'] = $account->phone;
+            }
         }
 
         unset($validated['attachment']);
-        $project = RequestProject::create($validated); // ← hanya sekali
+        $project = RequestProject::create($validated);
 
         if ($request->hasFile('attachment')) {
             foreach ($request->file('attachment') as $file) {
@@ -193,11 +205,18 @@ class RequestProjectController extends Controller
     /**
      * Remove the specified resource from storage.
      */
+    /**
+     * Remove the specified resource from storage.
+     * MODUL 2: Customer tidak boleh menghapus request yang sudah disubmit.
+     */
     public function destroy(RequestProject $requests_project)
     {
-        //$project = RequestProject::findOrFail($id);
+        // Block akses delete untuk Customer
+        if (Auth::user()->isCustomer()) {
+            abort(403, 'Customer tidak diperkenankan menghapus tiket request yang sudah disubmit.');
+        }
+
         foreach ($requests_project->attachments as $attachment) {
-            # code...
             if(Storage::disk('public')->exists($attachment->file_path))
             {
                 Storage::disk('public')->delete($attachment->file_path);

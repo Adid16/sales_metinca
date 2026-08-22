@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
     {
 
     $this->call(ArticleSeeder::class);
+    $this->call(SystemSettingSeeder::class);
         // ==========================================
         // 1. DATA USERS ASLI (TETAP SESUAI SETTINGAN LO)
         // ==========================================

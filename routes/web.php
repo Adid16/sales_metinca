@@ -213,6 +213,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::match(['patch', 'post'], '/quotations/{quotation}/close-negotiate', [App\Http\Controllers\NegotiateController::class, 'closeNegotiate'])->name('negotiate.close');
 
+    // Manager Override: Tambah kuota negosiasi per-quotation
+    Route::post('/quotations/{id}/override-nego-limit', [QuotationController::class, 'overrideNegotiationLimit'])->name('quotations.override-nego-limit');
+
     //polistint
     Route::get('/polistint', [PoListController::class, 'polistint'])->name('polistint');
 

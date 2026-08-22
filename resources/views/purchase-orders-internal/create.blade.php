@@ -173,7 +173,7 @@
     <div class="card-body mt-2">
  
         @php
-            $isEdit = $purchaseOrder->internals->count() > 0;
+            $isEdit = isset($selectedItem) || ($purchaseOrder->internals->count() > 0 && !$quotationItemId);
             $action = $isEdit
                 ? route('purchase-orders-internal.update', $purchaseOrder->id)
                 : route('purchase-orders-internal.store', $purchaseOrder->id);
@@ -273,7 +273,7 @@
                     <div class="border rounded p-3 mb-3 item-row" style="border-left: 4px solid #0d6efd !important;">
                         <input type="hidden" name="internal_id[]" value="">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="fw-bold text-primary">Item #<span class="row-no">{{ $qIndex + 1 }}</span></span>
+                            <span class="fw-bold text-primary">Item #<span class="row-no">{{ isset($qItemIndex) ? $qItemIndex : ($qIndex + 1) }}</span></span>
                             <button type="button" class="btn btn-sm btn-danger btn-remove"><i class="bi bi-trash me-1"></i>Hapus</button>
                         </div>
                         <div class="row g-2">
@@ -575,5 +575,33 @@
         });
         document.getElementById('grand-total').textContent = 'Rp ' + total.toLocaleString('id-ID');
     }
+    // MODUL 6: Auto-fill Spesifikasi & Harga dari Master Article
+    document.getElementById('item-body').addEventListener('change', function (e) {
+        if (e.target.name === 'article[]' && e.target.value.trim() !== '') {
+            const articleNo = e.target.value.trim();
+            const row = e.target.closest('.item-row');
+            
+            fetch('/article-requirements/' + encodeURIComponent(articleNo))
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success && res.data) {
+                        const data = res.data;
+                        if (data.material && row.querySelector('input[name="material[]"]')) {
+                            row.querySelector('input[name="material[]"]').value = data.material;
+                        }
+                        if (data.drawing_no && row.querySelector('textarea[name="spesifikasi[]"]')) {
+                            row.querySelector('textarea[name="spesifikasi[]"]').value = 'Drawing No: ' + data.drawing_no + (data.drawing_rev ? ' (Rev: ' + data.drawing_rev + ')' : '');
+                        }
+                        if (data.price && row.querySelector('.price-input')) {
+                            row.querySelector('.price-input').value = data.price;
+                            const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+                            row.querySelector('.subtotal-cell').value = 'Rp ' + (qty * data.price).toLocaleString('id-ID');
+                            updateTotal();
+                        }
+                    }
+                })
+                .catch(err => console.log('Article lookup error:', err));
+        }
+    });
 </script>
 @endpush

@@ -33,20 +33,20 @@
                                 <input type="hidden" name="purchase_order_internal_id" value="{{ $selectedItem->id }}">
                             @endif
 
-                            {{-- BOX INFORMASI ITEM YANG SEDANG DIAMANDEMEN --}}
+                            {{-- BOX INFORMASI ITEM YANG SEDANG DIAMANDEMEN (PERMANENT CARD CONTAINER) --}}
                             @if(isset($selectedItem))
-                                <div class="alert alert-light-primary border border-primary mb-4 p-3 rounded">
+                                <div class="card border border-primary shadow-sm mb-4 p-3 rounded bg-light-primary" style="background-color: #e7f3ff !important;">
                                     <div class="d-flex align-items-center mb-2">
                                         <i class="bi bi-box-seam-fill fs-5 text-primary me-2"></i>
                                         <h6 class="text-primary mb-0 fw-bold">Target Amandemen Item:</h6>
                                     </div>
-                                    <ul class="mb-0 small text-dark">
-                                        <li><strong>No. PO External Item:</strong> <span class="badge bg-dark">{{ $itemPoNo }}</span></li>
-                                        <li><strong>Nama Barang / Item:</strong> {{ $selectedItem->item }}</li>
-                                        <li><strong>Part No:</strong> <code>{{ $selectedItem->contract->part_no ?? $selectedItem->part_no ?? '-' }}</code></li>
-                                        <li><strong>Jumlah Qty Saat Ini:</strong> {{ number_format($selectedItem->qty) }} pcs</li>
+                                    <ul class="mb-0 small text-dark" style="list-style-type: none; padding-left: 0;">
+                                        <li class="mb-1"><i class="bi bi-dash me-1 text-primary"></i><strong>No. PO External Item:</strong> <span class="badge bg-dark">{{ $itemPoNo }}</span></li>
+                                        <li class="mb-1"><i class="bi bi-dash me-1 text-primary"></i><strong>Nama Barang / Item:</strong> <span class="fw-bold text-dark">{{ $selectedItem->item }}</span></li>
+                                        <li class="mb-1"><i class="bi bi-dash me-1 text-primary"></i><strong>Part No:</strong> <code>{{ $selectedItem->contract->part_no ?? $selectedItem->part_no ?? '-' }}</code></li>
+                                        <li class="mb-1"><i class="bi bi-dash me-1 text-primary"></i><strong>Jumlah Qty Saat Ini:</strong> <span class="fw-semibold text-primary">{{ number_format($selectedItem->qty) }} pcs</span></li>
                                         @if(isset($contract))
-                                            <li><strong>No. Tinjauan Kontrak Terikat:</strong> <span class="badge bg-primary">{{ $contract->contract_no }}</span></li>
+                                            <li><i class="bi bi-dash me-1 text-primary"></i><strong>No. Tinjauan Kontrak Terikat:</strong> <span class="badge bg-primary">{{ $contract->contract_no }}</span></li>
                                         @endif
                                     </ul>
                                 </div>
@@ -73,12 +73,20 @@
                                     </div>
                                 </div>
 
-                                {{-- 3. NOMOR AMANDEMEN YANG AKAN DATANG --}}
+                                {{-- 3. NOMOR AMANDEMEN YANG AKAN DATANG (MODUL 7: LIMIT CHECK) --}}
+                                @php
+                                    $maxLimit = \App\Services\SystemSettingService::maxAmendmentLimit();
+                                    $currentNo = (int) $nextAmendmentNo;
+                                    $quotaExceeded = $currentNo > $maxLimit;
+                                @endphp
                                 <div class="col-md-6 col-12 mb-3">
                                     <div class="form-group">
-                                        <label for="next_amandement_no">Amandement No (Fixed)</label>
-                                        <input type="text" id="next_amandement_no" value="{{ $nextAmendmentNo }}" readonly class="form-control disabled bg-light">
+                                        <label for="next_amandement_no">Amandement No (Sisa Kuota: {{ max(0, $maxLimit - $currentNo + 1) }}/{{ $maxLimit }})</label>
+                                        <input type="text" id="next_amandement_no" value="Revisi #{{ $nextAmendmentNo }} (Batas SOP: Max {{ $maxLimit }}x)" readonly class="form-control disabled {{ $quotaExceeded ? 'bg-danger text-white' : 'bg-light' }}">
                                     </div>
+                                    @if($quotaExceeded)
+                                        <small class="text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i> Batas amandemen telah tercapai. Pengajuan ini akan ditolak oleh sistem.</small>
+                                    @endif
                                 </div>
 
                                 {{-- 4. TEXTAREA ALASAN AMANDEMEN --}}

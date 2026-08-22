@@ -117,10 +117,15 @@
                                 <td><center>{{ $project->subject }}</center></td>
                                 <td><center>{{ $project->created_at->format('d F Y ') }}</center></td>
                                 <td><center>
+                                    {{-- MODUL 3: Badge Status Penugasan Tiket --}}
                                     @if($project->assignment)
-                                        <span class="badge badge-sm bg-success">{{ $project->assignment->sales->name }}</span>
+                                        <span class="badge bg-success" title="Sudah diklaim oleh {{ $project->assignment->sales->name ?? 'Sales' }}">
+                                            <i class="bi bi-person-check-fill me-1"></i>{{ $project->assignment->sales->name ?? 'Assigned' }}
+                                        </span>
                                     @else
-                                        <span class="text-muted"></span>
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-exclamation-circle-fill me-1"></i>Unassigned
+                                        </span>
                                     @endif
                                 </center></td>
                                 <td><center>

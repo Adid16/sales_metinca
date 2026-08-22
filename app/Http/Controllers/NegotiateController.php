@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Negotiate;
 use App\Models\Quotation;
 use App\Models\Account;
+use App\Models\Article;
 use App\Models\HistoryActivity;
+use App\Services\SystemSettingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -84,6 +86,20 @@ class NegotiateController extends Controller
  
         try {
             $quotation->load('items');
+
+            // ====================================================================
+            // MODUL 4: Pengecekan batas counter negosiasi
+            // ====================================================================
+            $currentNegoCount = Negotiate::where('quotation_id', $quotation->id)
+                ->where('action', 'negotiate')
+                ->count();
+            $effectiveLimit = SystemSettingService::effectiveNegotiationLimit($quotation);
+
+            if ($request->action === 'negotiate' && $currentNegoCount >= $effectiveLimit) {
+                return redirect()->back()->with('error', 
+                    'Kuota negosiasi telah habis (' . $currentNegoCount . '/' . $effectiveLimit . '). '
+                    . 'Silakan sepakati harga terakhir atau hubungi Manager Sales untuk menambah kuota.');
+            }
  
             // Hitung total negosiasi dan siapkan snapshot item
             $negotiatedItems = [];
@@ -92,6 +108,23 @@ class NegotiateController extends Controller
             foreach ($request->items as $itemData) {
                 $item = $quotation->items->firstWhere('id', $itemData['id']);
                 if ($item) {
+                    // ====================================================================
+                    // MODUL 4: Validasi harga terhadap master artikel (untuk Staff Sales)
+                    // ====================================================================
+                    if (!Auth::user()->isCustomer() && $request->action === 'negotiate') {
+                        $article = Article::where('part_name', $item->item)->first();
+                        if ($article && $article->price > 0) {
+                            $minMargin = SystemSettingService::minPriceMarginPercentage();
+                            $floorPrice = $article->price * (1 - ($minMargin / 100));
+                            if ($itemData['negotiated_price'] < $floorPrice && !$request->has('manager_price_approval')) {
+                                return redirect()->back()->with('error', 
+                                    'Harga untuk item "' . $item->item . '" (Rp ' . number_format($itemData['negotiated_price']) 
+                                    . ') di bawah harga master artikel (Rp ' . number_format($floorPrice) 
+                                    . '). Diperlukan persetujuan Manager Sales untuk melanjutkan.');
+                            }
+                        }
+                    }
+
                     $subtotal         = $itemData['negotiated_price'] * $item->qty;
                     $negotiatedTotal += $subtotal;
                     $negotiatedItems[] = [

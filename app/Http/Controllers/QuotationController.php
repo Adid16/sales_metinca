@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Account;
 use App\Models\Negotiate;
 use App\Models\HistoryActivity;
+use App\Services\SystemSettingService;
 use App\Notifications\QuotationSendNotification;
 use Exception;
 use Illuminate\Support\Facades\Auth;
@@ -64,6 +65,19 @@ class QuotationController extends Controller
 
             $requestProject = RequestProject::with(['attachments', 'customer', 'assignment.sales'])
                 ->find($request->request_id);
+
+            // ====================================================================
+            // MODUL 3: Lock akses Quotation ke PIC Sales pemegang tiket
+            // ====================================================================
+            if ($requestProject && $requestProject->assignment) {
+                $user = Auth::user();
+                if ($user->role === 'staff' && $user->divisi === 'sales') {
+                    if ($requestProject->assignment->sales_id !== $user->id) {
+                        return redirect()->route('requests-project.index')
+                            ->with('error', 'Akses ditolak. Hanya Sales PIC pemegang tiket (' . ($requestProject->assignment->sales->name ?? '-') . ') yang berhak membuat Quotation untuk request ini.');
+                    }
+                }
+            }
 
             if ($requestProject && $requestProject->customer_id) {
                 $customerAccount = Account::where('user_id', $requestProject->customer_id)->first();
@@ -178,6 +192,16 @@ class QuotationController extends Controller
 
     public function edit(Quotation $quotation)
     {
+        // MODUL 3: Lock akses edit Quotation ke PIC Sales pemegang tiket
+        $user = Auth::user();
+        if ($user->role === 'staff' && $user->divisi === 'sales' && $quotation->request_id) {
+            $requestProject = RequestProject::with('assignment')->find($quotation->request_id);
+            if ($requestProject && $requestProject->assignment && $requestProject->assignment->sales_id !== $user->id) {
+                return redirect()->route('quotations.index')
+                    ->with('error', 'Akses ditolak. Hanya Sales PIC pemegang tiket yang berhak mengedit Quotation ini.');
+            }
+        }
+
         return view('quotations.edit', compact('quotation'));
     }
 
@@ -395,5 +419,37 @@ class QuotationController extends Controller
         }
 
         return "{$prefix}-{$year}-{$month}-{$newNo}";
+    }
+
+    /**
+     * MODUL 1: Manager Override — Tambah kuota negosiasi per-quotation.
+     * Hanya bisa diakses oleh Manager Sales atau Admin.
+     */
+    public function overrideNegotiationLimit(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        // Otorisasi: hanya Manager Sales atau Admin
+        if (!($user->isAdmin() || ($user->isManager() && $user->divisi === 'sales'))) {
+            abort(403, 'Hanya Manager Sales atau Admin yang dapat menambah kuota negosiasi.');
+        }
+
+        $request->validate([
+            'additional_quota' => 'required|integer|min:1|max:10',
+        ]);
+
+        $result = SystemSettingService::overrideNegotiationLimit($id, $request->additional_quota);
+
+        if (!$result) {
+            return redirect()->back()->with('error', 'Quotation tidak ditemukan.');
+        }
+
+        HistoryActivity::create([
+            'user_id'       => $user->id,
+            'activity'      => 'Manager Override: Menambah kuota negosiasi (' . $request->additional_quota . 'x) untuk Quotation ID #' . $id,
+            'activity_time'  => now()->format('Y-m-d H:i:s')
+        ]);
+
+        return redirect()->back()->with('success', 'Kuota negosiasi berhasil ditambahkan (' . $request->additional_quota . 'x tambahan).');
     }
 }

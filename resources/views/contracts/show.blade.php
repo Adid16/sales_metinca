@@ -18,6 +18,19 @@
     <div class="row match-height">
         <div class="col-12">
             
+            {{-- FLASH MESSAGE --}}
+            @if (session('success'))
+                <div class="alert alert-success alert-dismissible fade show m-0 mb-3">
+                    <i class="bi bi-check-circle me-1"></i>{{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+            @if (session('error'))
+                <div class="alert alert-danger alert-dismissible fade show m-0 mb-3">
+                    <i class="bi bi-exclamation-triangle me-1"></i>{{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
             {{-- ================= CARD 1 & 2: LEMBAR TINJAUAN KONTRAK + METADATA ================= --}}
             <div class="card shadow-sm mb-3">
                 <div class="card-header py-3 bg-info text-black">
@@ -225,7 +238,12 @@
                             </a>
                         @endif
 
-                        {{-- 4. TOMBOL KEMBALI --}}
+                        {{-- 4. TOMBOL AUDIT TRAIL / REKAM JEJAK ORDER (MODUL 8) --}}
+                        <button type="button" class="btn btn-sm btn-info text-white px-3 shadow-sm me-1 fw-bold" data-bs-toggle="modal" data-bs-target="#auditTrailModal">
+                            <i class="bi bi-clock-history me-1"></i> Riwayat / Rekam Jejak Order
+                        </button>
+
+                        {{-- 5. TOMBOL KEMBALI --}}
                         <a href="{{ route('contracts.index') }}" class="btn btn-sm btn-secondary px-3 shadow-sm">
                             <i class="bi bi-arrow-left-circle me-1"></i> Back
                         </a>
@@ -253,7 +271,7 @@
             
             <form action="{{ route('contracts.approve-manager', $contract->id) }}" method="POST">
                 @csrf
-                @value && @method('PATCH')
+                @method('PATCH')
                 
                 <div class="modal-body text-center">
                     <p class="mb-2 fw-bold text-dark">Silakan gambar tanda tangan Anda di bawah ini:</p>
@@ -278,6 +296,124 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+{{-- ============================================
+     MODUL 8: MODAL AUDIT TRAIL / REKAM JEJAK ORDER
+     ============================================ --}}
+<div class="modal fade" id="auditTrailModal" tabindex="-1" aria-labelledby="auditTrailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title text-white" id="auditTrailModalLabel">
+                    <i class="bi bi-clock-history me-2"></i>Riwayat & Rekam Jejak Order (Audit Trail)
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {{-- 1. TOTAL FREKUENSI TRANSAKSI CUSTOMER --}}
+                <div class="card bg-light border mb-3">
+                    <div class="card-body py-2 px-3">
+                        <h6 class="fw-bold text-primary mb-2"><i class="bi bi-person-badge me-1"></i> Rekapitulasi Riwayat Transaksi Customer: {{ $contract->customer->name ?? '-' }}</h6>
+                        <div class="row text-center g-2">
+                            <div class="col-4">
+                                <div class="p-2 border rounded bg-white">
+                                    <small class="text-muted d-block">Total Quotation</small>
+                                    <span class="fs-5 fw-bold text-primary">{{ $customerTotalQuotation ?? 0 }}</span>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-2 border rounded bg-white">
+                                    <small class="text-muted d-block">Total PO</small>
+                                    <span class="fs-5 fw-bold text-success">{{ $customerTotalPO ?? 0 }}</span>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-2 border rounded bg-white">
+                                    <small class="text-muted d-block">Total Kontrak</small>
+                                    <span class="fs-5 fw-bold text-info">{{ $customerTotalContracts ?? 0 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- 2. SIKLUS NEGOSIASI HARGA --}}
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-chat-dots-fill me-1"></i> Log Siklus Negosiasi Harga pada PO Ini:</h6>
+                @if(isset($negotiations) && $negotiations->count() > 0)
+                    <div class="timeline border rounded p-3 mb-3 bg-white" style="max-height: 200px; overflow-y: auto;">
+                        @foreach($negotiations as $neg)
+                            <div class="p-2 mb-2 rounded border-start border-3 {{ $neg->from_customer ? 'border-primary bg-light' : 'border-success bg-light-success' }}">
+                                <div class="d-flex justify-content-between small text-muted mb-1">
+                                    <strong>{{ $neg->user->name ?? ($neg->from_customer ? 'Customer' : 'Sales Team') }}</strong>
+                                    <span>{{ $neg->created_at ? $neg->created_at->format('d-m-Y H:i') : '-' }}</span>
+                                </div>
+                                <div class="small fw-semibold text-dark">
+                                    Total Negosiasi: <span class="text-primary">Rp {{ number_format($neg->negotiated_total) }}</span> | Status: <span class="badge bg-secondary">{{ ucfirst($neg->action) }}</span>
+                                </div>
+                                @if($neg->message)
+                                    <div class="small text-muted fst-italic mt-1">"{{ $neg->message }}"</div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-muted small border rounded p-3 bg-light mb-3">Tidak ada catatan riwayat negosiasi harga pada order ini.</p>
+                @endif
+
+                {{-- 3. REKAP AMANDEMEN PO --}}
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-pencil-square me-1"></i> Rekapitulasi Amandemen Item:</h6>
+                @if(isset($amendmentHistory) && $amendmentHistory->count() > 0)
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm table-bordered text-nowrap align-middle">
+                            <thead class="table-secondary small">
+                                <tr>
+                                    <th>Rev #</th>
+                                    <th>Target Item</th>
+                                    <th>Alasan Amandemen Customer</th>
+                                    <th>Status Approval</th>
+                                </tr>
+                            </thead>
+                            <tbody class="small">
+                                @foreach($amendmentHistory as $amend)
+                                    <tr>
+                                        <td class="text-center fw-bold">#{{ $amend->amandement_no }}</td>
+                                        <td>{{ $amend->internalItem->item ?? '-' }}</td>
+                                        <td>{{ Str::limit($amend->alasan_amandemen ?? '-', 50) }}</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-{{ $amend->status == 'amandement' ? 'success' : ($amend->status == 'amandement_pending' ? 'warning text-dark' : 'secondary') }}">
+                                                {{ ucfirst($amend->status) }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <p class="text-muted small border rounded p-3 bg-light mb-3">Order ini belum pernah mengalami perubahan/amandemen.</p>
+                @endif
+
+                {{-- 4. AKTIVITAS / HISTORY LOG --}}
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-activity me-1"></i> Log Aktivitas Sistem:</h6>
+                @if(isset($orderActivities) && $orderActivities->count() > 0)
+                    <ul class="list-group list-group-flush border rounded small" style="max-height: 150px; overflow-y: auto;">
+                        @foreach($orderActivities as $act)
+                            <li class="list-group-item d-flex justify-content-between align-items-center py-1 px-2">
+                                <span><i class="bi bi-check2-circle text-success me-1"></i> {{ $act->activity }}</span>
+                                <span class="text-muted" style="font-size: 0.75rem;">{{ \Carbon\Carbon::parse($act->activity_time)->format('d-m-Y H:i') }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @else
+                    <p class="text-muted small border rounded p-3 bg-light mb-0">Tidak ada log aktivitas khusus untuk order ini.</p>
+                @endif
+            </div>
+            <div class="modal-footer bg-light py-2">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
         </div>
     </div>
 </div>

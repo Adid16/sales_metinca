@@ -257,8 +257,19 @@
                                     <input type="hidden" name="purchase_order_internal_id" value="{{ $targetInternalId }}">
                                 @endif
 
-                                <label for="alasan_penolakan" class="form-label text-danger fw-bold">Alasan Penolakan dari Staff Sales / Manajemen (Wajib Diisi untuk Customer):</label>
-                                <textarea name="alasan_penolakan" class="form-control mb-2" rows="2" placeholder="Tuliskan alasan penolakan amandemen item ini secara jelas oleh Staff Sales untuk disampaikan ke Customer..." required></textarea>
+                                <label for="alasan_penolakan_select_{{ $contract->id }}" class="form-label text-danger fw-bold">Alasan Penolakan (Pilih Berdasarkan SOP Manufaktur):</label>
+                                <select id="alasan_penolakan_select_{{ $contract->id }}" class="form-select form-select-sm mb-2" 
+                                    onchange="toggleRejectManual(this, '{{ $contract->id }}')" required>
+                                    <option value="">-- Pilih Alasan Penolakan --</option>
+                                    <option value="Bahan baku sudah dipotong/disiapkan">Bahan baku sudah dipotong/disiapkan</option>
+                                    <option value="Jadwal mesin stamping/casting sudah berjalan">Jadwal mesin stamping/casting sudah berjalan</option>
+                                    <option value="Proses heat treatment sudah dimulai">Proses heat treatment sudah dimulai</option>
+                                    <option value="Material sudah dipesan ke supplier">Material sudah dipesan ke supplier</option>
+                                    <option value="Mould/cetakan sudah dalam proses produksi">Mould/cetakan sudah dalam proses produksi</option>
+                                    <option value="Lainnya">Lainnya (Isi manual)</option>
+                                </select>
+                                <textarea id="alasan_penolakan_manual_{{ $contract->id }}" class="form-control form-control-sm mb-2" rows="2" placeholder="Tuliskan alasan penolakan manual..." style="display:none;" oninput="updateFinalReason('{{ $contract->id }}')"></textarea>
+                                <input type="hidden" name="alasan_penolakan" id="alasan_penolakan_final_{{ $contract->id }}" required>
                                 <div class="d-flex justify-content-end gap-2">
                                     <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="collapse" data-bs-target="#rejectCollapseContract{{ $contract->id }}">Batal</button>
                                     <button type="submit" class="btn btn-sm btn-danger fw-bold"><i class="bi bi-x-circle-fill me-1"></i> Konfirmasi Tolak Amandemen</button>
@@ -301,3 +312,28 @@
     </div>
 @endforeach
 @endsection
+
+@push('scripts')
+<script>
+function toggleRejectManual(selectElem, contractId) {
+    const manualBox = document.getElementById('alasan_penolakan_manual_' + contractId);
+    const finalInput = document.getElementById('alasan_penolakan_final_' + contractId);
+    
+    if (selectElem.value === 'Lainnya') {
+        manualBox.style.display = 'block';
+        manualBox.required = true;
+        finalInput.value = manualBox.value;
+    } else {
+        manualBox.style.display = 'none';
+        manualBox.required = false;
+        finalInput.value = selectElem.value;
+    }
+}
+
+function updateFinalReason(contractId) {
+    const manualBox = document.getElementById('alasan_penolakan_manual_' + contractId);
+    const finalInput = document.getElementById('alasan_penolakan_final_' + contractId);
+    finalInput.value = manualBox.value;
+}
+</script>
+@endpush
