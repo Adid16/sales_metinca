@@ -13,7 +13,7 @@
     
     {{-- ALERT 1: JIKA AMANDEMEN DITOLAK BY SALES / MANAGER (PERMANENT CARD CONTAINER) --}}
     @if($po->contract && $po->contract->status === 'rejected' && $po->contract->alasan_penolakan)
-        <div class="card border border-danger mb-4 p-3 rounded shadow-sm bg-light-danger" style="background-color: #fff5f5 !important;">
+        <div class="card border border-danger mb-4 p-3 rounded shadow-sm bg-danger-subtle">
             <div class="d-flex align-items-center mb-1">
                 <i class="bi bi-x-circle-fill fs-5 text-danger me-2"></i>
                 <strong class="text-danger">Pengajuan Amandemen Ditolak</strong>
@@ -29,9 +29,9 @@
 
     {{-- ALERT 2: JIKA MASIH MENUNGGU PERSETUJUAN (PERMANENT CARD CONTAINER) --}}
     @if($po->status === 'amandement_pending')
-        <div class="card border border-warning mb-4 p-3 rounded shadow-sm bg-light-warning" style="background-color: #fffdf0 !important;">
+        <div class="card border border-warning mb-4 p-3 rounded shadow-sm bg-warning-subtle">
             <div class="d-flex align-items-center">
-                <i class="bi bi-hourglass-split fs-5 text-dark me-2"></i>
+                <i class="bi bi-hourglass-split fs-5 text-warning me-2"></i>
                 <span class="text-dark small">
                     <strong>Status Amandemen:</strong> Pengajuan amandemen Anda telah diterima dan saat ini sedang dalam antrean verifikasi oleh Sales / Manager.
                 </span>

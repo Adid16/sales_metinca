@@ -60,13 +60,13 @@
 
                 
                 <?php if($contract->amandement_no > 0 && !empty($contract->alasan_amandemen) && $contract->alasan_amandemen !== '-'): ?>
-                    <div class="card border-warning border-2 shadow-sm mb-3 mx-4" style="background-color: #fffdf0 !important;">
+                    <div class="card border-warning border-2 shadow-sm mb-3 mx-4 bg-warning-subtle">
                         <div class="card-body p-3">
                             <div class="d-flex align-items-center mb-1">
                                 <i class="bi bi-chat-left-quote-fill text-warning fs-5 me-2"></i>
                                 <strong class="text-dark">Catatan / Alasan Pengajuan Amandemen dari Customer (Ke-<?php echo e($contract->amandement_no); ?>):</strong>
                             </div>
-                            <div class="fst-italic text-dark ps-4 fw-bold fs-6 text-primary">
+                            <div class="fst-italic ps-4 fw-bold fs-6 text-primary">
                                 "<?php echo e($contract->alasan_amandemen); ?>"
                             </div>
                         </div>
@@ -219,7 +219,7 @@
                             </span>
                         <?php endif; ?>
                     </div>
-                    <div class="card-body p-0">
+                    <div class="card-body p-0 table-responsive">
                         <table class="table table-bordered align-middle mb-0">
                             <thead class="bg-light">
                                 <tr>
@@ -235,9 +235,9 @@
                                     </td>
                                     <td>
                                         <?php
-                                            $isPriceRow = strtolower($req['requirement']) == 'price';
-                                            $isAuthorized = auth()->user()->role == 'admin' || strtolower(auth()->user()->divisi) == 'sales';
-                                            $maskedValue = ($isPriceRow && !$isAuthorized) ? '*** RAHASIA PERUSAHAAN ***' : $req['requirement_value'];
+                                             $isPriceRow = strtolower($req['requirement']) == 'price';
+                                             $isAuthorized = auth()->user()->role == 'admin' || strtolower(auth()->user()->divisi) == 'sales';
+                                             $maskedValue = ($isPriceRow && !$isAuthorized) ? '*** RAHASIA PERUSAHAAN ***' : $req['requirement_value'];
                                         ?>
 
                                         <input type="text" class="form-control form-control-sm <?php echo e(($isPriceRow && !$isAuthorized) ? 'text-danger fw-bold text-center' : ''); ?>" value="<?php echo e($maskedValue); ?>" readonly>
@@ -784,12 +784,12 @@
                                     </div>
                                     <div class="row g-2 mb-3 small">
                                         <div class="col-md-6">
-                                            <div class="p-2 border rounded bg-white">
+                                            <div class="p-2 border rounded">
                                                 <span class="text-muted">Syarat Pembayaran:</span> <strong class="text-dark"><?php echo e($quotation->payment_terms ?? 'Net 30 Days'); ?></strong>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <div class="p-2 border rounded bg-white">
+                                            <div class="p-2 border rounded">
                                                 <span class="text-muted">Target Pengiriman:</span> <strong class="text-dark"><?php echo e($quotation->target_delivery_date ?? '-'); ?></strong>
                                             </div>
                                         </div>
@@ -825,8 +825,8 @@
                                                             <td class="text-end">Rp <?php echo e(number_format($qItem->original_price, 2)); ?></td>
                                                             <td class="text-end fw-bold">Rp <?php echo e(number_format($sub, 2)); ?></td>
                                                         <?php else: ?>
-                                                            <td class="text-center text-muted fst-italic"><span class="badge bg-light text-muted border"><i class="bi bi-lock-fill me-1"></i>Khusus Sales</span></td>
-                                                            <td class="text-center text-muted fst-italic"><span class="badge bg-light text-muted border"><i class="bi bi-lock-fill me-1"></i>Khusus Sales</span></td>
+                                                            <td class="text-center text-muted fst-italic"><span class="badge border"><i class="bi bi-lock-fill me-1"></i>Khusus Sales</span></td>
+                                                            <td class="text-center text-muted fst-italic"><span class="badge border"><i class="bi bi-lock-fill me-1"></i>Khusus Sales</span></td>
                                                         <?php endif; ?>
                                                     </tr>
                                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
@@ -841,7 +841,7 @@
                                                             Rp <?php echo e(number_format($initTotal, 2)); ?>
 
                                                         <?php else: ?>
-                                                            <span class="badge bg-light text-muted border"><i class="bi bi-lock-fill me-1"></i>Khusus Divisi Sales</span>
+                                                            <span class="badge border"><i class="bi bi-lock-fill me-1"></i>Khusus Divisi Sales</span>
                                                         <?php endif; ?>
                                                     </td>
                                                 </tr>
@@ -849,7 +849,7 @@
                                         </table>
                                     </div>
                                 <?php else: ?>
-                                    <div class="p-4 text-center text-muted bg-light rounded">
+                                    <div class="p-4 text-center text-muted rounded">
                                         <i class="bi bi-info-circle fs-3 text-secondary mb-2 d-block"></i>
                                         Tidak ada data Quotation terhubung pada kontrak ini.
                                     </div>
@@ -872,7 +872,7 @@
                                     <div class="timeline position-relative">
                                         <?php $__currentLoopData = $negotiations; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $negIndex => $neg): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                             <div class="card border mb-3 shadow-xs <?php echo e($neg->from_customer ? 'border-primary' : 'border-success'); ?>">
-                                                <div class="card-header py-2 px-3 <?php echo e($neg->from_customer ? 'bg-light-primary text-primary' : 'bg-light-success text-success'); ?> d-flex justify-content-between align-items-center">
+                                                <div class="card-header py-2 px-3 <?php echo e($neg->from_customer ? 'bg-primary-subtle text-primary' : 'bg-success-subtle text-success'); ?> d-flex justify-content-between align-items-center">
                                                     <div class="small fw-bold">
                                                         <i class="bi bi-<?php echo e($neg->from_customer ? 'person-fill' : 'headset'); ?> me-1"></i>
                                                         Tahap Negosiasi #<?php echo e($negIndex + 1); ?>: <?php echo e($neg->user->name ?? ($neg->from_customer ? 'Customer' : 'Tim Sales')); ?>
@@ -897,7 +897,7 @@
 
                                                                 </span>
                                                             <?php else: ?>
-                                                                <span class="badge bg-light text-muted border ms-1"><i class="bi bi-lock-fill me-1"></i>Khusus Divisi Sales</span>
+                                                                <span class="badge border ms-1"><i class="bi bi-lock-fill me-1"></i>Khusus Divisi Sales</span>
                                                             <?php endif; ?>
                                                         </div>
                                                         <div>
@@ -920,7 +920,7 @@
 
                                                     <?php if(!empty($itemsList) && is_array($itemsList) && count($itemsList) > 0): ?>
                                                         <div class="table-responsive my-2">
-                                                            <table class="table table-sm table-bordered align-middle bg-white mb-0" style="font-size: 0.8rem;">
+                                                            <table class="table table-sm table-bordered align-middle mb-0" style="font-size: 0.8rem;">
                                                                 <thead class="table-light">
                                                                     <tr>
                                                                         <th class="text-center" style="width: 35px;">No</th>

@@ -105,6 +105,26 @@
         .btn-collapse-toggle[aria-expanded="true"] .bi-chevron-down {
             transform: rotate(180deg);
         }
+
+        /* Dark Mode Specific Overrides */
+        html[data-bs-theme="dark"] .subtable-box {
+            background-color: #161726 !important;
+            border-left: 4px solid #435ebe !important;
+        }
+        html[data-bs-theme="dark"] .table-detail {
+            background-color: #1e1e2d !important;
+            color: #c2c2d9 !important;
+        }
+        html[data-bs-theme="dark"] .table-detail th {
+            background-color: #282b42 !important;
+            color: #93b0ff !important;
+            border-bottom: 1px solid #363954 !important;
+        }
+        html[data-bs-theme="dark"] .table-detail td {
+            background-color: #1e1e2d !important;
+            color: #c2c2d9 !important;
+            border-color: #2d3047 !important;
+        }
     </style>
 @endpush
 
@@ -137,19 +157,19 @@
 
                     <div class="card-body py-2">
                         <form class="row g-2 align-items-center mt-0" method="GET" action="{{ route('contracts.index') }}">
-                            <div class="col-md-2">
+                            <div class="col-12 col-sm-6 col-md-4 col-xl-2">
                                 <div class="d-flex align-items-center gap-1">
                                     <label class="form-label small mb-0 text-nowrap">From :</label>
                                     <input type="date" name="start_date" class="form-control form-control-sm" value="{{ $filters['start_date'] ?? '' }}">
                                 </div>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-12 col-sm-6 col-md-4 col-xl-2">
                                 <div class="d-flex align-items-center gap-1">
                                     <label class="form-label small mb-0 text-nowrap">To :</label>
                                     <input type="date" name="end_date" class="form-control form-control-sm" value="{{ $filters['end_date'] ?? '' }}">
                                 </div>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-12 col-sm-6 col-md-4 col-xl-2">
                                 <select name="status" class="form-select form-select-sm">
                                     <option value="">Semua Status</option>
                                     <option value="created" {{ (isset($filters['status']) && $filters['status']=='created') ? 'selected' : '' }}>Created</option>
@@ -160,7 +180,7 @@
                                     <option value="done" {{ (isset($filters['status']) && $filters['status']=='done') ? 'selected' : '' }}>Done</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-12 col-sm-6 col-md-4 col-xl-2">
                                 <select name="dept" class="form-select form-select-sm">
                                     <option value="">Semua Departemen</option>
                                     <option value="sales" {{ (isset($filters['dept']) && $filters['dept']=='sales') ? 'selected' : '' }}>Sales</option>
@@ -169,12 +189,12 @@
                                     <option value="design engineering" {{ (isset($filters['dept']) && $filters['dept']=='design engineering') ? 'selected' : '' }}>Design Engineering</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-12 col-sm-6 col-md-4 col-xl-2">
                                 <input type="text" name="search" class="form-control form-control-sm"
                                     placeholder="Cari No Kontrak / PO / Customer..."
                                     value="{{ $filters['search'] ?? '' }}">
                             </div>
-                            <div class="col-auto d-flex gap-1">
+                            <div class="col-12 col-xl-auto d-flex flex-wrap gap-1">
                                 <button type="submit" class="btn btn-sm btn-primary">
                                     <i class="bi bi-search me-1"></i>Filter
                                 </button>
@@ -202,7 +222,7 @@
                                         <th class="text-center" style="width: 90px;">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody style="color:#212529;">
+                                <tbody>
                                     @forelse ($contracts as $poKey => $contractGroup)
                                         @php
                                             $firstContract = $contractGroup->first();

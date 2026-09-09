@@ -31,84 +31,102 @@
         </div>
     <section class="content">
         {{-- <div class="card"> --}}
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    {{-- <h5>PO List</h5> --}}
-                    <form action="{{ route('po-schedule.arrange') }}" method="post">
-                        @csrf
-                        @method('PUT')
-                        <button type="submit" onclick="confirm('apakah anda yakin re-arrange schedule?')" class="btn btn-sm btn-primary"><i class="bi bi-list"></i>Arrange Schedule</button>
-                    </form>
+                <div class="table-responsive">
+                    <table class="table table-hover" id="table1">
+                        <thead>
+                            <tr>
+                                <th><center>No</center></th>
+                                <th><center>Quotation No</center></th>
+                                <th><center>PO No</center></th>
+                                <th><center>Attachments</center></th>
+                                <th><center>Delivery Date</center></th>
+                                <th><center>Status</center></th>
+                                <th><center>Status Order</center></th>
+                                <th><center>Action</center></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($pos as $po)
+                                <tr>
+                                    <td>
+                                        <center>{{ $po->id }}</center>
+                                    </td>
+                                    <td>
+                                        <center>{{ $po->quotation->quotation_no ?? '-' }}</center>
+                                    </td>
+                                    <td>
+                                        <center>{{ $po->po_no ?? '-' }}</center>
+                                    </td>
+                                    <td>
+                                        <center>
+                                            @if ($po->attachment)
+                                                <a href="{{ asset('storage/' . $po->attachment) }}" target="_blank"
+                                                    class="btn btn-sm btn-info"><i class="bi bi-file-earmark-arrow-down-fill"></i></a>
+                                            @else
+                                                <span class="badge bg-danger">Not Uploaded</span>
+                                            @endif
+                                        </center>
+                                    </td>
+                                    <td>
+                                        <center>
+                                            {{ \Carbon\Carbon::parse($po->delivery_date ?? $po->delivery_request)->format('d F Y') }}
+                                        </center>
+                                    </td>
+                                    <td>
+                                        <center>
+                                            @if ($po->status == 'pending')
+                                                <span class="badge bg-warning">{{ $po->status }}</span>
+                                            @elseif ($po->status == 'approved')
+                                                <span class="badge bg-success">{{ $po->status }}</span>
+                                            @elseif ($po->status == 'rejected')
+                                                <span class="badge bg-danger">{{ $po->status }}</span>
+                                            @else
+                                                <span class="badge bg-secondary">{{ $po->status }}</span>
+                                            @endif
+                                        </center>
+                                    </td>
+                                    <td>
+                                        <center>
+                                            @if ($po->status_order == 'scheduled')
+                                                <span class="badge bg-warning">{{ $po->status_order }}</span>
+                                            @elseif ($po->status_order == 'production')
+                                                <span class="badge bg-info">{{ $po->status_order }}</span>
+                                            @elseif ($po->status_order == 'done')
+                                                <span class="badge bg-success">{{ $po->status_order }}</span>
+                                            @elseif ($po->status_order == 'delivered')
+                                                <span class="badge bg-primary">{{ $po->status_order }}</span>
+                                            @else
+                                                <span class="badge bg-secondary">{{ $po->status_order ?? '-' }}</span>
+                                            @endif
+                                        </center>
+                                    </td>
+                                    <td>
+                                        <center>
+                                            <span data-bs-toggle="tooltip" data-bs-placement="left" title="Detail">
+                                                <button type="button" class="btn icon btn-sm btn-info btn-show"
+                                                    data-id="{{ $po->id }}" data-bs-toggle="modal"
+                                                    data-bs-target="#previewModal"><i class="bi bi-eye"></i>
+                                                </button>
+                                            </span>
+                                            @if(auth()->user()->isManager() && auth()->user()->divisi == 'sales' && $po->status == 'contract')
+                                            <span data-bs-toggle="tooltip" data-bs-placement="right" title="Edit">
+                                                <button type="button" class="btn icon btn-sm btn-warning btn-edit"
+                                                    data-id="{{ $po->id }}" data-bs-toggle="modal"
+                                                    data-bs-target="#updateStatusModal"><i class="bi bi-pencil-square"></i>
+                                                </button>
+                                            </span>
+                                            @endif
+                                        </center>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="text-center">Belum ada data PO</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
-                <table class="table table-hover" id=table1>
-                    <thead>
-                        <tr>
-                            <th><center>No</center></th>
-                            <th><center>Quotation No</center></th>
-                            <th><center>PO No</center></th>
-                            <th><center>Attachments</center></th>
-                            <th><center>Delivery Date</center></th>
-                            <th><center>Status</center></th>
-                            <th><center>Status Order</center></th>
-                            <th><center>Action</center></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($pos as $po)
-                            <tr>
-                                <td>
-                                    <center>{{ $po->id }}</center>
-                                </td>
-                                <td>
-                                    <center>{{ $po->quotation->quotation_no }}</center>
-                                </td>
-                                <td>
-                                    <center>{{ $po->po_no }}</center>
-                                </td>
-                                <td>
-                                    <center><a href="{{ asset('storage/uploads/' . $po->attachment) }}" target="_blank"
-                                            class="btn btn-sm btn-info">File</a></center>
-                                </td>
-                                <td>
-                                    <center>{{ \Carbon\Carbon::parse($po->delivery_request)->format('d-m-Y') }}</center>
-                                    <span class="text-sm rounded bg-info text-white">{{ \Carbon\Carbon::parse($po->delivery_request)->diffForHumans() }}</span>
-                                </td>
-                                <td>
-                                    <center>{{ $po->status }}</center>
-                                </td>
-                                <td>
-                                    <center>{{ $po->status_order }}</center>
-                                </td>
-                                <td>
-                                    <center>
-                                        <span data-bs-toggle="tooltip" data-bs-placement="left" title="Detail">
-                                            <button type="button" class="btn icon btn-sm btn-info btn-show"
-                                                data-id="{{ $po->id }}" data-bs-toggle="modal"
-                                                data-bs-target="#previewModal"><i class="bi bi-eye"></i>
-                                            </button>
-                                        </span>
-                                        @if(auth()->user()->isManager() && auth()->user()->divisi == 'sales' && $po->status == 'contract')
-                                        <span data-bs-toggle="tooltip" data-bs-placement="right" title="Edit">
-                                            <button type="button" class="btn icon btn-sm btn-warning btn-edit"
-                                                data-id="{{ $po->id }}" data-bs-toggle="modal"
-                                                data-bs-target="#updateStatusModal"><i class="bi bi-pencil-square"></i>
-                                            </button>
-                                        </span>
-                                        @endif
-                                    </center>
-                                </td>
-                                <td>
-                                    <center></center>
-                                </td>
-                            </tr>
-
-                        @empty
-                            <tr>
-                                <td colspan="6">Belum ada data PO</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
             </div>
         {{-- </div> --}}
         <div class="modal fade" id="previewModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"

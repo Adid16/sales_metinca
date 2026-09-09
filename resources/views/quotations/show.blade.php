@@ -50,6 +50,22 @@
         .history-item.from-pt { border-left-color: #00bcd4; }
         .history-meta { font-size: 11px; color: #bbb; margin-bottom: 3px; }
         .history-content { font-size: 13px; color: #555; }
+
+        /* Dark Mode Overrides */
+        html[data-bs-theme="dark"] .item-table th {
+            background: #222438 !important;
+            color: #e2e8f0 !important;
+            border-bottom: 2px solid #3d425c !important;
+        }
+        html[data-bs-theme="dark"] .timeline::before {
+            background: #363954 !important;
+        }
+        html[data-bs-theme="dark"] .history-item {
+            border-left-color: #363954 !important;
+        }
+        html[data-bs-theme="dark"] .history-content {
+            color: #cbd5e1 !important;
+        }
     </style>
 @endpush
  

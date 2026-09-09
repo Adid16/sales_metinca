@@ -9,8 +9,12 @@
         .stat-card {
             border-radius: 12px;
             transition: all 0.25s ease;
-            border: 1px solid #e9ecef;
-            background: #fff;
+            border: 1px solid rgba(0,0,0,0.08);
+            background: var(--bs-card-bg, #fff);
+        }
+        [data-bs-theme="dark"] .stat-card {
+            border-color: rgba(255,255,255,0.08);
+            background: var(--bs-card-bg, #1e1e2d);
         }
         .stat-card:hover {
             transform: translateY(-2px);
@@ -24,22 +28,22 @@
             transition: all 0.2s ease;
         }
         .nav-pills .nav-link:not(.active) {
-            background-color: #f8fafc;
-            color: #495057;
-            border: 1px solid #e2e8f0;
+            background-color: var(--bs-tertiary-bg, #f8fafc);
+            color: var(--bs-body-color, #495057);
+            border: 1px solid var(--bs-border-color, #e2e8f0);
         }
         .nav-pills .nav-link:not(.active):hover {
-            background-color: #e2e8f0;
-            color: #0d6efd;
+            background-color: var(--bs-secondary-bg, #e2e8f0);
+            color: var(--bs-primary, #0d6efd);
         }
         .table th {
-            background-color: #f8fafc;
+            background-color: var(--bs-tertiary-bg, #f8fafc);
             font-size: 0.78rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: #495057;
-            border-bottom: 2px solid #e2e8f0;
+            color: var(--bs-body-color, #495057);
+            border-bottom: 2px solid var(--bs-border-color, #e2e8f0);
             padding: 12px 14px;
         }
         .table td {
@@ -138,7 +142,7 @@
     {{-- MAIN CONTENT CARD --}}
     <div class="card shadow-sm border" style="border-radius: 12px; overflow: hidden;">
         {{-- FILTER PILL TABS CONTAINER (CLEAN & NON-OVERLAPPING) --}}
-        <div class="p-3 bg-white border-bottom">
+        <div class="p-3 border-bottom">
             <ul class="nav nav-pills gap-2 flex-wrap" role="tablist">
                 <li class="nav-item">
                     <a class="nav-link {{ $tab === 'all' ? 'active bg-primary text-white' : '' }}" href="{{ route('negotiations.index', ['tab' => 'all']) }}">

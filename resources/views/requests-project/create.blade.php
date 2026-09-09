@@ -47,6 +47,20 @@
         .info-badge strong {
             color: #0d6efd;
         }
+
+        /* Dark Mode Overrides */
+        html[data-bs-theme="dark"] .form-section-title {
+            color: #e2e8f0 !important;
+            border-bottom: 2px solid #32364e !important;
+        }
+        html[data-bs-theme="dark"] .info-badge {
+            background-color: rgba(67, 94, 190, 0.15) !important;
+            border-left: 3px solid #435ebe !important;
+            color: #cbd5e1 !important;
+        }
+        html[data-bs-theme="dark"] .info-badge strong {
+            color: #93b0ff !important;
+        }
     </style>
     <link rel="stylesheet" href="{{ asset('assets/extensions/filepond/filepond.css') }}">
 @endpush

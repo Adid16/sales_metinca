@@ -73,6 +73,36 @@
             border-radius: 8px; 
             border: 1px solid #f1f5f9;
         }
+
+        /* Dark Mode Scoped Overrides */
+        html[data-bs-theme="dark"] .negotiate-card {
+            background: #1e1e2d !important;
+            border-color: #2d3047 !important;
+        }
+        html[data-bs-theme="dark"] .negotiate-card .card-header {
+            background-color: #24263a !important;
+            color: #e2e8f0 !important;
+            border-bottom-color: #2d3047 !important;
+        }
+        html[data-bs-theme="dark"] .info-label {
+            color: #94a3b8 !important;
+        }
+        html[data-bs-theme="dark"] .info-value {
+            color: #f1f1f9 !important;
+        }
+        html[data-bs-theme="dark"] .item-table th {
+            background-color: #222438 !important;
+            color: #e2e8f0 !important;
+            border-bottom: 2px solid #3d425c !important;
+        }
+        html[data-bs-theme="dark"] .total-row {
+            background-color: #24263a !important;
+        }
+        html[data-bs-theme="dark"] .history-content {
+            background: #171827 !important;
+            color: #cbd5e1 !important;
+            border-color: #2d3047 !important;
+        }
     </style>
 @endpush
  

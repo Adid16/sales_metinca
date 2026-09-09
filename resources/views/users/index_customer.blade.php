@@ -140,49 +140,51 @@
                         </div>
                     </div>
                 </div>
-                <table class="table table-hover mt-3" id="table1">
-                    <thead>
-                        <tr>
-                            <th><center>No</center></th>
-                            <th><center>Nama</center></th>
-                            <th><center>Company</center></th>
-                            {{-- <th><center>Country</center></th> --}}
-                            <th><center>Email</center></th>
-                            {{-- <th><center>Password</center></th> --}}
-                            {{-- <th><center>Phone</center></th> --}}
-                            <th><center>Role</center></th>
-                            {{-- <th><center>Address</center></th> --}}
-                            <th><center>Action</center></th>
-                        </tr>
-                    </thead>
-                    <tbody style="font-size: 14px;">
-                        @forelse ($users as $user)
+                <div class="table-responsive">
+                    <table class="table table-hover mt-3" id="table1">
+                        <thead>
                             <tr>
-                                <td><center>{{ $loop->iteration }}</center></td>
-                                <td style="width: 70px;">{{ $user->name }}</td>
-                                <td><center>{{ $user->company }}</center></td>
-                                <td><center>{{ $user->email }}</center></td>
-                                {{-- <td><center>{{ $user->password }}</center></td> --}}
-                                <td><center>{{ $user->role }} {{ ucfirst($user->divisi) ?? '' }}</center></td>
-                                <td><center>
-                                        <button class="btn btn-sm btn-warning btn-edit" data-user-id="{{ $user->id }}" data-bs-toggle="modal" data-bs-target="#modalEditCustomer"><i
-                                                class="bi bi-pencil-square"></i></button>
-                                        <form action="{{ route('users.destroy', $user->id) }}" method="POST"
-                                            class="d-inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit"
-                                                onclick="return confirm('Apakah anda yakin ingin menghapus user ini?')"
-                                                class="btn btn-sm btn-danger"><i class="bi bi-trash-fill"></i>
-                                            </button>
-                                        </form>
-                                </center></td>
+                                <th><center>No</center></th>
+                                <th><center>Nama</center></th>
+                                <th><center>Company</center></th>
+                                {{-- <th><center>Country</center></th> --}}
+                                <th><center>Email</center></th>
+                                {{-- <th><center>Password</center></th> --}}
+                                {{-- <th><center>Phone</center></th> --}}
+                                <th><center>Role</center></th>
+                                {{-- <th><center>Address</center></th> --}}
+                                <th><center>Action</center></th>
                             </tr>
-                        @empty
-                            <tr><td colspan="8" class="text-center text-muted">No data available</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody style="font-size: 14px;">
+                            @forelse ($users as $user)
+                                <tr>
+                                    <td><center>{{ $loop->iteration }}</center></td>
+                                    <td style="width: 70px;">{{ $user->name }}</td>
+                                    <td><center>{{ $user->company }}</center></td>
+                                    <td><center>{{ $user->email }}</center></td>
+                                    {{-- <td><center>{{ $user->password }}</center></td> --}}
+                                    <td><center>{{ $user->role }} {{ ucfirst($user->divisi) ?? '' }}</center></td>
+                                    <td><center>
+                                            <button class="btn btn-sm btn-warning btn-edit" data-user-id="{{ $user->id }}" data-bs-toggle="modal" data-bs-target="#modalEditCustomer"><i
+                                                    class="bi bi-pencil-square"></i></button>
+                                            <form action="{{ route('users.destroy', $user->id) }}" method="POST"
+                                                class="d-inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit"
+                                                    onclick="return confirm('Apakah anda yakin ingin menghapus user ini?')"
+                                                    class="btn btn-sm btn-danger"><i class="bi bi-trash-fill"></i>
+                                                </button>
+                                            </form>
+                                    </center></td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="8" class="text-center text-muted">No data available</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             {{-- </div> --}}
         
     </section>

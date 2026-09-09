@@ -1,0 +1,210 @@
+/* ==========================================================================
+   RESPONSIVE ENHANCEMENTS & MOBILE/TABLET OPTIMIZATIONS (PT. METINCA PRIMA)
+   Ensures seamless layout adaptation on Mobile (xs, sm), Tablet (md), and Desktop (lg, xl, xxl).
+   ========================================================================== */
+
+/* ================= 1. HEADER & TOPBAR NAVBAR ================= */
+.layout-navbar .navbar-top {
+    background-color: var(--bs-card-bg, #ffffff);
+    border-bottom: 1px solid var(--bs-border-color, #e9ecef);
+    padding: 0.75rem 1.5rem;
+    min-height: 64px;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+html[data-bs-theme="dark"] .layout-navbar .navbar-top {
+    background-color: #1e1e2d !important;
+    border-bottom-color: #2d3047 !important;
+}
+
+.header-title-container {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.app-page-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 0;
+    color: var(--bs-heading-color, #25396f);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+html[data-bs-theme="dark"] .app-page-title {
+    color: #f1f1f9 !important;
+}
+
+.burger-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #435ebe;
+    font-size: 1.5rem;
+    text-decoration: none;
+    line-height: 1;
+    cursor: pointer;
+}
+
+html[data-bs-theme="dark"] .burger-btn {
+    color: #93b0ff;
+}
+
+/* Tablet & Mobile header adjustments */
+@media (max-width: 1199.98px) {
+    .layout-navbar .navbar-top {
+        padding: 0.6rem 1rem;
+    }
+    .app-page-title {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .app-page-title {
+        font-size: 0.88rem;
+        max-width: 170px;
+    }
+}
+
+/* ================= 2. MAIN CONTENT & PAGE WRAPPERS ================= */
+#main-content {
+    padding: 1.25rem 1.5rem 2.5rem;
+}
+
+@media (max-width: 767.98px) {
+    #main-content {
+        padding: 1rem 0.75rem 2rem;
+    }
+    .card-body {
+        padding: 1rem !important;
+    }
+    .card-header {
+        padding: 0.75rem 1rem !important;
+    }
+    .page-heading h3 {
+        font-size: 1.25rem !important;
+    }
+}
+
+/* ================= 3. FILTER BARS & SEARCH BARS ================= */
+@media (max-width: 767.98px) {
+    .filter-group-responsive {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    .filter-group-responsive .form-control,
+    .filter-group-responsive .form-select,
+    .filter-group-responsive .btn {
+        width: 100% !important;
+    }
+}
+
+/* ================= 4. TABLE RESPONSIVENESS ================= */
+.table-responsive {
+    width: 100% !important;
+    margin-bottom: 1rem;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure minimum readable column widths for data tables */
+.table th, .table td {
+    vertical-align: middle;
+}
+
+.table th.text-nowrap, .table td.text-nowrap {
+    white-space: nowrap !important;
+}
+
+@media (max-width: 767.98px) {
+    .table {
+        font-size: 0.8rem !important;
+    }
+    .table thead th {
+        font-size: 0.75rem !important;
+        padding: 8px 10px !important;
+    }
+    .table tbody td {
+        padding: 8px 10px !important;
+    }
+    .btn-action-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+}
+
+/* ================= 5. BUTTONS, BADGES & ACTIONS ================= */
+@media (max-width: 575.98px) {
+    .btn-sm, .btn-xs {
+        font-size: 0.75rem !important;
+        padding: 0.25rem 0.5rem !important;
+    }
+    .modal-footer {
+        flex-direction: column-reverse;
+        gap: 8px;
+    }
+    .modal-footer > * {
+        width: 100% !important;
+        margin: 0 !important;
+    }
+}
+
+/* ================= 6. MODALS & POPUPS ================= */
+@media (max-width: 767.98px) {
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+    .modal-content {
+        border-radius: 8px;
+    }
+    .modal-header {
+        padding: 0.75rem 1rem;
+    }
+    .modal-body {
+        padding: 1rem;
+    }
+}
+
+/* ================= 7. ITEM DETAILS & ACCORDION CARDS ================= */
+@media (max-width: 767.98px) {
+    .border-end,
+    .border-end-md,
+    .item-detail-card-wrapper .border-end {
+        border-right: none !important;
+        border-bottom: 1px solid var(--bs-border-color, rgba(0,0,0,0.1)) !important;
+        padding-bottom: 1rem !important;
+        margin-bottom: 1rem !important;
+    }
+    html[data-bs-theme="dark"] .border-end,
+    html[data-bs-theme="dark"] .border-end-md,
+    html[data-bs-theme="dark"] .item-detail-card-wrapper .border-end {
+        border-bottom-color: #2d3047 !important;
+    }
+}
+
+/* ================= 8. NAVIGATION TABS ================= */
+.nav-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    scrollbar-width: thin;
+}
+
+.nav-tabs .nav-link {
+    white-space: nowrap;
+}
+
+/* ================= 9. SWEETALERT RESPONSIVENESS ================= */
+@media (max-width: 575.98px) {
+    .swal2-popup {
+        width: 90% !important;
+        padding: 1em 0.5em !important;
+        font-size: 0.9rem !important;
+    }
+}

@@ -1,0 +1,516 @@
+/* ==========================================================================
+   DARK THEME ENHANCEMENTS & NORMALIZATIONS (PT. METINCA PRIMA)
+   Handles all dark mode styling gracefully across all views & components.
+   ========================================================================== */
+
+html[data-bs-theme="dark"] {
+    --bs-body-bg: #151521;
+    --bs-body-color: #c2c2d9;
+    --bs-card-bg: #1e1e2d;
+    --bs-border-color: #2d3047;
+}
+
+/* ================= 1. TYPOGRAPHY & TEXT OVERRIDES ================= */
+html[data-bs-theme="dark"] body {
+    background-color: #151521 !important;
+    color: #c2c2d9 !important;
+}
+
+html[data-bs-theme="dark"] h1,
+html[data-bs-theme="dark"] h2,
+html[data-bs-theme="dark"] h3,
+html[data-bs-theme="dark"] h4,
+html[data-bs-theme="dark"] h5,
+html[data-bs-theme="dark"] h6,
+html[data-bs-theme="dark"] .h1,
+html[data-bs-theme="dark"] .h2,
+html[data-bs-theme="dark"] .h3,
+html[data-bs-theme="dark"] .h4,
+html[data-bs-theme="dark"] .h5,
+html[data-bs-theme="dark"] .h6 {
+    color: #f1f1f9 !important;
+}
+
+html[data-bs-theme="dark"] .text-dark {
+    color: #e2e8f0 !important;
+}
+
+/* Preserve dark text inside yellow/warning/light badges/buttons where contrast is required */
+html[data-bs-theme="dark"] .btn-warning.text-dark,
+html[data-bs-theme="dark"] .badge.bg-warning.text-dark,
+html[data-bs-theme="dark"] .badge.bg-warning,
+html[data-bs-theme="dark"] .btn-warning {
+    color: #1a1a24 !important;
+}
+
+html[data-bs-theme="dark"] .text-secondary {
+    color: #94a3b8 !important;
+}
+
+html[data-bs-theme="dark"] .text-muted {
+    color: #8b95a5 !important;
+}
+
+html[data-bs-theme="dark"] .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* ================= 2. CARDS & CONTAINERS ================= */
+html[data-bs-theme="dark"] .card {
+    background-color: #1e1e2d !important;
+    border-color: #2d3047 !important;
+    color: #c2c2d9 !important;
+}
+
+html[data-bs-theme="dark"] .card-header:not(.bg-primary):not(.bg-success):not(.bg-danger):not(.bg-warning):not(.bg-info) {
+    background-color: #24263a !important;
+    border-bottom-color: #2d3047 !important;
+    color: #f1f1f9 !important;
+}
+
+html[data-bs-theme="dark"] .card-footer {
+    background-color: #171827 !important;
+    border-top-color: #2d3047 !important;
+}
+
+html[data-bs-theme="dark"] .bg-light {
+    background-color: #171826 !important;
+    color: #c2c2d9 !important;
+    border-color: #2d3047 !important;
+}
+
+html[data-bs-theme="dark"] .bg-white {
+    background-color: #1e1e2d !important;
+    color: #c2c2d9 !important;
+}
+
+html[data-bs-theme="dark"] .border,
+html[data-bs-theme="dark"] .border-top,
+html[data-bs-theme="dark"] .border-bottom,
+html[data-bs-theme="dark"] .border-end,
+html[data-bs-theme="dark"] .border-start {
+    border-color: #2d3047 !important;
+}
+
+/* ================= 3. TABLES & DATATABLES ================= */
+html[data-bs-theme="dark"] .table,
+html[data-bs-theme="dark"] table {
+    --bs-table-bg: transparent;
+    --bs-table-striped-bg: rgba(255, 255, 255, 0.02);
+    --bs-table-hover-bg: rgba(67, 94, 190, 0.12);
+    --bs-table-border-color: #2d3047;
+    color: #c2c2d9 !important;
+}
+
+html[data-bs-theme="dark"] table thead th,
+html[data-bs-theme="dark"] .table thead th,
+html[data-bs-theme="dark"] .table-light,
+html[data-bs-theme="dark"] .table-light th,
+html[data-bs-theme="dark"] thead.table-light th,
+html[data-bs-theme="dark"] #poTable thead th,
+html[data-bs-theme="dark"] .table-items thead th,
+html[data-bs-theme="dark"] .item-table th {
+    background-color: #222438 !important;
+    background: #222438 !important;
+    color: #e2e8f0 !important;
+    border-color: #32364e !important;
+    border-bottom: 2px solid #3d425c !important;
+}
+
+html[data-bs-theme="dark"] .table tfoot,
+html[data-bs-theme="dark"] .table tfoot td,
+html[data-bs-theme="dark"] .table-light tfoot,
+html[data-bs-theme="dark"] tfoot.table-light td {
+    background-color: #1a1c2b !important;
+    color: #e2e8f0 !important;
+    border-color: #32364e !important;
+}
+
+html[data-bs-theme="dark"] .table tbody td,
+html[data-bs-theme="dark"] table tbody td,
+html[data-bs-theme="dark"] #poTable tbody td {
+    border-color: #2a2d3e !important;
+    color: #c2c2d9 !important;
+}
+
+html[data-bs-theme="dark"] .table tbody tr:hover,
+html[data-bs-theme="dark"] .table-hover tbody tr:hover,
+html[data-bs-theme="dark"] .table-hover>tbody>tr:hover>*,
+html[data-bs-theme="dark"] #poTable tbody tr:hover {
+    background-color: rgba(67, 94, 190, 0.14) !important;
+    color: #ffffff !important;
+}
+
+html[data-bs-theme="dark"] .table-warning,
+html[data-bs-theme="dark"] .table-warning>td,
+html[data-bs-theme="dark"] .table-warning>th {
+    background-color: rgba(245, 158, 11, 0.15) !important;
+    color: #fde047 !important;
+    border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+html[data-bs-theme="dark"] .table-striped>tbody>tr:nth-of-type(odd)>* {
+    background-color: rgba(255, 255, 255, 0.02) !important;
+    color: #c2c2d9 !important;
+}
+
+/* Sub-Item Accordion Boxes (PO Internal, Contract Index) */
+html[data-bs-theme="dark"] .subtable-box {
+    background-color: #161726 !important;
+    border-left: 4px solid #435ebe !important;
+}
+
+html[data-bs-theme="dark"] .table-detail {
+    background-color: #1e1e2d !important;
+    color: #c2c2d9 !important;
+}
+
+html[data-bs-theme="dark"] .table-detail th {
+    background-color: #282b42 !important;
+    color: #93b0ff !important;
+    border-color: #363954 !important;
+}
+
+html[data-bs-theme="dark"] .table-detail td {
+    background-color: #1e1e2d !important;
+    color: #c2c2d9 !important;
+    border-color: #2d3047 !important;
+}
+
+/* ================= 4. FORMS & INPUTS ================= */
+html[data-bs-theme="dark"] .form-control,
+html[data-bs-theme="dark"] .form-select {
+    background-color: #171827 !important;
+    border-color: #363852 !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-bs-theme="dark"] .form-control:focus,
+html[data-bs-theme="dark"] .form-select:focus {
+    background-color: #1c1d30 !important;
+    border-color: #435ebe !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 0.25rem rgba(67, 94, 190, 0.25) !important;
+}
+
+html[data-bs-theme="dark"] .form-control[readonly],
+html[data-bs-theme="dark"] .form-control:disabled,
+html[data-bs-theme="dark"] .form-control.bg-light {
+    background-color: #131320 !important;
+    border-color: #2a2b3f !important;
+    color: #cbd5e1 !important;
+}
+
+html[data-bs-theme="dark"] .input-group-text,
+html[data-bs-theme="dark"] .input-group-text.bg-light {
+    background-color: #232438 !important;
+    border-color: #363852 !important;
+    color: #a5a5c0 !important;
+}
+
+html[data-bs-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(1.2) !important;
+    opacity: 0.8 !important;
+    cursor: pointer;
+}
+
+html[data-bs-theme="dark"] .form-select option {
+    background-color: #1e1e2d !important;
+    color: #e2e8f0 !important;
+}
+
+/* ================= 5. BADGES & PILLS ================= */
+html[data-bs-theme="dark"] .bg-primary-subtle {
+    background-color: rgba(67, 94, 190, 0.25) !important;
+    color: #93b0ff !important;
+    border: 1px solid rgba(67, 94, 190, 0.35) !important;
+}
+
+html[data-bs-theme="dark"] .bg-success-subtle {
+    background-color: rgba(25, 135, 84, 0.25) !important;
+    color: #5eead4 !important;
+    border: 1px solid rgba(25, 135, 84, 0.35) !important;
+}
+
+html[data-bs-theme="dark"] .bg-warning-subtle {
+    background-color: rgba(245, 158, 11, 0.22) !important;
+    color: #fde047 !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+}
+
+html[data-bs-theme="dark"] .bg-info-subtle {
+    background-color: rgba(13, 202, 240, 0.22) !important;
+    color: #67e8f9 !important;
+    border: 1px solid rgba(13, 202, 240, 0.35) !important;
+}
+
+html[data-bs-theme="dark"] .bg-danger-subtle {
+    background-color: rgba(220, 53, 69, 0.22) !important;
+    color: #fca5a5 !important;
+    border: 1px solid rgba(220, 53, 69, 0.35) !important;
+}
+
+html[data-bs-theme="dark"] .bg-secondary-subtle {
+    background-color: rgba(108, 117, 125, 0.25) !important;
+    color: #cbd5e1 !important;
+    border: 1px solid rgba(108, 117, 125, 0.35) !important;
+}
+
+html[data-bs-theme="dark"] .bg-light-primary {
+    background-color: rgba(67, 94, 190, 0.25) !important;
+    color: #93b0ff !important;
+}
+
+html[data-bs-theme="dark"] .bg-light-success {
+    background-color: rgba(25, 135, 84, 0.25) !important;
+    color: #5eead4 !important;
+}
+
+html[data-bs-theme="dark"] .bg-light-warning {
+    background-color: rgba(245, 158, 11, 0.22) !important;
+    color: #fde047 !important;
+}
+
+html[data-bs-theme="dark"] .bg-light-danger {
+    background-color: rgba(220, 53, 69, 0.22) !important;
+    color: #fca5a5 !important;
+}
+
+html[data-bs-theme="dark"] .bg-light-secondary {
+    background-color: rgba(108, 117, 125, 0.25) !important;
+    color: #cbd5e1 !important;
+}
+
+html[data-bs-theme="dark"] .badge.bg-light {
+    background-color: #2b2d42 !important;
+    color: #e2e8f0 !important;
+    border-color: #3d415d !important;
+}
+
+html[data-bs-theme="dark"] .badge.bg-white {
+    background-color: #2b2d42 !important;
+    color: #e2e8f0 !important;
+    border-color: #3d415d !important;
+}
+
+/* ================= 6. MODALS & DROPDOWNS ================= */
+html[data-bs-theme="dark"] .modal-content {
+    background-color: #1e1e2d !important;
+    border-color: #32364e !important;
+    color: #c2c2d9 !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+}
+
+html[data-bs-theme="dark"] .modal-header {
+    border-bottom-color: #2d3047 !important;
+}
+
+html[data-bs-theme="dark"] .modal-footer,
+html[data-bs-theme="dark"] .modal-footer.bg-light {
+    background-color: #161726 !important;
+    border-top-color: #2d3047 !important;
+}
+
+html[data-bs-theme="dark"] .dropdown-menu {
+    background-color: #1e1e2d !important;
+    border-color: #32364e !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4) !important;
+}
+
+html[data-bs-theme="dark"] .dropdown-item {
+    color: #c2c2d9 !important;
+}
+
+html[data-bs-theme="dark"] .dropdown-item:hover,
+html[data-bs-theme="dark"] .dropdown-item:focus {
+    background-color: rgba(67, 94, 190, 0.2) !important;
+    color: #ffffff !important;
+}
+
+html[data-bs-theme="dark"] .dropdown-divider {
+    border-top-color: #32364e !important;
+}
+
+html[data-bs-theme="dark"] .notification-dropdown .notification-item.bg-light {
+    background-color: #24263a !important;
+}
+
+/* ================= 7. NAVIGATION, TABS & PAGINATION ================= */
+html[data-bs-theme="dark"] .nav-tabs {
+    border-bottom-color: #32364e !important;
+}
+
+html[data-bs-theme="dark"] .nav-tabs .nav-link {
+    color: #94a3b8 !important;
+}
+
+html[data-bs-theme="dark"] .nav-tabs .nav-link:hover {
+    border-color: #3d425c !important;
+    color: #ffffff !important;
+}
+
+html[data-bs-theme="dark"] .nav-tabs .nav-link.active {
+    background-color: #1e1e2d !important;
+    border-color: #32364e #32364e #1e1e2d !important;
+    color: #93b0ff !important;
+    font-weight: 700 !important;
+}
+
+html[data-bs-theme="dark"] .page-link {
+    background-color: #1e1e2d !important;
+    border-color: #32364e !important;
+    color: #c2c2d9 !important;
+}
+
+html[data-bs-theme="dark"] .page-item.active .page-link {
+    background-color: #435ebe !important;
+    border-color: #435ebe !important;
+    color: #ffffff !important;
+}
+
+html[data-bs-theme="dark"] .page-item.disabled .page-link {
+    background-color: #161726 !important;
+    border-color: #2a2d3e !important;
+    color: #64748b !important;
+}
+
+/* Simple-DataTables */
+html[data-bs-theme="dark"] .dataTable-input,
+html[data-bs-theme="dark"] .dataTable-selector {
+    background-color: #171827 !important;
+    border-color: #363852 !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-bs-theme="dark"] .dataTable-pagination a {
+    background-color: #1e1e2d !important;
+    color: #c2c2d9 !important;
+    border-color: #32364e !important;
+}
+
+html[data-bs-theme="dark"] .dataTable-pagination li.active a {
+    background-color: #435ebe !important;
+    color: #ffffff !important;
+}
+
+/* ================= 8. NEGOTIATION, CHAT & TIMELINES ================= */
+html[data-bs-theme="dark"] .negotiate-card {
+    background-color: #1e1e2d !important;
+    border-color: #32364e !important;
+}
+
+html[data-bs-theme="dark"] .negotiate-card .card-header {
+    background-color: #24263a !important;
+    color: #e2e8f0 !important;
+    border-bottom-color: #32364e !important;
+}
+
+html[data-bs-theme="dark"] .info-label {
+    color: #94a3b8 !important;
+}
+
+html[data-bs-theme="dark"] .info-value {
+    color: #f1f1f9 !important;
+}
+
+html[data-bs-theme="dark"] .history-item {
+    border-left-color: #3d425c !important;
+}
+
+html[data-bs-theme="dark"] .history-meta {
+    color: #94a3b8 !important;
+}
+
+html[data-bs-theme="dark"] .history-content {
+    color: #cbd5e1 !important;
+}
+
+html[data-bs-theme="dark"] .total-row {
+    background-color: #24263a !important;
+}
+
+html[data-bs-theme="dark"] .timeline::before {
+    background: #363954 !important;
+}
+
+/* ================= 9. DASHBOARD STATS CARDS & ALERTS ================= */
+html[data-bs-theme="dark"] .card-blue {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.16), rgba(96, 165, 250, 0.08)) !important;
+    border: 1px solid rgba(59, 130, 246, 0.28) !important;
+}
+html[data-bs-theme="dark"] .card-blue .card-label {
+    color: #93c5fd !important;
+}
+
+html[data-bs-theme="dark"] .card-green {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.16), rgba(74, 222, 128, 0.08)) !important;
+    border: 1px solid rgba(34, 197, 94, 0.28) !important;
+}
+html[data-bs-theme="dark"] .card-green .card-label {
+    color: #86efac !important;
+}
+
+html[data-bs-theme="dark"] .card-yellow {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(250, 204, 21, 0.08)) !important;
+    border: 1px solid rgba(245, 158, 11, 0.28) !important;
+}
+html[data-bs-theme="dark"] .card-yellow .card-label {
+    color: #fde047 !important;
+}
+
+html[data-bs-theme="dark"] .card-red {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.16), rgba(248, 113, 113, 0.08)) !important;
+    border: 1px solid rgba(239, 68, 68, 0.28) !important;
+}
+html[data-bs-theme="dark"] .card-red .card-label {
+    color: #fca5a5 !important;
+}
+
+html[data-bs-theme="dark"] .card-purple {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.16), rgba(167, 139, 250, 0.08)) !important;
+    border: 1px solid rgba(139, 92, 246, 0.28) !important;
+}
+html[data-bs-theme="dark"] .card-purple .card-label {
+    color: #d8b4fe !important;
+}
+
+/* Form section headers and info badges */
+html[data-bs-theme="dark"] .form-section-title {
+    color: #e2e8f0 !important;
+    border-bottom: 2px solid #32364e !important;
+}
+
+html[data-bs-theme="dark"] .info-badge {
+    background-color: rgba(67, 94, 190, 0.15) !important;
+    border-left: 3px solid #435ebe !important;
+    color: #cbd5e1 !important;
+}
+
+html[data-bs-theme="dark"] .info-badge strong {
+    color: #93b0ff !important;
+}
+
+/* Alert Boxes in Dark Mode */
+html[data-bs-theme="dark"] .alert-success {
+    background-color: rgba(25, 135, 84, 0.2) !important;
+    border-color: rgba(25, 135, 84, 0.4) !important;
+    color: #4ade80 !important;
+}
+
+html[data-bs-theme="dark"] .alert-danger {
+    background-color: rgba(220, 53, 69, 0.2) !important;
+    border-color: rgba(220, 53, 69, 0.4) !important;
+    color: #f87171 !important;
+}
+
+html[data-bs-theme="dark"] .alert-warning {
+    background-color: rgba(245, 158, 11, 0.18) !important;
+    border-color: rgba(245, 158, 11, 0.4) !important;
+    color: #fbbf24 !important;
+}
+
+html[data-bs-theme="dark"] .alert-info {
+    background-color: rgba(13, 202, 240, 0.18) !important;
+    border-color: rgba(13, 202, 240, 0.4) !important;
+    color: #38bdf8 !important;
+}

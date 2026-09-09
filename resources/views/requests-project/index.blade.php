@@ -39,14 +39,14 @@
             <div class="card-body py-0">
                 <form class="mb-3" method="GET" action="{{ route('requests-project.index') }}">
                     <div class="row g-2 align-items-end mt-0">
-                        <div class= "col-md-3">
+                        <div class="col-12 col-sm-6 col-lg-3">
                             <div class="d-flex align-items-center gap-1">
                                 <label class="form-label small mb-0 text-nowrap">From : </label>
                                 <input type="date" name="start_date" class="form-control form-control-sm" value="{{ $filters['start_date'] ?? '' }}" placeholder="From">
                             </div>
                         </div>
                         
-                        <div class="col-md-3">
+                        <div class="col-12 col-sm-6 col-lg-3">
                             <div class="d-flex align-items-center gap-1">
                                 <label class="form-label small mb-0 text-nowrap">To : </label>
                                 <input type="date" name="end_date" class="form-control form-control-sm" value="{{ $filters['end_date'] ?? '' }}" placeholder="To">
@@ -54,7 +54,7 @@
                         </div>
                         
                         @if(auth()->user()->isAdmin() || auth()->user()->isManager() || (auth()->user()->role == 'staff' && auth()->user()->divisi == 'sales') || auth()->user()->isCustomer())
-                        <div class="col-md-2">
+                        <div class="col-12 col-sm-6 col-lg-2">
                             <div class="d-flex align-items-center gap-1">
                                 <select name="sales_id" class="form-select form-select-sm">
                                     <option value="">All Sales</option>
@@ -66,21 +66,21 @@
                         </div>
                         @endif
             
-                    <div class="col-md-2 d-flex gap-1">
-                        {{-- <div class="d-flex align-items-center gap-1"> --}}
+                        <div class="col-12 col-sm-6 col-lg-4 d-flex flex-wrap gap-1">
                             @if (auth()->user()->isAdmin() || auth()->user()->isManager() || (auth()->user()->role == 'staff' && auth()->user()->divisi == 'sales') || auth()->user()->isCustomer())
                                 <button type="submit" class="btn btn-sm btn-secondary">Filter</button>
-                                <a href = "{{ route('requests-project.index') }}" class="btn btn-sm btn-danger">Clear</a>
-                                {{-- <button type="submit" class="btn btn-sm btn-danger">Clear</button> --}}
+                                <a href="{{ route('requests-project.index') }}" class="btn btn-sm btn-danger">Clear</a>
                                 <button type="submit" formaction="{{ route('requests-project.export') }}" class="btn btn-success btn-sm btn-end text-end">Export</button>
                             @endif
                             @if (auth()->user()->isCustomer())
                                 <a href="{{ route('requests-project.create') }}" class="btn btn-primary btn-sm"> New </a>
                             @endif
-                        {{-- </div> --}}
+                        </div>
                     </div>
                 </form>
             </div>
+
+            <div class="table-responsive">
                 <table class="table table-hover text-nowrap" id="table1">
                     <thead>
                         <tr>
@@ -134,12 +134,6 @@
                                                 @endif
                                     @endif 
                                     
-                                    {{-- <button type="submit" class="btn btn-sm btn-primary"
-                                        onclick="return confirm('Ambil request project ini?')">
-                                        <i class="bi bi-plus"></i>
-                                    </button> --}}
-                                </form>
-                                   
                                 </center></td>
                             </tr>
                         @empty

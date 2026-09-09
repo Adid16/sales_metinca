@@ -42,21 +42,21 @@
     <div class="card-body py-0">
         <form class="mb-3" method="GET" action="{{ route('quotations.index') }}">
             <div class="row g-2 align-items-end mt-0">
-                <div class="col-md-3">
+                <div class="col-12 col-sm-6 col-lg-3">
                     <div class="d-flex align-items-center gap-1">
                         <label class="form-label small mb-0 text-nowrap">From : </label>
                         <input type="date" name="start_date" class="form-control form-control-sm" value="{{ $filters['start_date'] ?? '' }}" placeholder="From">
                     </div>
                 </div>
         
-                <div class="col-md-3">
+                <div class="col-12 col-sm-6 col-lg-3">
                     <div class="d-flex align-items-center gap-1">
                         <label class="form-label small mb-0 text-nowrap">To : </label>
                         <input type="date" name="end_date" class="form-control form-control-sm" value="{{ $filters['end_date'] ?? '' }}" placeholder="To">                      
                     </div>
                 </div>
 
-                <div class="col-md-2">
+                <div class="col-12 col-sm-6 col-lg-2">
                     <div class="d-flex align-items-center gap-1">
                         <select name="status" class="form-select form-select-sm">
                             <option value="">All Status</option>
@@ -69,7 +69,7 @@
                     </div>
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-12 col-sm-6 col-lg-4 d-flex flex-wrap gap-1">
                     <button type="submit" class="btn btn-sm btn-secondary">Filter</button>
                     <button type="submit" formaction="{{ route('quotations.export') }}" class="btn btn-success btn-sm">Export</button>
                     @if(!auth()->user()->isCustomer())
@@ -79,6 +79,7 @@
             </div>
         </form>
 
+        <div class="table-responsive">
         <table class="table table-hover align-middle" id="table1">
             <thead class="table-light">
                 <tr>
@@ -187,6 +188,7 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
     </div>
 </section>
 

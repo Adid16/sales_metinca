@@ -37,14 +37,14 @@
             <div class="card-body py-0">
                 <form class="mb-3" method="GET" action="<?php echo e(route('requests-project.index')); ?>">
                     <div class="row g-2 align-items-end mt-0">
-                        <div class= "col-md-3">
+                        <div class="col-12 col-sm-6 col-lg-3">
                             <div class="d-flex align-items-center gap-1">
                                 <label class="form-label small mb-0 text-nowrap">From : </label>
                                 <input type="date" name="start_date" class="form-control form-control-sm" value="<?php echo e($filters['start_date'] ?? ''); ?>" placeholder="From">
                             </div>
                         </div>
                         
-                        <div class="col-md-3">
+                        <div class="col-12 col-sm-6 col-lg-3">
                             <div class="d-flex align-items-center gap-1">
                                 <label class="form-label small mb-0 text-nowrap">To : </label>
                                 <input type="date" name="end_date" class="form-control form-control-sm" value="<?php echo e($filters['end_date'] ?? ''); ?>" placeholder="To">
@@ -52,7 +52,7 @@
                         </div>
                         
                         <?php if(auth()->user()->isAdmin() || auth()->user()->isManager() || (auth()->user()->role == 'staff' && auth()->user()->divisi == 'sales') || auth()->user()->isCustomer()): ?>
-                        <div class="col-md-2">
+                        <div class="col-12 col-sm-6 col-lg-2">
                             <div class="d-flex align-items-center gap-1">
                                 <select name="sales_id" class="form-select form-select-sm">
                                     <option value="">All Sales</option>
@@ -64,21 +64,21 @@
                         </div>
                         <?php endif; ?>
             
-                    <div class="col-md-2 d-flex gap-1">
-                        
+                        <div class="col-12 col-sm-6 col-lg-4 d-flex flex-wrap gap-1">
                             <?php if(auth()->user()->isAdmin() || auth()->user()->isManager() || (auth()->user()->role == 'staff' && auth()->user()->divisi == 'sales') || auth()->user()->isCustomer()): ?>
                                 <button type="submit" class="btn btn-sm btn-secondary">Filter</button>
-                                <a href = "<?php echo e(route('requests-project.index')); ?>" class="btn btn-sm btn-danger">Clear</a>
-                                
+                                <a href="<?php echo e(route('requests-project.index')); ?>" class="btn btn-sm btn-danger">Clear</a>
                                 <button type="submit" formaction="<?php echo e(route('requests-project.export')); ?>" class="btn btn-success btn-sm btn-end text-end">Export</button>
                             <?php endif; ?>
                             <?php if(auth()->user()->isCustomer()): ?>
                                 <a href="<?php echo e(route('requests-project.create')); ?>" class="btn btn-primary btn-sm"> New </a>
                             <?php endif; ?>
-                        
+                        </div>
                     </div>
                 </form>
             </div>
+
+            <div class="table-responsive">
                 <table class="table table-hover text-nowrap" id="table1">
                     <thead>
                         <tr>
@@ -133,9 +133,6 @@
                                                 <?php endif; ?>
                                     <?php endif; ?> 
                                     
-                                    
-                                </form>
-                                   
                                 </center></td>
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>

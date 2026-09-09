@@ -100,7 +100,7 @@
             <div class="row">
                 <div class="col-12">
                     <div class="card shadow-sm border-0">
-                        <div class="card-header py-3 bg-white border-bottom d-flex justify-content-between align-items-center">
+                        <div class="card-header py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <div class="d-flex align-items-center">
                                 <div class="avatar bg-primary-subtle text-primary rounded-circle p-2 me-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
                                     <i class="bi bi-clock-history fs-5"></i>

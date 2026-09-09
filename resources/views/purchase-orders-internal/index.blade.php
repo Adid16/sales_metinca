@@ -3,15 +3,11 @@
 @section('title', 'PT. Metinca Prima Industrial Works')
 
 @push('styles')
-    <link rel="shortcut icon" href="./assets/compiled/svg/favicon.svg" type="image/x-icon">
     <link rel="stylesheet" href="{{ asset('assets/extensions/simple-datatables/style.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/compiled/css/table-datatable.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/compiled/css/app.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/compiled/css/app-dark.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     
     <style>
-        /* ================= TABEL UTAMA (NORMAL TANPA SCROLL) ================= */
         /* ================= TABEL UTAMA (NORMAL TANPA SCROLL) ================= */
         .table-main-wrapper {
             width: 100% !important;
@@ -157,6 +153,36 @@
         }
         .btn-collapse-toggle[aria-expanded="true"] .bi-chevron-down {
             transform: rotate(180deg);
+        }
+
+        /* Dark Theme Scoped Overrides */
+        html[data-bs-theme="dark"] .subtable-box {
+            background-color: #161726 !important;
+            border-left: 4px solid #435ebe !important;
+        }
+        html[data-bs-theme="dark"] .table-detail {
+            background-color: #1e1e2d !important;
+            color: #c2c2d9 !important;
+        }
+        html[data-bs-theme="dark"] .table-detail th {
+            background-color: #282b42 !important;
+            color: #93b0ff !important;
+            border-bottom: 1px solid #363954 !important;
+        }
+        html[data-bs-theme="dark"] .table-detail td {
+            background-color: #1e1e2d !important;
+            color: #c2c2d9 !important;
+            border-color: #2d3047 !important;
+        }
+        html[data-bs-theme="dark"] .badge-pricelist {
+            background-color: rgba(25, 135, 84, 0.25) !important;
+            color: #5eead4 !important;
+            border-color: rgba(25, 135, 84, 0.4) !important;
+        }
+        html[data-bs-theme="dark"] .badge-kontrak-dibuat {
+            background-color: #2b2d42 !important;
+            color: #cbd5e1 !important;
+            border-color: #3d415d !important;
         }
     </style>
 @endpush

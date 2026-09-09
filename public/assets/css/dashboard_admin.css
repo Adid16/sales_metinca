@@ -111,3 +111,44 @@
     box-shadow: 0 12px 30px rgba(0,0,0,.15);
 }
 
+/* Dark Mode Scoped Card Styles */
+html[data-bs-theme="dark"] .card-blue {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.16), rgba(96, 165, 250, 0.08)) !important;
+    border: 1px solid rgba(59, 130, 246, 0.28) !important;
+}
+html[data-bs-theme="dark"] .card-blue .card-label {
+    color: #93c5fd !important;
+}
+
+html[data-bs-theme="dark"] .card-green {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.16), rgba(74, 222, 128, 0.08)) !important;
+    border: 1px solid rgba(34, 197, 94, 0.28) !important;
+}
+html[data-bs-theme="dark"] .card-green .card-label {
+    color: #86efac !important;
+}
+
+html[data-bs-theme="dark"] .card-yellow {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(250, 204, 21, 0.08)) !important;
+    border: 1px solid rgba(245, 158, 11, 0.28) !important;
+}
+html[data-bs-theme="dark"] .card-yellow .card-label {
+    color: #fde047 !important;
+}
+
+html[data-bs-theme="dark"] .card-red {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.16), rgba(248, 113, 113, 0.08)) !important;
+    border: 1px solid rgba(239, 68, 68, 0.28) !important;
+}
+html[data-bs-theme="dark"] .card-red .card-label {
+    color: #fca5a5 !important;
+}
+
+html[data-bs-theme="dark"] .card-purple {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.16), rgba(167, 139, 250, 0.08)) !important;
+    border: 1px solid rgba(139, 92, 246, 0.28) !important;
+}
+html[data-bs-theme="dark"] .card-purple .card-label {
+    color: #d8b4fe !important;
+}
+
