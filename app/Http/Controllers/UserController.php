@@ -93,7 +93,7 @@ class UserController extends Controller
         ]);
         \App\Models\HistoryActivity::create([
             'user_id' => Auth::user()->id,
-            'activity' => 'Membuat user',
+            'activity' => 'Membuat user customer ' . $user->name,
             'activity_time' => now()->format('Y-m-d H:i:s')
         ]);
 
@@ -112,11 +112,11 @@ class UserController extends Controller
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
-        User::create($validated);
+        $createdUser = User::create($validated);
 
         \App\Models\HistoryActivity::create([
             'user_id' => Auth::user()->id,
-            'activity' => 'Membuat user',
+            'activity' => 'Membuat user ' . $createdUser->name . ' (Role: ' . ($createdUser->role ?? '-') . ')',
             'activity_time' => now()->format('Y-m-d H:i:s')
         ]);
 
@@ -143,7 +143,7 @@ class UserController extends Controller
 
         \App\Models\HistoryActivity::create([
             'user_id' => Auth::user()->id,
-            'activity' => 'Mengupdate user',
+            'activity' => 'Mengupdate data user ' . $user->name,
             'activity_time' => now()->format('Y-m-d H:i:s')
         ]);
 
@@ -152,10 +152,11 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        $userName = $user->name;
         $user->delete();
         \App\Models\HistoryActivity::create([
             'user_id' => Auth::user()->id,
-            'activity' => 'Menghapus quotation',
+            'activity' => 'Menghapus user ' . $userName,
             'activity_time' => now()->format('Y-m-d H:i:s')
         ]);
         return redirect()->back()->with('success', 'berhasil hapus user');

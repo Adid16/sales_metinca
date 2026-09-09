@@ -88,15 +88,22 @@
                                 <?php endif; ?>
                             </div>
                         </div>
+                                <?php
+                                    $customerProfile = $requestProject->customer;
+                                    $customerAccount = $customerProfile ? $customerProfile->account : null;
+                                    $companyDisplay = $requestProject->company ?: ($customerAccount->company ?? ($customerProfile->company ?? '-'));
+                                    $phoneDisplay = $requestProject->phone ?: ($customerAccount->phone ?? ($customerProfile->phone ?? '-'));
+                                ?>
+
                                 <div class="row mb-2">
                                     <div class="col-md-3">Name</div>
-                                    <div class="col-md-4"><?php echo e($requestProject->name); ?></div>
+                                    <div class="col-md-4"><?php echo e($requestProject->name ?: ($customerProfile->name ?? '-')); ?></div>
                                 </div>
 
                                 <div class="row mb-2">
                                     <div class="col-md-3">Company</div>
-                                    <div class="col-md-4">
-                                        <?php echo e($requestProject->company); ?>
+                                    <div class="col-md-4 fw-semibold text-dark">
+                                        <?php echo e($companyDisplay); ?>
 
                                     </div>
                                 </div>
@@ -114,10 +121,14 @@
                                 <div class="row mb-2">
                                     <div class="col-md-3">Phone:</div>
                                     <div class="col-md-6">
-                                        <a href="tel:<?php echo e($requestProject->phone); ?>">
-                                            <i class="bi bi-telephone"></i> <?php echo e($requestProject->phone); ?>
+                                        <?php if($phoneDisplay && $phoneDisplay !== '-'): ?>
+                                            <a href="tel:<?php echo e($phoneDisplay); ?>">
+                                                <i class="bi bi-telephone"></i> <?php echo e($phoneDisplay); ?>
 
-                                        </a>
+                                            </a>
+                                        <?php else: ?>
+                                            <span class="text-muted">-</span>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                                 

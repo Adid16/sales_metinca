@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\RequestProject;
+use App\Models\HistoryActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
@@ -40,7 +41,12 @@ class RequestProjectController extends Controller
             });
         }
 
-        $projects = $query->latest()->get();
+        $projects = $query->orderByRaw("
+            CASE 
+                WHEN NOT EXISTS (SELECT 1 FROM request_project_assignments WHERE request_project_assignments.request_project_id = request_projects.id) THEN 1
+                ELSE 2
+            END ASC, created_at DESC
+        ")->get();
 
         $sales = \App\Models\User::where('role','staff')->where('divisi','sales')->get();
 
@@ -71,19 +77,29 @@ class RequestProjectController extends Controller
         ]);
 
         // ====================================================================
-        // MODUL 2: Auto-fill profil customer dari data user yang login
+        // MODUL 2: Auto-fill profil customer dari data user yang login / terdaftar
         // ====================================================================
         if (Auth::check()) {
             $user = Auth::user();
+            $account = $user->account;
+            $company = !empty($user->company) ? $user->company : ($account->company ?? null);
+            $phone = !empty($user->phone) ? $user->phone : ($account->phone ?? null);
+
             $validated['customer_id'] = $user->id;
             $validated['name']    = $user->name;
             $validated['email']   = $user->email;
-            $validated['company'] = $user->company;
-
-            // Ambil phone dari Account profile jika tersedia
-            $account = $user->account;
-            if ($account && $account->phone) {
-                $validated['phone'] = $account->phone;
+            $validated['company'] = $company ?: ($request->input('company') ?: null);
+            $validated['phone']   = $phone ?: ($request->input('phone') ?: null);
+        } else {
+            $existingUser = User::where('email', $validated['email'])->first();
+            if ($existingUser) {
+                $validated['customer_id'] = $existingUser->id;
+                if (empty($validated['company'])) {
+                    $validated['company'] = $existingUser->company ?: ($existingUser->account->company ?? null);
+                }
+                if (empty($validated['phone'])) {
+                    $validated['phone'] = $existingUser->phone ?: ($existingUser->account->phone ?? null);
+                }
             }
         }
 
@@ -101,6 +117,12 @@ class RequestProjectController extends Controller
                 ]);
             }
         }
+
+        HistoryActivity::create([
+            'user_id'       => Auth::id() ?? ($project->customer_id ?? null),
+            'activity'      => 'Membuat Request Project #' . $project->id . ' (' . ($project->subject ?? 'Permintaan Baru') . ')',
+            'activity_time' => now()->format('Y-m-d H:i:s'),
+        ]);
 
         return redirect()->back()->with('success', 'Project request created successfully.');
     }
@@ -198,6 +220,13 @@ class RequestProjectController extends Controller
         $project->assignment()->create([
             'sales_id'=> Auth::id(),
         ]);
+
+        HistoryActivity::create([
+            'user_id'       => Auth::id(),
+            'activity'      => 'Sales PIC (' . Auth::user()->name . ') menerima tiket Request Project #' . $project->id . ' (' . ($project->subject ?? '-') . ')',
+            'activity_time' => now()->format('Y-m-d H:i:s'),
+        ]);
+
         return redirect()->back()->with('success', 'Project berhasil diterima.');
 
     }

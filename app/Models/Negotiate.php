@@ -19,12 +19,21 @@ class Negotiate extends Model
         'support_document',
         'action',
         'negotiated_items',
+        'requires_manager_approval',
+        'manager_approval_status',
+        'manager_approval_note',
+        'manager_approved_by',
+        'manager_approved_at',
+        'floor_price_snapshot',
     ];
  
     protected $casts = [
-        'from_customer'        => 'boolean',
-        'negotiated_items'     => 'array',
-        'target_delivery_date' => 'date',
+        'from_customer'             => 'boolean',
+        'requires_manager_approval' => 'boolean',
+        'negotiated_items'          => 'array',
+        'floor_price_snapshot'      => 'array',
+        'target_delivery_date'      => 'date',
+        'manager_approved_at'       => 'datetime',
     ];
  
     public function quotation()
@@ -35,5 +44,10 @@ class Negotiate extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function manager()
+    {
+        return $this->belongsTo(User::class, 'manager_approved_by');
     }
 }

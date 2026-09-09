@@ -103,9 +103,16 @@
         </div>
             
         <?php if($articles->hasPages()): ?>
-            <div class="d-flex justify-content-center card-footer bg-transparent border-0">
-                <?php echo e($articles->links()); ?>
+            <div class="card-footer bg-transparent border-0 py-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <small class="text-muted">
+                        Menampilkan <?php echo e($articles->firstItem() ?? 0); ?>–<?php echo e($articles->lastItem() ?? 0); ?> dari <?php echo e($articles->total()); ?> data
+                    </small>
+                    <div>
+                        <?php echo e($articles->appends(request()->query())->links('pagination::bootstrap-5')); ?>
 
+                    </div>
+                </div>
             </div>
         <?php endif; ?>
     </div>

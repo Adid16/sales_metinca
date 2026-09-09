@@ -7,6 +7,57 @@
     <link rel="stylesheet" href="./assets/compiled/css/table-datatable.css">
     <link rel="stylesheet" href="./assets/compiled/css/app.css">
     <link rel="stylesheet" href="./assets/compiled/css/app-dark.css">
+    <style>
+        #poTable {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+        }
+        #poTable thead th {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #4b5563;
+            background-color: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 12px 14px;
+            vertical-align: middle;
+        }
+        #poTable tbody td {
+            padding: 12px 14px;
+            vertical-align: middle;
+            font-size: 0.875rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        #poTable tbody tr:hover {
+            background-color: #f8faff !important;
+        }
+        .btn-action-group .btn {
+            font-size: 0.78rem;
+            padding: 0.28rem 0.6rem;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            font-weight: 600;
+        }
+        .bg-primary-subtle {
+            background-color: #eef2ff !important;
+            color: #4f46e5 !important;
+        }
+        .bg-success-subtle {
+            background-color: #ecfdf5 !important;
+            color: #059669 !important;
+        }
+        .bg-warning-subtle {
+            background-color: #fffbeb !important;
+            color: #d97706 !important;
+        }
+        .bg-info-subtle {
+            background-color: #f0f9ff !important;
+            color: #0284c7 !important;
+        }
+    </style>
 <?php $__env->stopPush(); ?>
 
 <?php $__env->startSection('content'); ?>
@@ -59,27 +110,23 @@
                             <option value="review" <?php echo e((isset($filters['status']) && $filters['status']=='review') ? 'selected' : ''); ?>>Review</option>
                             <option value="contract" <?php echo e((isset($filters['status']) && $filters['status']=='contract') ? 'selected' : ''); ?>>Contract</option>
                             <option value="production" <?php echo e((isset($filters['status']) && $filters['status']=='production') ? 'selected' : ''); ?>>Production</option>
-                            <option value="ship" <?php echo e((isset($filters['status']) && $filters['status']=='ship') ? 'selected' : ''); ?>>Ship</option>
                         </select>
                     </div>
                     <div class="col-auto">
                         <button type="submit" class="btn btn-sm btn-primary">Filter</button>
                         <button type="submit" formaction="<?php echo e(route('purchase-orders.export')); ?>" class="btn btn-sm btn-success">Export</button>
                     </div>
-                </form>
-
-                <table class="table table-hover align-middle text-nowrap" id="poTable">
+                </form>                <table class="table table-hover align-middle" id="poTable">
                     <thead>
                         <tr>
-                            <th><center>No</center></th>
-                            <th><center>Req Id</center></th>
-                            <th><center>Quotation No</center></th>
-                            <th><center>PO No</center></th>
-                            <th><center>Part / Item Name</center></th>
-                            <th><center>Delivery Date</center></th>
-                            <th><center>Sales PIC</center></th>
-                            <th><center>Status</center></th>
-                            <th><center>Action</center></th>
+                            <th class="text-center" style="width: 45px;">No</th>
+                            <th class="text-center" style="width: 140px;">Quotation No</th>
+                            <th class="text-center" style="width: 170px;">PO No</th>
+                            <th class="text-start" style="min-width: 220px;">Part / Item Name</th>
+                            <th class="text-center" style="width: 120px;">Delivery Date</th>
+                            <th class="text-center" style="width: 130px;">Sales PIC</th>
+                            <th class="text-center" style="width: 140px;">Status</th>
+                            <th class="text-center" style="min-width: 220px;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -95,22 +142,33 @@
                                 $isFullyProcessed = ($internalsCount >= $totalItemCount) && ($totalItemCount > 0);
 
                                 $firstItemName = '-';
+                                $firstArticleOrPart = null;
                                 if ($po->internals && $po->internals->count() > 0) {
-                                    $firstItemName = $po->internals->first()->item ?? '-';
+                                    $firstInternalRow = $po->internals->first();
+                                    $firstItemName = $firstInternalRow->item ?? '-';
+                                    $firstArticleOrPart = $firstInternalRow->part_no ?? $firstInternalRow->article_no ?? null;
                                 } elseif ($po->quotation && $po->quotation->items->count() > 0) {
-                                    $firstItemName = $po->quotation->items->first()->item ?? '-';
+                                    $firstQuotationRow = $po->quotation->items->first();
+                                    $firstItemName = $firstQuotationRow->item ?? '-';
                                 }
                             ?>
                             
                             
                             <tr class="table-group-divider">
-                                <td><center><?php echo e($loop->iteration); ?></center></td>
-                                <td><center><span class="badge badge-sm bg-light text-dark">#<?php echo e($po->id); ?></span></center></td>
-                                <td><center><?php echo e($po->quotation->quotation_no ?? '-'); ?></center></td>
-                                <td><center><span class="fw-bold text-primary"><?php echo e($po->po_no); ?></span>
+                                <td class="text-center text-muted fw-semibold"><?php echo e($loop->iteration); ?></td>
+                                <td class="text-center">
+                                    <span class="badge bg-light text-dark border px-2 py-1"><?php echo e($po->quotation->quotation_no ?? '-'); ?></span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="fw-bold text-primary"><?php echo e($po->po_no); ?></span>
                                     
                                     <?php
-                                        $hasAmendment = $po->internals && $po->internals->flatMap(function($i) {
+                                        $isCurrentlyAmandement = in_array($poStatus, ['amandement', 'amandement_pending'])
+                                            || ($po->internals && $po->internals->contains(function($i) {
+                                                return in_array(strtolower($i->status ?? ''), ['amandement', 'amandement_pending'])
+                                                    || ($i->contract && in_array(strtolower($i->contract->status ?? ''), ['amandement', 'amandement_pending']));
+                                            }));
+                                        $hasPastAmendment = $po->internals && $po->internals->flatMap(function($i) {
                                             return \App\Models\Contract::where('purchase_order_internal_id', $i->id)
                                                 ->where('amandement_no', '>', 0)->get();
                                         })->count() > 0;
@@ -118,147 +176,74 @@
                                             return \App\Models\Contract::where('purchase_order_internal_id', $i->id)->pluck('amandement_no');
                                         })->max() : 0;
                                     ?>
-                                    <?php if($hasAmendment): ?>
-                                        <br><span class="badge bg-warning text-dark mt-1" style="font-size:0.68rem;"><i class="bi bi-arrow-repeat me-1"></i>Amandemen Rev #<?php echo e($maxAmendNo); ?></span>
-                                    <?php elseif(in_array($poStatus, ['sent','review'])): ?>
-                                        <br><span class="badge bg-success mt-1" style="font-size:0.68rem;"><i class="bi bi-plus-circle me-1"></i>PO Baru</span>
+                                    <?php if($isCurrentlyAmandement): ?>
+                                        <div class="mt-1"><span class="badge bg-warning text-dark px-2 py-0" style="font-size:0.68rem;"><i class="bi bi-arrow-repeat me-1"></i>Amandemen Rev #<?php echo e($maxAmendNo ?: 1); ?></span></div>
+                                    <?php else: ?>
+                                        <div class="mt-1"><span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0" style="font-size:0.68rem;"><i class="bi bi-plus-circle me-1"></i>PO Baru</span></div>
                                     <?php endif; ?>
-                                </center></td>
-                                <td>
-                                    <center>
-                                        <?php if($isMultiItem): ?>
-                                            <span class="badge bg-light-primary text-primary fw-bold">
-                                                <i class="bi bi-boxes me-1"></i><?php echo e($totalItemCount); ?> Item(s)
-                                            </span>
-                                            <?php if($internalsCount > 0): ?>
-                                                <br><small class="text-success fw-semibold">(<?php echo e($internalsCount); ?>/<?php echo e($totalItemCount); ?> Diproses)</small>
-                                            <?php endif; ?>
-                                        <?php else: ?>
-                                            <span class="fw-bold text-dark"><?php echo e($firstItemName); ?></span>
-                                        <?php endif; ?>
-                                    </center>
                                 </td>
-                                <td><center><?php echo e(\Carbon\Carbon::parse($po->delivery_request)->format('d-m-Y')); ?></center></td>
-                                <td><center>
+                                <td class="text-start">
+                                    <div class="d-inline-flex align-items-center gap-1">
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fw-semibold">
+                                            <i class="bi bi-boxes me-1"></i><?php echo e($totalItemCount); ?> Item(s)
+                                        </span>
+                                        <?php if($internalsCount > 0): ?>
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fw-semibold">
+                                                <i class="bi bi-check2 me-1"></i><?php echo e($internalsCount); ?>/<?php echo e($totalItemCount); ?> Diproses
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                                <td class="text-center text-nowrap">
+                                    <i class="bi bi-calendar-event me-1 text-muted"></i><?php echo e(\Carbon\Carbon::parse($po->delivery_request)->format('d-m-Y')); ?>
+
+                                </td>
+                                <td class="text-center">
                                     <?php if($po->quotation && $po->quotation->request && $po->quotation->request->assignment): ?>
-                                        <span class="badge badge-sm bg-success">
-                                            <?php echo e($po->quotation->request->assignment->sales->name ?? '-'); ?>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                            <i class="bi bi-person-fill me-1"></i><?php echo e($po->quotation->request->assignment->sales->name ?? '-'); ?>
 
                                         </span>
                                     <?php else: ?>
-                                        <span class="text-muted">-</span>
+                                        <span class="text-muted small">-</span>
                                     <?php endif; ?>
-                                </center></td>
-                                <td>
-                                    <center>
-                                        <?php if($poStatus == 'amandement_pending'): ?>
-                                            <span class="badge bg-light-danger text-danger fw-bold"><i class="bi bi-hourglass-split me-1"></i>Amandemen Pending</span>
-                                        <?php elseif($poStatus == 'amandement'): ?>
-                                            <span class="badge bg-danger text-white fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i>Amandemen</span>
-                                        <?php elseif(in_array($poStatus, ['contract', 'approved'])): ?>
-                                            <span class="badge bg-light-info text-info">Contract</span>
-                                        <?php elseif($poStatus == 'production'): ?>
-                                            <span class="badge bg-light-success text-success">In Production</span>
-                                        <?php elseif($poStatus == 'ship'): ?>
-                                            <span class="badge bg-success text-white">Shipped</span>
-                                        <?php else: ?>
-                                            <span class="badge bg-light-primary text-primary"><?php echo e(ucfirst($po->status)); ?></span>
-                                        <?php endif; ?>
-                                    </center>
                                 </td>
-                                <td>
-                                    <center>
+                                <td class="text-center">
+                                    <?php if($poStatus == 'amandement_pending'): ?>
+                                        <span class="badge bg-warning-subtle text-dark border border-warning px-2 py-1"><i class="bi bi-hourglass-split me-1 text-warning"></i>Amandemen Pending</span>
+                                    <?php elseif($poStatus == 'amandement'): ?>
+                                        <span class="badge bg-danger text-white px-2 py-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>Amandemen</span>
+                                    <?php elseif(in_array($poStatus, ['contract', 'approved'])): ?>
+                                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2 py-1"><i class="bi bi-file-earmark-check me-1"></i>Contract</span>
+                                    <?php elseif($poStatus == 'production'): ?>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-gear-wide-connected me-1"></i>In Production</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"><i class="bi bi-send me-1"></i><?php echo e(ucfirst($po->status)); ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-flex align-items-center justify-content-center gap-1 flex-wrap btn-action-group">
                                         
-                                        <button type="button" class="btn btn-sm btn-info text-white btn-show mb-1"
+                                        <button type="button" class="btn btn-sm btn-info text-white btn-show"
                                             data-id="<?php echo e($po->id); ?>" data-bs-toggle="modal"
                                             data-bs-target="#previewModal">
-                                            <i class="bi bi-file-earmark-text-fill"></i> Detail
+                                            <i class="bi bi-file-earmark-text-fill me-1"></i> Detail
                                         </button>
 
                                         
-                                        <?php if(auth()->user()->role == 'customer'): ?>
-                                            <?php if(!$isMultiItem): ?>
-                                                <?php
-                                                    $firstInternal = $po->internals->first();
-                                                    $masterContract = $firstInternal ? ($firstInternal->contract ?? ($firstInternal->contracts ? $firstInternal->contracts->last() : null)) : null;
-                                                    if (!$masterContract && $po->contracts) {
-                                                        $masterContract = $po->contracts->where('status', 'rejected')->first() 
-                                                            ?? $po->contracts->whereNotNull('alasan_penolakan')->first()
-                                                            ?? $po->contracts->last();
-                                                    }
-
-                                                    $masterRawStatus  = strtolower($masterContract ? $masterContract->status : '');
-                                                    $masterIsRejected = ($masterRawStatus == 'rejected') || ($masterContract && !empty($masterContract->alasan_penolakan) && $poStatus != 'amandement_pending');
-                                                    $masterIsPending  = ($poStatus == 'amandement_pending' || $masterRawStatus == 'amandement_pending');
-                                                    $masterIsApproved = ($poStatus == 'amandement' || $masterRawStatus == 'amandement');
-                                                ?>
-
-                                                <?php if($masterIsRejected): ?>
-                                                    
-                                                    <button type="button" class="btn btn-sm btn-danger text-white fw-bold mb-1"
-                                                            data-bs-toggle="modal" data-bs-target="#rejectReasonMasterModal<?php echo e($po->id); ?>">
-                                                        <i class="bi bi-x-circle me-1"></i> Ditolak (Lihat Alasan)
-                                                    </button>
-                                                <?php elseif($masterIsPending): ?>
-                                                    <button class="btn btn-sm btn-secondary mb-1 fw-semibold" disabled title="Pengajuan amandemen sedang dalam peninjauan Sales & Manager">
-                                                        <i class="bi bi-clock-history me-1"></i> Pending Review
-                                                    </button>
-                                                <?php elseif($masterIsApproved): ?>
-                                                    <button class="btn btn-sm btn-success text-white mb-1 fw-semibold" disabled title="Amandemen telah disetujui dan sedang diproses Sales">
-                                                        <i class="bi bi-check-circle me-1"></i> Disetujui
-                                                    </button>
-                                                <?php else: ?>
-                                                    <a href="<?php echo e(route('purchase-orders.create-amandement', ['id' => $po->id, 'internal_id' => $firstInternal->id ?? null])); ?>"
-                                                       class="btn btn-sm btn-warning mb-1 text-dark fw-semibold"
-                                                       data-bs-toggle="tooltip" title="Ajukan Amandemen Perubahan PO">
-                                                        <i class="bi bi-pencil-square me-1"></i> Ajukan Amandemen
-                                                    </a>
-                                                <?php endif; ?>
-                                            <?php endif; ?>
-                                        <?php endif; ?>
-
-                                        
-                                        <?php if(!$isMultiItem): ?>
-                                            <?php if(auth()->user()->isAdmin() || (auth()->user()->isStaff() && auth()->user()->divisi == 'sales')): ?>
-                                                <?php if($poStatus == 'amandement_pending' || ($masterContract && $masterContract->status == 'amandement_pending')): ?>
-                                                    <button class="btn btn-sm btn-secondary mb-1 fw-semibold" disabled title="PO / Kontrak sedang dalam proses pengajuan amandemen oleh Customer. Harap selesaikan review di menu PO Amandement.">
-                                                        <i class="bi bi-clock-history me-1 text-warning"></i> Amandemen Pending
-                                                    </button>
-                                                <?php elseif(in_array($poStatus, ['amandement']) || ($masterContract && $masterContract->status == 'amandement')): ?>
-                                                    <a href="<?php echo e(route('purchase-orders-internal.create', ['purchaseOrder' => $po->id, 'internal_id' => $firstInternal->id ?? null])); ?>"
-                                                        class="btn btn-sm btn-warning text-dark fw-bold mb-1" 
-                                                        data-bs-toggle="tooltip" title="Amandemen disetujui. Klik untuk memproses ulang ke Sistem Internal">
-                                                        <i class="bi bi-arrow-repeat me-1"></i> Proses Internal (Amandemen)
-                                                    </a>
-                                                <?php elseif(!$isFullyProcessed && in_array($poStatus, ['sent', 'created'])): ?>
-                                                    <a href="<?php echo e(route('purchase-orders-internal.create', ['purchaseOrder' => $po->id])); ?>"
-                                                        class="btn btn-sm btn-primary mb-1" 
-                                                        data-bs-toggle="tooltip" title="Proses Masuk ke Sistem Internal">
-                                                        <i class="bi bi-gear-fill me-1"></i> Proses Internal
-                                                    </a>
-                                                <?php else: ?>
-                                                    <button class="btn btn-sm btn-secondary mb-1" disabled>
-                                                        <i class="bi bi-check-circle-fill me-1"></i> Sudah Diproses
-                                                    </button>
-                                                <?php endif; ?>
-                                            <?php endif; ?>
-                                        <?php else: ?>
-                                            
-                                            <button class="btn btn-sm btn-outline-primary mb-1" type="button" 
-                                                    data-bs-toggle="collapse" data-bs-target="#collapsePoItems<?php echo e($po->id); ?>" 
-                                                    aria-expanded="false">
-                                                <i class="bi bi-chevron-down me-1"></i> Rincian Item (<?php echo e($totalItemCount); ?>)
-                                            </button>
-                                        <?php endif; ?>
-                                    </center>
+                                        <button class="btn btn-sm btn-outline-primary fw-semibold" type="button" 
+                                                data-bs-toggle="collapse" data-bs-target="#collapsePoItems<?php echo e($po->id); ?>" 
+                                                aria-expanded="false">
+                                            <i class="bi bi-chevron-down me-1"></i> Rincian Item (<?php echo e($totalItemCount); ?>)
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
 
                             
-                            <?php if($isMultiItem): ?>
-                                <tr class="collapse border-0 bg-light" id="collapsePoItems<?php echo e($po->id); ?>">
-                                    <td colspan="9" class="p-3">
-                                        <div class="card shadow-sm border mb-0">
+                            <tr class="collapse border-0 bg-light" id="collapsePoItems<?php echo e($po->id); ?>">
+                                <td colspan="8" class="p-3">
+                                    <div class="card shadow-sm border mb-0">
                                             <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
                                                 <strong class="text-dark small"><i class="bi bi-list-nested me-1 text-primary"></i> RINCIAN ITEM UNTUK PO: <?php echo e($po->po_no); ?></strong>
                                                 <small class="text-muted">Status: <?php echo e($internalsCount); ?>/<?php echo e($totalItemCount); ?> Item Diproses</small>
@@ -334,33 +319,44 @@
                                                                     <td class="text-center fw-bold"><?php echo e(number_format($internalItem->qty ?? $qItem->qty ?? 1)); ?> pcs</td>
                                                                     <td class="text-center">Rp <?php echo e(number_format($internalItem->unit_price ?? $qItem->price ?? 0, 0, ',', '.')); ?></td>
                                                                     <td class="text-center">
-                                                                        <?php if(in_array($itemRawStatus, ['contract', 'approved'])): ?>
-                                                                            <span class="badge bg-light-info text-info"><i class="bi bi-file-earmark-check me-1"></i>Contract</span>
+                                                                        <?php
+                                                                            $hasItemRejection = $itemContract && (!empty($itemContract->sales_reject_reason) || !empty($itemContract->quality_reject_reason) || !empty($itemContract->ppc_reject_reason) || !empty($itemContract->dev_engineering_reject_reason));
+                                                                        ?>
+                                                                        <?php if(in_array($itemRawStatus, ['production', 'done'])): ?>
+                                                                            <span class="badge bg-light-success text-success"><i class="bi bi-gear-wide-connected me-1"></i>In Production</span>
+                                                                        <?php elseif($hasItemRejection): ?>
+                                                                            <span class="badge bg-light-danger text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Perlu Revisi</span>
                                                                         <?php elseif($itemRawStatus == 'review'): ?>
                                                                             <span class="badge bg-light-warning text-warning"><i class="bi bi-search me-1"></i>Review</span>
-                                                                        <?php elseif($itemRawStatus == 'production'): ?>
-                                                                            <span class="badge bg-light-success text-success"><i class="bi bi-gear-wide-connected me-1"></i>In Production</span>
-                                                                        <?php elseif($itemRawStatus == 'ship'): ?>
-                                                                            <span class="badge bg-success text-white"><i class="bi bi-truck me-1"></i>Shipped</span>
+                                                                        <?php elseif(in_array($itemRawStatus, ['contract', 'approved'])): ?>
+                                                                            <span class="badge bg-light-info text-info"><i class="bi bi-file-earmark-check me-1"></i>Contract</span>
                                                                         <?php elseif(in_array($itemRawStatus, ['created', 'sent'])): ?>
-                                                                            <span class="badge bg-light-primary text-primary"><i class="bi bi-check-circle me-1"></i>Created</span>
+                                                                            <span class="badge bg-light-primary text-primary"><i class="bi bi-check-circle me-1"></i>PO Internal OK</span>
+                                                                        <?php elseif($itemRawStatus == 'amandement_pending'): ?>
+                                                                            <span class="badge bg-light-warning text-warning"><i class="bi bi-clock-history me-1"></i>Amandemen Pending</span>
+                                                                        <?php elseif($itemRawStatus == 'amandement'): ?>
+                                                                            <span class="badge bg-light-danger text-danger"><i class="bi bi-exclamation-octagon me-1"></i>Amandemen Approved</span>
                                                                         <?php else: ?>
                                                                             <span class="badge bg-light text-secondary">Belum Diproses</span>
                                                                         <?php endif; ?>
                                                                     </td>
                                                                     <td class="text-center">
-                                                                         <?php if(auth()->user()->isAdmin() || (auth()->user()->isStaff() && auth()->user()->divisi == 'sales')): ?>
-                                                                             <?php if($isPendingAmandement): ?>
-                                                                                 
-                                                                                 <button class="btn btn-xs btn-secondary me-1 mb-1 fw-semibold" disabled title="Item ini sedang dalam proses pengajuan amandemen oleh Customer. Harap selesaikan review di menu PO Amandement.">
-                                                                                     <i class="bi bi-clock-history me-1 text-warning"></i> Amandemen Pending
-                                                                                 </button>
-                                                                                 <button type="button" class="btn btn-xs btn-info text-white btn-show me-1 mb-1"
-                                                                                     data-id="<?php echo e($po->id); ?>" <?php if($internalItem): ?> data-internal-id="<?php echo e($internalItem->id); ?>" <?php endif; ?> data-bs-toggle="modal"
-                                                                                     data-bs-target="#previewModal">
-                                                                                     <i class="bi bi-eye"></i> Detail
-                                                                                 </button>
-                                                                             <?php elseif($itemRawStatus == 'amandement'): ?>
+                                                                        <?php if(auth()->user()->isAdmin() || (auth()->user()->isStaff() && auth()->user()->divisi == 'sales')): ?>
+                                                                            <?php
+                                                                                $isAmended = ($itemContract && $itemContract->amandement_no > 0) || str_contains(strtolower($po->status), 'amandemen') || ($internalItem && strtolower($internalItem->status) == 'amandement');
+                                                                            ?>
+
+                                                                            <?php if($isPendingAmandement): ?>
+                                                                                
+                                                                                <a href="<?php echo e(route('purchase-orders.approval-amandement')); ?>" class="btn btn-xs btn-warning text-dark fw-bold me-1 mb-1" title="Item ini sedang dalam pengajuan amandemen oleh Customer. Klik untuk review.">
+                                                                                    <i class="bi bi-clock-history me-1"></i> Amandemen Pending
+                                                                                </a>
+                                                                                <button type="button" class="btn btn-xs btn-info text-white btn-show me-1 mb-1"
+                                                                                    data-id="<?php echo e($po->id); ?>" <?php if($internalItem): ?> data-internal-id="<?php echo e($internalItem->id); ?>" <?php endif; ?> data-bs-toggle="modal"
+                                                                                    data-bs-target="#previewModal">
+                                                                                    <i class="bi bi-eye"></i> Detail
+                                                                                </button>
+                                                                            <?php elseif($itemRawStatus == 'amandement' || ($internalItem && $internalItem->status == 'amandement')): ?>
                                                                                 
                                                                                 <a href="<?php echo e(route('purchase-orders-internal.create', ['purchaseOrder' => $po->id, 'internal_id' => $internalItem->id ?? null, 'quotation_item_id' => $qItemId])); ?>"
                                                                                    class="btn btn-xs btn-warning text-dark fw-bold mb-1 me-1"
@@ -373,23 +369,51 @@
                                                                                     <i class="bi bi-eye"></i> Detail
                                                                                 </button>
                                                                             <?php elseif($internalItem): ?>
-                                                                                <button class="btn btn-xs btn-secondary me-1 mb-1" disabled title="Item ini sudah diproses ke PO Internal">
-                                                                                    <i class="bi bi-check-circle-fill me-1"></i> Sudah Diproses
-                                                                                </button>
+                                                                                
+                                                                                <?php if($itemContract && in_array($itemRawStatus, ['production', 'done'])): ?>
+                                                                                    <a href="<?php echo e(route('contracts.show', $itemContract->id)); ?>" class="btn btn-xs btn-success text-white fw-bold me-1 mb-1" title="Kontrak telah 100% disetujui 4 Manager">
+                                                                                        <i class="bi bi-check-circle-fill me-1"></i> In Production
+                                                                                    </a>
+                                                                                <?php elseif($itemContract && $hasItemRejection): ?>
+                                                                                    <a href="<?php echo e(route('contracts.edit', $itemContract->id)); ?>" class="btn btn-xs btn-danger text-white fw-bold me-1 mb-1" title="Ada catatan revisi dari Manager. Klik untuk memperbaiki">
+                                                                                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Revisi Kontrak
+                                                                                    </a>
+                                                                                <?php elseif($itemContract && in_array($itemRawStatus, ['review', 'waiting_approval'])): ?>
+                                                                                    <a href="<?php echo e(route('contracts.show', $itemContract->id)); ?>" class="btn btn-xs btn-warning text-dark fw-bold me-1 mb-1" title="Kontrak sedang di-review oleh 4 Manager">
+                                                                                        <i class="bi bi-search me-1"></i> Review Kontrak
+                                                                                    </a>
+                                                                                <?php else: ?>
+                                                                                    
+                                                                                    <a href="<?php echo e(route('contracts.create', ['idPO' => $po->id, 'internal_id' => $internalItem->id])); ?>" 
+                                                                                       class="btn btn-xs <?php echo e($isAmended ? 'btn-warning text-dark' : 'btn-success text-white'); ?> fw-bold me-1 mb-1" 
+                                                                                       title="PO Internal sudah dibuat. Klik untuk membuat Contract Review Sheet">
+                                                                                        <i class="bi bi-file-earmark-plus me-1"></i> <?php echo e($isAmended ? 'Buat Kontrak Amandemen' : 'Buat Kontrak'); ?>
+
+                                                                                    </a>
+                                                                                <?php endif; ?>
+
                                                                                 <button type="button" class="btn btn-xs btn-info text-white btn-show me-1 mb-1"
                                                                                     data-id="<?php echo e($po->id); ?>" data-internal-id="<?php echo e($internalItem->id); ?>" data-bs-toggle="modal"
                                                                                     data-bs-target="#previewModal">
                                                                                     <i class="bi bi-eye"></i> Detail
                                                                                 </button>
-                                                                                <a href="<?php echo e(route('purchase-orders-internal.create', ['purchaseOrder' => $po->id, 'internal_id' => $internalItem->id])); ?>" 
-                                                                                   class="btn btn-xs btn-outline-secondary mb-1">
-                                                                                    <i class="bi bi-pencil"></i> Edit PO Int
-                                                                                </a>
+                                                                                <?php if(!in_array($itemRawStatus, ['production', 'done'])): ?>
+                                                                                    <a href="<?php echo e(route('purchase-orders-internal.create', ['purchaseOrder' => $po->id, 'internal_id' => $internalItem->id])); ?>" 
+                                                                                       class="btn btn-xs btn-outline-secondary mb-1" title="Edit PO Internal">
+                                                                                        <i class="bi bi-pencil"></i> Edit PO Int
+                                                                                    </a>
+                                                                                <?php endif; ?>
                                                                             <?php else: ?>
+                                                                                
                                                                                 <a href="<?php echo e(route('purchase-orders-internal.create', ['purchaseOrder' => $po->id, 'quotation_item_id' => $qItemId])); ?>"
                                                                                    class="btn btn-xs btn-primary mb-1">
                                                                                     <i class="bi bi-gear-fill me-1"></i> Proses Internal
                                                                                 </a>
+                                                                                <button type="button" class="btn btn-xs btn-info text-white btn-show me-1 mb-1"
+                                                                                    data-id="<?php echo e($po->id); ?>" data-bs-toggle="modal"
+                                                                                    data-bs-target="#previewModal">
+                                                                                    <i class="bi bi-eye"></i> Detail
+                                                                                </button>
                                                                             <?php endif; ?>
                                                                         <?php else: ?>
                                                                             
@@ -398,6 +422,15 @@
                                                                                 data-bs-target="#previewModal">
                                                                                 <i class="bi bi-eye"></i> Detail
                                                                             </button>
+
+                                                                            <?php
+                                                                                $isItemProduction = in_array(strtolower($itemContract->status ?? ''), ['production', 'done']) 
+                                                                                    || in_array(strtolower($internalItem->status ?? ''), ['production', 'done']) 
+                                                                                    || in_array($poStatus, ['production', 'done']);
+                                                                                $itemAmendCount = (int) ($itemContract ? ($itemContract->amandement_no ?? 0) : 0);
+                                                                                $maxLimit = \App\Services\SystemSettingService::maxAmendmentLimit();
+                                                                                $isItemQuotaExceeded = ($itemAmendCount >= $maxLimit);
+                                                                            ?>
 
                                                                             <?php if($isRejectedAmandement): ?>
                                                                                 
@@ -415,6 +448,16 @@
                                                                                 <button class="btn btn-xs btn-success text-white mb-1 fw-semibold" disabled title="Amandemen telah disetujui dan sedang diproses Sales">
                                                                                     <i class="bi bi-check-circle me-1"></i> Disetujui
                                                                                 </button>
+                                                                            <?php elseif($isItemProduction): ?>
+                                                                                
+                                                                                <button class="btn btn-xs btn-secondary mb-1 fw-semibold" disabled title="Item ini sudah masuk tahap produksi (In Production) dan tidak dapat diamandemen lagi.">
+                                                                                    <i class="bi bi-lock-fill me-1 text-warning"></i> In Production
+                                                                                </button>
+                                                                            <?php elseif($isItemQuotaExceeded): ?>
+                                                                                
+                                                                                <button class="btn btn-xs btn-secondary mb-1 fw-semibold" disabled title="Batas maksimal amandemen (<?php echo e($maxLimit); ?>x) telah tercapai untuk item ini.">
+                                                                                    <i class="bi bi-slash-circle me-1 text-danger"></i> Amandemen Maks (<?php echo e($itemAmendCount); ?>/<?php echo e($maxLimit); ?>)
+                                                                                </button>
                                                                             <?php elseif(!$internalItem || !$itemContract): ?>
                                                                                 
                                                                                 <button class="btn btn-xs btn-secondary mb-1 fw-semibold" disabled title="PO baru diterbitkan, menunggu Sales memproses PO Internal / Kontrak pertama kali">
@@ -424,7 +467,7 @@
                                                                                 
                                                                                 <a href="<?php echo e(route('purchase-orders.create-amandement', ['id' => $po->id, 'internal_id' => $internalItem->id ?? null])); ?>"
                                                                                    class="btn btn-xs btn-warning text-dark mb-1 fw-semibold"
-                                                                                   data-bs-toggle="tooltip" title="Ajukan Amandemen Khusus Item Ini">
+                                                                                   data-bs-toggle="tooltip" title="Ajukan Amandemen Khusus Item Ini (Amandemen ke-<?php echo e($itemAmendCount + 1); ?>/<?php echo e($maxLimit); ?>)">
                                                                                     <i class="bi bi-pencil-square me-1"></i> Ajukan Amandemen
                                                                                 </a>
                                                                             <?php endif; ?>
@@ -439,16 +482,29 @@
                                         </div>
                                     </td>
                                 </tr>
-                            <?php endif; ?>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr>
-                                <td colspan="9" class="text-center py-4 text-muted">No data available</td>
+                                <td colspan="8" class="text-center py-4 text-muted">No data available</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
             </div>
         </div>
+
+        <?php if($pos->hasPages()): ?>
+            <div class="card-footer bg-transparent border-0 py-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <small class="text-muted">
+                        Menampilkan <?php echo e($pos->firstItem() ?? 0); ?>–<?php echo e($pos->lastItem() ?? 0); ?> dari <?php echo e($pos->total()); ?> data PO
+                    </small>
+                    <div>
+                        <?php echo e($pos->appends(request()->query())->links('pagination::bootstrap-5')); ?>
+
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
         
         <div class="modal fade" id="previewModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
             aria-labelledby="staticBackdropLabel" aria-hidden="true">
@@ -588,7 +644,7 @@
                                 <div class="p-3 bg-light rounded border mb-0">
                                     <p class="small text-dark mb-0">
                                         <i class="bi bi-info-circle-fill text-primary me-1"></i> <strong>Tujuan & Konfirmasi:</strong><br>
-                                        Dengan mengeklik <strong>"Saya Mengerti (OK)"</strong>, Anda menyetujui/mengonfirmasi telah membaca alasan penolakan ini. Status penolakan item akan di-reset sehingga Anda dapat mengajukan amandemen baru bila diperlukan.
+                                        Dengan mengeklik <strong>"Saya Mengerti (OK)"</strong>, Anda mengonfirmasi telah membaca alasan penolakan ini. Pengajuan yang ditolak ini tetap terhitung sebagai 1x pengajuan revisi. Anda masih dapat mengajukan amandemen perbaikan jika batas maksimal (2x) belum terpenuhi.
                                     </p>
                                 </div>
                             </div>
@@ -660,7 +716,7 @@
                                     <div class="p-3 bg-light rounded border mb-0">
                                         <p class="small text-dark mb-0">
                                             <i class="bi bi-info-circle-fill text-primary me-1"></i> <strong>Tujuan & Konfirmasi:</strong><br>
-                                            Dengan mengeklik <strong>"Saya Mengerti (OK)"</strong>, Anda menyetujui/mengonfirmasi telah membaca alasan penolakan ini. Status penolakan item akan di-reset sehingga Anda dapat mengajukan amandemen baru bila diperlukan.
+                                            Dengan mengeklik <strong>"Saya Mengerti (OK)"</strong>, Anda mengonfirmasi telah membaca alasan penolakan ini. Pengajuan yang ditolak ini tetap terhitung sebagai 1x pengajuan revisi. Anda masih dapat mengajukan amandemen perbaikan jika batas maksimal (2x) belum terpenuhi.
                                         </p>
                                     </div>
                                 </div>
@@ -688,76 +744,131 @@
 
 <?php $__env->startPush('scripts'); ?>
     <script>
-        const showBtns = document.querySelectorAll('.btn-show');
-        const modalShowContent = document.getElementById('modalContent');
-
-        showBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const id = btn.dataset.id;
-                const internalId = btn.dataset.internalId;
-
-                modalShowContent.innerHTML = `
-                    <div class="modal-body text-center">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </div>
-                `;
-
-                let fetchUrl = `/purchase-orders/${id}`;
-                if (internalId) {
-                    fetchUrl += `?internal_id=${internalId}`;
-                }
-
-                fetch(fetchUrl)
-                    .then(response => response.text())
-                    .then(html => {
-                        modalShowContent.innerHTML = html;
-                    })
-                    .catch(error => {
-                        modalShowContent.innerHTML = `
-                            <div class="modal-body text-danger text-center">
-                                Gagal memuat data
-                            </div>
-                        `;
-                        console.error(error);
-                    });
+        // Global Helpers untuk Tracking Modal Item Focus & Show All
+        window.showAllItemCards = function() {
+            document.querySelectorAll('.item-detail-card-wrapper').forEach(function(card) {
+                card.style.display = 'block';
             });
-        });
+            const btn = document.getElementById('btn-show-all-cards');
+            if (btn) btn.style.display = 'none';
+            const subtitle = document.getElementById('detail-section-subtitle');
+            if (subtitle) subtitle.textContent = 'Spesifikasi mendalam, alasan perubahan, dan berkas amandemen untuk seluruh item.';
+        };
 
-        const editBtn = document.querySelectorAll('.btn-edit');
-        const editModalContent = document.getElementById('editModalContent');
+        window.focusItemCard = function(index) {
+            const targetEl = document.getElementById('item-detail-card-' + index);
+            if (targetEl) {
+                targetEl.style.display = 'block';
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                targetEl.classList.add('border-primary', 'shadow-lg');
+                targetEl.style.transition = 'all 0.3s ease';
+                targetEl.style.boxShadow = '0 0 18px rgba(13, 110, 253, 0.45)';
+                
+                setTimeout(() => {
+                    targetEl.classList.remove('shadow-lg');
+                    targetEl.style.boxShadow = '';
+                }, 2500);
+            }
+        };
 
-        editBtn.forEach(btn => {
-            btn.addEventListener('click',()=>{
-                const id = btn.dataset.id;
+        // Helper untuk inject HTML beserta eksekusi script di dalamnya
+        function injectModalHtml(container, html) {
+            container.innerHTML = html;
+            container.querySelectorAll('script').forEach(oldScript => {
+                const newScript = document.createElement('script');
+                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+            // Re-init tooltips inside injected content
+            container.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
+        }
 
-                editModalContent.innerHTML = `
-                <div class="modal-body text-center">
-                    <div class="spinner-border" role="status">
+        // Delegated Event Listener untuk Tombol Detail (.btn-show)
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-show');
+            if (!btn) return;
+
+            const modalShowContent = document.getElementById('modalContent');
+            if (!modalShowContent) return;
+
+            const id = btn.dataset.id;
+            const internalId = btn.dataset.internalId;
+
+            modalShowContent.innerHTML = `
+                <div class="modal-body text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
+                    <div class="text-muted small mt-2">Memuat rincian pesanan...</div>
                 </div>
-                `;
+            `;
 
-                fetch(`/purchase-orders/${id}/edit`)
-                    .then(response => response.text())
-                    .then(html => {
-                        editModalContent.innerHTML = html;
-                    })
-                    .catch(error => {
-                        editModalContent.innerHTML = `
-                    <div class="modal-body text-danger text-center">
-                        Gagal memuat data
+            let fetchUrl = `/purchase-orders/${id}`;
+            if (internalId) {
+                fetchUrl += `?internal_id=${internalId}`;
+            }
+
+            fetch(fetchUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error('Gagal memuat status: ' + response.statusText);
+                    return response.text();
+                })
+                .then(html => {
+                    injectModalHtml(modalShowContent, html);
+                })
+                .catch(error => {
+                    modalShowContent.innerHTML = `
+                        <div class="modal-body text-danger text-center py-4">
+                            <i class="bi bi-exclamation-octagon fs-2 d-block mb-2"></i>
+                            Gagal memuat data Purchase Order.
+                        </div>
+                    `;
+                    console.error('Error fetching PO detail:', error);
+                });
+        });
+
+        // Delegated Event Listener untuk Tombol Edit (.btn-edit)
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-edit');
+            if (!btn) return;
+
+            const editModalContent = document.getElementById('editModalContent');
+            if (!editModalContent) return;
+
+            const id = btn.dataset.id;
+
+            editModalContent.innerHTML = `
+                <div class="modal-body text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
-                `;
-                    })
-            });
+                    <div class="text-muted small mt-2">Memuat form edit...</div>
+                </div>
+            `;
+
+            fetch(`/purchase-orders/${id}/edit`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Gagal memuat status edit: ' + response.statusText);
+                    return response.text();
+                })
+                .then(html => {
+                    injectModalHtml(editModalContent, html);
+                })
+                .catch(error => {
+                    editModalContent.innerHTML = `
+                        <div class="modal-body text-danger text-center py-4">
+                            <i class="bi bi-exclamation-octagon fs-2 d-block mb-2"></i>
+                            Gagal memuat form edit.
+                        </div>
+                    `;
+                    console.error('Error fetching PO edit:', error);
+                });
         });
         
         document.addEventListener('DOMContentLoaded', function () {
             const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+            [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
         });
     </script>
 <?php $__env->stopPush(); ?>

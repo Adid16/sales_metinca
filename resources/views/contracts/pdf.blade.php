@@ -499,18 +499,22 @@
                         'sales'              => [
                             'id'   => $contract->sales_approver,
                             'date' => $contract->sales_approved_at,
+                            'sig'  => $contract->manager_sales_signature,
                         ],
                         'quality'            => [
                             'id'   => $contract->quality_approver,
                             'date' => $contract->quality_approved_at,
+                            'sig'  => $contract->manager_quality_signature,
                         ],
                         'ppc'                => [
                             'id'   => $contract->ppc_approver,
                             'date' => $contract->ppc_approved_at,
+                            'sig'  => $contract->manager_ppc_signature,
                         ],
                         'design engineering' => [
                             'id'   => $contract->dev_engineering_approver,
                             'date' => $contract->dev_engineering_approved_at,
+                            'sig'  => $contract->manager_de_signature,
                         ],
                     ];
 
@@ -521,31 +525,40 @@
 
                 @foreach ($deptOrder as $deptCode)
                     @if (isset($groupedDetails[$deptCode]) && count($groupedDetails[$deptCode]) > 0)
+                        @php
+                            $itemCount = count($groupedDetails[$deptCode]);
+                            $approverInfo = $deptApprovers[$deptCode] ?? null;
+                            $approverName = ($approverInfo && !empty($approverInfo['id'])) ? ($approverUsers[$approverInfo['id']] ?? '') : '';
+                            $signatureImg = $approverInfo['sig'] ?? null;
+                            $approvedDate = (!empty($approverInfo['date'])) ? \Carbon\Carbon::parse($approverInfo['date'])->format('d/m/Y') : '';
+                        @endphp
                         @foreach ($groupedDetails[$deptCode] as $index => $detail)
                             <tr class="{{ $deptClasses[$deptCode] ?? '' }}">
                                 @if ($index === 0)
-                                    <td class="dept-col" rowspan="{{ count($groupedDetails[$deptCode]) }}">
+                                    <td class="dept-col" rowspan="{{ $itemCount }}" style="vertical-align: middle; text-align: center;">
                                         {{ $deptLabels[$deptCode] ?? strtoupper(substr($deptCode, 0, 2)) }}
                                     </td>
                                 @endif
                                 <td class="req-col">{{ $detail->requirement ?? '' }}</td>
-                                <td class="check-col text-center">
-                                    @if($index === 0)
-                                        {{ $approverUsers[$deptApprovers[$deptCode]['id']] ?? '' }}
-                                    @endif
-                                </td>
-                                <td class="check-col text-center">
-                                    @if($index === 0 && !empty($deptApprovers[$deptCode]['date']))
-                                        {{ \Carbon\Carbon::parse($deptApprovers[$deptCode]['date'])->format('d/m/Y') }}
-                                    @endif
-                                    {{-- @if (isset($detail->checkBy) && $detail->checkBy)
-                                        {{ $detail->checkBy->name }}
-                                    @elseif(isset($detail->check_by) && $detail->check_by)
-                                        {{ $detail->check_by }}
-                                    @else
-                                        &nbsp;
-                                    @endif --}}
-                                </td>
+                                @if ($index === 0)
+                                    <td class="check-col text-center" rowspan="{{ $itemCount }}" style="vertical-align: middle; text-align: center; padding: 2px;">
+                                        @if(!empty($signatureImg))
+                                            <img src="{{ $signatureImg }}" alt="Tanda Tangan" style="max-height: 38px; max-width: 72px; object-fit: contain; display: block; margin: 0 auto 2px auto;">
+                                        @endif
+                                        @if(!empty($approverName))
+                                            <div style="font-size: 8px; font-weight: bold; line-height: 1.1; margin-top: 1px;">{{ $approverName }}</div>
+                                        @else
+                                            &nbsp;
+                                        @endif
+                                    </td>
+                                    <td class="check-col text-center" rowspan="{{ $itemCount }}" style="vertical-align: middle; text-align: center;">
+                                        @if(!empty($approvedDate))
+                                            <span style="font-size: 9px; font-weight: bold;">{{ $approvedDate }}</span>
+                                        @else
+                                            &nbsp;
+                                        @endif
+                                    </td>
+                                @endif
                                 <td class="remark-col">{!! nl2br(e($detail->requirement_value ?? '')) !!}</td>
                             </tr>
                         @endforeach

@@ -134,10 +134,7 @@
     </div>
 </section>
 @push('scripts')    
-<script src="assets/extensions/simple-datatables/umd/simple-datatables.js"></script>
-<script src="assets/static/js/pages/simple-datatables.js"></script>
-<script>
-    let dataTable = new simpleDatatables.DataTable("#table1");
-</script>
+<script src="{{ asset('assets/extensions/simple-datatables/umd/simple-datatables.js') }}"></script>
+<script src="{{ asset('assets/static/js/pages/simple-datatables.js') }}"></script>
 @endpush
 @endsection

@@ -197,6 +197,7 @@ class Sidebar {
   }
 
   isElementInViewport(el) {
+    if (!el) return false;
     var rect = el.getBoundingClientRect()
 
     return (
@@ -209,6 +210,7 @@ class Sidebar {
   }
 
   forceElementVisibility(el) {
+    if (!el) return;
     if (!this.isElementInViewport(el)) {
       el.scrollIntoView(false)
     }

@@ -105,8 +105,15 @@
         </div>
             
         @if($articles->hasPages())
-            <div class="d-flex justify-content-center card-footer bg-transparent border-0">
-                {{ $articles->links() }}
+            <div class="card-footer bg-transparent border-0 py-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <small class="text-muted">
+                        Menampilkan {{ $articles->firstItem() ?? 0 }}–{{ $articles->lastItem() ?? 0 }} dari {{ $articles->total() }} data
+                    </small>
+                    <div>
+                        {{ $articles->appends(request()->query())->links('pagination::bootstrap-5') }}
+                    </div>
+                </div>
             </div>
         @endif
     </div>

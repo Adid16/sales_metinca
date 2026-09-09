@@ -50,4 +50,12 @@ class PurchaseOrderInternal extends Model
     {
         return $this->hasMany(Contract::class, 'purchase_order_internal_id');
     }
+
+    public function getSalesPicAttribute()
+    {
+        if ($this->purchaseOrder && $this->purchaseOrder->quotation && $this->purchaseOrder->quotation->request && $this->purchaseOrder->quotation->request->assignment && $this->purchaseOrder->quotation->request->assignment->sales) {
+            return $this->purchaseOrder->quotation->request->assignment->sales;
+        }
+        return null;
+    }
 }

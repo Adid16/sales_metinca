@@ -12,8 +12,8 @@ class SystemSettingSeeder extends Seeder
         $settings = [
             [
                 'key' => 'max_negotiation_limit',
-                'value' => '3',
-                'description' => 'Batas maksimal counter negosiasi harga per Quotation.',
+                'value' => '6',
+                'description' => 'Batas maksimal counter negosiasi harga per Quotation (3 kali saling balas = total 6x).',
             ],
             [
                 'key' => 'max_amandement_limit',

@@ -109,15 +109,22 @@
                                 @endif
                             </div>
                         </div>
+                                @php
+                                    $customerProfile = $requestProject->customer;
+                                    $customerAccount = $customerProfile ? $customerProfile->account : null;
+                                    $companyDisplay = $requestProject->company ?: ($customerAccount->company ?? ($customerProfile->company ?? '-'));
+                                    $phoneDisplay = $requestProject->phone ?: ($customerAccount->phone ?? ($customerProfile->phone ?? '-'));
+                                @endphp
+
                                 <div class="row mb-2">
                                     <div class="col-md-3">Name</div>
-                                    <div class="col-md-4">{{ $requestProject->name }}</div>
+                                    <div class="col-md-4">{{ $requestProject->name ?: ($customerProfile->name ?? '-') }}</div>
                                 </div>
 
                                 <div class="row mb-2">
                                     <div class="col-md-3">Company</div>
-                                    <div class="col-md-4">
-                                        {{ $requestProject->company }}
+                                    <div class="col-md-4 fw-semibold text-dark">
+                                        {{ $companyDisplay }}
                                     </div>
                                 </div>
 
@@ -133,9 +140,13 @@
                                 <div class="row mb-2">
                                     <div class="col-md-3">Phone:</div>
                                     <div class="col-md-6">
-                                        <a href="tel:{{ $requestProject->phone }}">
-                                            <i class="bi bi-telephone"></i> {{ $requestProject->phone }}
-                                        </a>
+                                        @if($phoneDisplay && $phoneDisplay !== '-')
+                                            <a href="tel:{{ $phoneDisplay }}">
+                                                <i class="bi bi-telephone"></i> {{ $phoneDisplay }}
+                                            </a>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
                                     </div>
                                 </div>
                                 

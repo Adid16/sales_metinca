@@ -8,11 +8,11 @@ use App\Models\Quotation;
 class SystemSettingService
 {
     /**
-     * Ambil batas maksimal counter negosiasi harga per Quotation.
+     * Ambil batas maksimal counter negosiasi harga per Quotation (3 kali saling balas = total 6x).
      */
     public static function maxNegotiationLimit(): int
     {
-        return (int) system_setting('max_negotiation_limit', 3);
+        return (int) system_setting('max_negotiation_limit', 6);
     }
 
     /**
@@ -24,11 +24,11 @@ class SystemSettingService
     }
 
     /**
-     * Ambil persentase margin minimum harga jual.
+     * Ambil persentase toleransi diskon / margin batas bawah harga jual (Default: 10%).
      */
     public static function minPriceMarginPercentage(): float
     {
-        return (float) system_setting('min_price_margin_percentage', 0);
+        return (float) system_setting('min_price_margin_percentage', 10);
     }
 
     /**

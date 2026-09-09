@@ -50,6 +50,10 @@ class AccountController extends Controller
             'fax'      => $request->fax,
         ]);
 
+        if ($request->filled('company')) {
+            Auth::user()->update(['company' => $request->company]);
+        }
+
         return redirect()->route('account.show')
             ->with('success', 'Account berhasil disimpan.');
     }
@@ -79,6 +83,10 @@ class AccountController extends Controller
             ['user_id' => Auth::id()],
             $request->only(['phone', 'company', 'position', 'address', 'city', 'zip', 'fax'])
         );
+
+        if ($request->filled('company')) {
+            Auth::user()->update(['company' => $request->company]);
+        }
 
         return redirect()->route('account.show')
             ->with('success', 'Account berhasil diupdate.');

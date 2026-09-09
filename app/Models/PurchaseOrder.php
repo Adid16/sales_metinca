@@ -65,4 +65,17 @@ class PurchaseOrder extends Model
     {
         return $this->hasOne(Contract::class, 'order_no', 'po_no');
     }
+
+    public function internalContracts()
+    {
+        return $this->hasManyThrough(Contract::class, PurchaseOrderInternal::class, 'purchase_order_id', 'purchase_order_internal_id');
+    }
+
+    public function getSalesPicAttribute()
+    {
+        if ($this->quotation && $this->quotation->request && $this->quotation->request->assignment && $this->quotation->request->assignment->sales) {
+            return $this->quotation->request->assignment->sales;
+        }
+        return null;
+    }
 }

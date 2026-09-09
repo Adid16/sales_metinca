@@ -60,29 +60,31 @@
 
 
 <?php if(isset($contract) && ($contract->alasan_amandemen || $contract->catatan_sales)): ?>
-    <div class="alert alert-warning border-warning shadow-sm d-flex align-items-start mb-3" role="alert">
-        <i class="bi bi-exclamation-triangle-fill fs-4 me-3 text-warning"></i>
-        <div class="w-100">
-            <div class="d-flex justify-content-between align-items-center">
-                <h6 class="alert-heading fw-bold mb-1 text-dark">
-                    <i class="bi bi-pencil-square me-1"></i> Catatan Amandemen Item (Revisi #<?php echo e($contract->amandement_no); ?>)
-                </h6>
-                <span class="badge bg-warning text-dark">Amandemen Active</span>
+    <div class="card border-warning shadow-sm mb-3 alert-permanent" style="background-color: #fff9e6; border-left: 5px solid #ffc107 !important;">
+        <div class="card-body p-3 d-flex align-items-start">
+            <i class="bi bi-exclamation-triangle-fill fs-4 me-3 text-warning"></i>
+            <div class="w-100">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <h6 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-pencil-square me-1"></i> Catatan Amandemen Item (Revisi #<?php echo e($contract->amandement_no); ?>)
+                    </h6>
+                    <span class="badge bg-warning text-dark">Amandemen Active</span>
+                </div>
+                
+                <?php if($contract->alasan_amandemen): ?>
+                    <p class="mb-1 small text-dark">
+                        <strong>Alasan Amandemen Customer:</strong> <?php echo e($contract->alasan_amandemen); ?>
+
+                    </p>
+                <?php endif; ?>
+                
+                <?php if($contract->catatan_sales): ?>
+                    <p class="mb-0 small text-dark">
+                        <strong>Catatan Tim Sales:</strong> <?php echo e($contract->catatan_sales); ?>
+
+                    </p>
+                <?php endif; ?>
             </div>
-            
-            <?php if($contract->alasan_amandemen): ?>
-                <p class="mb-1 small text-dark">
-                    <strong>Alasan Amandemen Customer:</strong> <?php echo e($contract->alasan_amandemen); ?>
-
-                </p>
-            <?php endif; ?>
-            
-            <?php if($contract->catatan_sales): ?>
-                <p class="mb-0 small text-dark">
-                    <strong>Catatan Tim Sales:</strong> <?php echo e($contract->catatan_sales); ?>
-
-                </p>
-            <?php endif; ?>
         </div>
     </div>
 <?php endif; ?>
@@ -151,7 +153,7 @@
                     <input type="text" id="search_article" class="form-control" placeholder="Ketik Nomor Artikel (Contoh: ART-001) lalu tekan Enter..." autocomplete="off">
                     <button class="btn btn-info text-white" type="button" id="btn_search">Cari Data</button>
                 </div>
-                <small class="text-muted mt-1 d-block">* Menarik data otomatis ke kolom "Item #1" di form bawah. Anda juga bisa langsung mengetik kode artikel di dalam kolom baris item mana pun lalu tekan Enter.</small>
+                <small class="text-muted mt-1 d-block">* Data artikel & harga negosiasi sudah otomatis ditarik dari Quotation. Anda juga dapat mengetik kode artikel di baris mana pun lalu tekan Enter.</small>
             </div>
             
             <div class="col-md-4 text-center mt-3 mt-md-0 d-none" id="qc_action_area">
@@ -169,7 +171,7 @@
     <div class="card-header py-2" style="background:#e9ecef;">
         <h6 class="mb-0 fw-bold text-uppercase" style="font-size:0.78rem; letter-spacing:1px; color:#0d6efd;">
             <i class="bi bi-list-check me-1"></i>Detail Item PO Internal
-            <small class="text-muted fw-normal text-lowercase ms-2">— input berdasarkan dokumen di atas</small>
+            <small class="text-muted fw-normal text-lowercase ms-2">— terisi otomatis dari Quotation & Harga Negosiasi</small>
         </h6>
     </div>
     <div class="card-body mt-2">
@@ -179,9 +181,10 @@
             $action = $isEdit
                 ? route('purchase-orders-internal.update', $purchaseOrder->id)
                 : route('purchase-orders-internal.store', $purchaseOrder->id);
+            $defaultSupplier = 'PT. Metinca Prima Industrial Works';
         ?>
  
-        <form action="<?php echo e($action); ?>" method="POST">
+        <form action="<?php echo e($action); ?>" method="POST" id="po-internal-form">
             <?php echo csrf_field(); ?>
             <?php if($isEdit): ?> <?php echo method_field('PUT'); ?> <?php endif; ?>
             
@@ -212,36 +215,37 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label mb-1 fw-semibold small">CUSTOMER ORDER NO</label>
-                            <input type="text" name="po_no[]" class="form-control form-control-sm" value="<?php echo e($item->po_no ?? $itemPoNo ?? $purchaseOrder->po_no); ?>" placeholder="No PO">
+                            <input type="text" name="po_no[]" class="form-control form-control-sm bg-light fw-semibold" value="<?php echo e($item->po_no ?? $itemPoNo ?? $purchaseOrder->po_no); ?>" placeholder="No PO">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label mb-1 fw-semibold small text-dark"><i class="bi bi-keyboard text-info"></i> Article (Tekan Enter)</label>
+                            <label class="form-label mb-1 fw-semibold small text-dark"><i class="bi bi-upc-scan text-info"></i> Article (Tekan Enter)</label>
                             <input type="text" name="article[]" class="form-control form-control-sm form-article text-uppercase fw-semibold" value="<?php echo e($item->article ?? ''); ?>" placeholder="Ketik Kode Artikel lalu tekan Enter">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label mb-1 fw-semibold small">Nama Item <span class="text-danger">*</span></label>
-                            <input type="text" name="item[]" class="form-control form-control-sm form-item" value="<?php echo e($item->item); ?>" placeholder="Nama item" required>
+                            <input type="text" name="item[]" class="form-control form-control-sm form-item fw-semibold" value="<?php echo e($item->item); ?>" placeholder="Nama item" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label mb-1 fw-semibold small">Material</label>
                             <input type="text" name="material[]" class="form-control form-control-sm form-material" value="<?php echo e($item->material); ?>" placeholder="Material">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label mb-1 fw-semibold small">Spesifikasi (Drawing/Berat)</label>
-                            <input type="text" name="spesifikasi[]" class="form-control form-control-sm form-spesifikasi" value="<?php echo e($item->spesifikasi); ?>" placeholder="Spesifikasi teknis">
+                            <label class="form-label mb-1 fw-semibold small">Spesifikasi (Drawing/Berat/Remark)</label>
+                            <input type="text" name="spesifikasi[]" class="form-control form-control-sm form-spesifikasi" value="<?php echo e($item->spesifikasi); ?>" placeholder="Drawing / Berat / Remark">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label mb-1 fw-semibold small">Qty <span class="text-danger">*</span></label>
                             <input type="number" name="qty[]" class="form-control form-control-sm qty-input" value="<?php echo e($item->qty); ?>" min="1" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label mb-1 fw-semibold small">Unit Price <span class="text-danger">*</span></label>
-                            <input type="number" name="unit_price[]" class="form-control form-control-sm price-input" value="<?php echo e($item->unit_price); ?>" min="0" step="0.01" required>
+                            <label class="form-label mb-1 fw-semibold small text-dark"><i class="bi bi-lock-fill text-secondary me-1"></i> Unit Price (Harga Kesepakatan) <span class="badge bg-secondary-subtle text-secondary border ms-1" style="font-size: 0.7rem;">Terkunci</span> <span class="text-danger">*</span></label>
+                            <input type="number" name="unit_price[]" class="form-control form-control-sm price-input bg-light fw-bold text-success border-success" value="<?php echo e((float)$item->unit_price); ?>" min="0" step="0.01" readonly required>
+                            <small class="text-muted d-block mt-1" style="font-size: 0.72rem;"><i class="bi bi-shield-lock me-1"></i>Harga terkunci otomatis dari kesepakatan Quotation / Negosiasi</small>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label mb-1 fw-semibold small">Subtotal</label>
-                            <input type="text" class="form-control form-control-sm subtotal-cell bg-light fw-semibold"
-                                value="Rp <?php echo e(number_format($item->subtotal, 0, ',', '.')); ?>" readonly>
+                            <input type="text" class="form-control form-control-sm subtotal-cell bg-light fw-bold text-dark"
+                                value="Rp <?php echo e(number_format($item->subtotal ?? ($item->qty * $item->unit_price), 0, ',', '.')); ?>" readonly>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label mb-1 fw-semibold small">Delivery Date</label>
@@ -249,15 +253,15 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label mb-1 fw-semibold small">Supplier/Vendor</label>
-                            <input type="text" name="supplier[]" class="form-control form-control-sm" value="<?php echo e($item->supplier); ?>" placeholder="Supplier/Vendor">
+                            <input type="text" name="supplier[]" class="form-control form-control-sm" value="<?php echo e($item->supplier ?? $defaultSupplier); ?>" placeholder="Supplier/Vendor">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label mb-1 fw-semibold small">PIC Buyer</label>
-                            <input type="text" name="pic_buyer[]" class="form-control form-control-sm" value="<?php echo e($item->pic_buyer); ?>" placeholder="Nama PIC">
+                            <input type="text" name="pic_buyer[]" class="form-control form-control-sm" value="<?php echo e($item->pic_buyer ?? ($purchaseOrder->customer->name ?? '')); ?>" placeholder="Nama PIC">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label mb-1 fw-semibold small">Perusahaan Buyer</label>
-                            <input type="text" name="company_buyer[]" class="form-control form-control-sm" value="<?php echo e($item->company_buyer); ?>" placeholder="Nama perusahaan">
+                            <input type="text" name="company_buyer[]" class="form-control form-control-sm" value="<?php echo e($item->company_buyer ?? $customerCompany); ?>" placeholder="Nama perusahaan">
                         </div>
                         <div class="col-md-12">
                             <label class="form-label mb-1 fw-semibold small">Notes</label>
@@ -272,45 +276,74 @@
                         $qItemsToInput = $qItem ? collect([$qItem]) : ($purchaseOrder->quotation?->items ?? collect());
                     ?>
                     <?php $__currentLoopData = $qItemsToInput; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $qIndex => $qItemRow): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <?php
+                        $artCode = $qItemRow->article?->article_no ?? $qItemRow->article?->internal_part_no ?? '';
+                        $artMaterial = $qItemRow->article?->material ?? '';
+                        $specs = [];
+                        if ($qItemRow->article) {
+                            if (!empty($qItemRow->article->drawing_no)) {
+                                $dwg = 'Drawing: ' . $qItemRow->article->drawing_no . (!empty($qItemRow->article->drawing_rev) ? ' Rev: ' . $qItemRow->article->drawing_rev : '');
+                                $specs[] = $dwg;
+                            }
+                            if (!empty($qItemRow->article->berat)) {
+                                $specs[] = 'Berat: ' . $qItemRow->article->berat . ' Kg';
+                            }
+                            if (!empty($qItemRow->article->remark)) {
+                                $specs[] = 'Remark: ' . $qItemRow->article->remark;
+                            }
+                        }
+                        $artSpec = implode(' | ', $specs);
+                        $finalPrice = (float)($qItemRow->price ?? $qItemRow->negotiated_price ?? $qItemRow->original_price ?? 0);
+                        $rowSubtotal = $qItemRow->qty * $finalPrice;
+                        $itemNumber = isset($qItemIndex) && $qItem ? $qItemIndex : ($qIndex + 1);
+                        $rowPoNo = $itemPoNo ?? ($purchaseOrder->po_no . '-' . $itemNumber);
+                    ?>
                     <div class="border rounded p-3 mb-3 item-row" style="border-left: 4px solid #0d6efd !important;">
                         <input type="hidden" name="internal_id[]" value="">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="fw-bold text-primary">Item #<span class="row-no"><?php echo e(isset($qItemIndex) ? $qItemIndex : ($qIndex + 1)); ?></span></span>
+                            <div>
+                                <span class="fw-bold text-primary">Item #<span class="row-no"><?php echo e($itemNumber); ?></span></span>
+                                <span class="badge bg-light-success text-success border border-success ms-2" style="font-size: 0.72rem;">
+                                    <i class="bi bi-link-45deg me-1"></i>Otomatis dari Quotation #<?php echo e($purchaseOrder->quotation->quotation_no ?? '-'); ?>
+
+                                </span>
+                            </div>
                             <button type="button" class="btn btn-sm btn-danger btn-remove"><i class="bi bi-trash me-1"></i>Hapus</button>
                         </div>
                         <div class="row g-2">
                             <div class="col-md-6">
-                                <label class="form-label mb-1 fw-semibold small text-muted">No PO</label>
-                                <input type="text" name="po_no[]" class="form-control form-control-sm" value="<?php echo e($itemPoNo ?? $purchaseOrder->po_no ?? ''); ?>" readonly>
+                                <label class="form-label mb-1 fw-semibold small text-muted">No PO (Item)</label>
+                                <input type="text" name="po_no[]" class="form-control form-control-sm bg-light fw-bold text-primary" value="<?php echo e($rowPoNo); ?>" readonly>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label mb-1 fw-semibold small text-dark"><i class="bi bi-keyboard text-info"></i> Article (Tekan Enter)</label>
-                                <input type="text" name="article[]" class="form-control form-control-sm form-article text-uppercase fw-semibold" placeholder="Ketik Kode Artikel lalu tekan Enter">
+                                <label class="form-label mb-1 fw-semibold small text-dark"><i class="bi bi-upc-scan text-info"></i> Article (Tekan Enter)</label>
+                                <input type="text" name="article[]" class="form-control form-control-sm form-article text-uppercase fw-semibold" value="<?php echo e($artCode); ?>" placeholder="Kode Artikel">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small text-muted">Nama Item <span class="text-danger">*</span></label>
-                                <input type="text" name="item[]" class="form-control form-control-sm form-item" value="<?php echo e($qItemRow->item); ?>" placeholder="Nama item" required>
+                                <input type="text" name="item[]" class="form-control form-control-sm form-item fw-semibold" value="<?php echo e($qItemRow->item); ?>" placeholder="Nama item" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small text-muted">Material</label>
-                                <input type="text" name="material[]" class="form-control form-control-sm form-material" placeholder="Material">
+                                <input type="text" name="material[]" class="form-control form-control-sm form-material" value="<?php echo e($artMaterial); ?>" placeholder="Material">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label mb-1 fw-semibold small text-muted">Spesifikasi (Drawing/Berat)</label>
-                                <input type="text" name="spesifikasi[]" class="form-control form-control-sm form-spesifikasi" placeholder="Spesifikasi teknis">
+                                <label class="form-label mb-1 fw-semibold small text-muted">Spesifikasi (Drawing/Berat/Remark)</label>
+                                <input type="text" name="spesifikasi[]" class="form-control form-control-sm form-spesifikasi" value="<?php echo e($artSpec); ?>" placeholder="Drawing / Berat / Remark">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small text-muted">Qty <span class="text-danger">*</span></label>
-                                <input type="number" name="qty[]" class="form-control form-control-sm qty-input" value="<?php echo e($qItemRow->qty); ?>" min="1" required>
+                                <input type="number" name="qty[]" class="form-control form-control-sm qty-input fw-semibold" value="<?php echo e($qItemRow->qty); ?>" min="1" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label mb-1 fw-semibold small text-muted">Unit Price <span class="text-danger">*</span></label>
-                                <input type="number" name="unit_price[]" class="form-control form-control-sm price-input" value="<?php echo e((int)$qItemRow->price); ?>" min="0" step="0.01" required>
+                                <label class="form-label mb-1 fw-semibold small text-dark"><i class="bi bi-lock-fill text-secondary me-1"></i> Unit Price (Harga Kesepakatan) <span class="badge bg-secondary-subtle text-secondary border ms-1" style="font-size: 0.7rem;">Terkunci</span> <span class="text-danger">*</span></label>
+                                <input type="number" name="unit_price[]" class="form-control form-control-sm price-input bg-light fw-bold text-success border-success" value="<?php echo e($finalPrice); ?>" min="0" step="0.01" readonly required>
+                                <small class="text-muted d-block mt-1" style="font-size: 0.72rem;"><i class="bi bi-shield-lock me-1"></i>Harga terkunci otomatis dari kesepakatan Quotation / Negosiasi</small>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small text-muted">Subtotal</label>
-                                <input type="text" class="form-control form-control-sm subtotal-cell bg-light fw-semibold" 
-                                    value="Rp <?php echo e(number_format($qItemRow->qty * $qItemRow->price, 0, ',', '.')); ?>" readonly>
+                                <input type="text" class="form-control form-control-sm subtotal-cell bg-light fw-bold text-dark" 
+                                    value="Rp <?php echo e(number_format($rowSubtotal, 0, ',', '.')); ?>" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small text-muted">Delivery Date</label>
@@ -318,7 +351,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small text-muted">Supplier/Vendor</label>
-                                <input type="text" name="supplier[]" class="form-control form-control-sm" placeholder="Supplier/Vendor">
+                                <input type="text" name="supplier[]" class="form-control form-control-sm" value="<?php echo e($defaultSupplier); ?>" placeholder="Supplier/Vendor">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small text-muted">PIC Buyer</label>
@@ -326,7 +359,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small text-muted">Perusahaan Buyer</label>
-                                <input type="text" name="company_buyer[]" class="form-control form-control-sm" value="<?php echo e($purchaseOrder->company ?? ($purchaseOrder->quotation->company ?? '')); ?>" placeholder="Nama perusahaan">
+                                <input type="text" name="company_buyer[]" class="form-control form-control-sm" value="<?php echo e($customerCompany); ?>" placeholder="Nama perusahaan">
                             </div>
                             <div class="col-md-12">
                                 <label class="form-label mb-1 fw-semibold small text-muted">Notes</label>
@@ -340,18 +373,19 @@
 
             
             <div class="border rounded p-3 mb-3 d-flex justify-content-between align-items-center" style="background:#f0f4ff;">
-                <span class="fw-bold">TOTAL MULTI-ITEMS</span>
-                <span class="fw-bold fs-5" id="grand-total">Rp 0</span>
+                <span class="fw-bold text-dark fs-6"><i class="bi bi-calculator me-2 text-primary"></i>TOTAL MULTI-ITEMS</span>
+                <span class="fw-bold fs-4 text-primary" id="grand-total">Rp 0</span>
             </div>
  
-            <div class="d-flex justify-content-end mt-3 gap-1">
-                <button type="button" class="btn btn-sm btn-success" id="btn-add-row">
+            <div class="d-flex justify-content-end mt-3 gap-2">
+                
+                <button type="button" class="btn btn-sm btn-success px-3 d-none" id="btn-add-row">
                     <i class="bi bi-plus-lg me-1"></i>Add item
                 </button>
-                <button type="submit" class="btn btn-primary btn-sm fw-semibold">
-                    Save
+                <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold">
+                    <i class="bi bi-save me-1"></i>Save PO Internal
                 </button>
-                <a href="<?php echo e(route('purchase-orders.index')); ?>" class="btn btn-sm btn-light">
+                <a href="<?php echo e(route('purchase-orders.index')); ?>" class="btn btn-sm btn-light px-3">
                     Back
                 </a>
             </div>
@@ -369,61 +403,89 @@
         const btnSearch   = document.getElementById('btn_search');
         const qcArea      = document.getElementById('qc_action_area');
         const btnSendQC   = document.getElementById('btn_send_qc');
+        const mainForm    = document.getElementById('po-internal-form');
 
-        document.getElementById('item-body').addEventListener('keydown', function(e) {
-            if (e.target.classList.contains('form-article') && e.key === 'Enter') {
-                e.preventDefault();
+        // =========================================================================
+        // 1. CEGAH FORM TERSIMPAN / SUBMIT OTOMATIS SAAT TEKAN TOMBOL ENTER
+        // =========================================================================
+        if (mainForm) {
+            mainForm.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+                    e.preventDefault(); // Matikan auto-submit form pada tombol Enter
 
-                const inputField = e.target;
-                const articleCode = inputField.value.trim();
-                if (articleCode === '') return;
+                    // Jika Enter ditekan pada input kode artikel, jalankan lookup data artikel
+                    if (e.target.classList.contains('form-article')) {
+                        loadArticleForRow(e.target);
+                    }
+                    return false;
+                }
+            });
+        }
 
-                const currentRow = inputField.closest('.item-row');
+        // =========================================================================
+        // 2. FUNGSI UNIFIED LOAD DATA ARTIKEL KE BARIS FORM
+        // =========================================================================
+        function loadArticleForRow(inputField) {
+            const articleCode = inputField.value.trim();
+            if (!articleCode) return;
 
-                Swal.fire({ 
-                    title: 'Memuat Data...', 
-                    allowOutsideClick: false, 
-                    didOpen: () => { Swal.showLoading(); }
-                });
+            const currentRow = inputField.closest('.item-row');
+            if (!currentRow) return;
 
-                fetch(`/articles/requirements/${encodeURIComponent(articleCode)}`)
-                    .then(response => {
-                        if (!response.ok) throw new Error('Not found');
-                        return response.json();
-                    })
-                    .then(res => {
-                        if (res.success && res.data) {
-                            currentRow.querySelector('.form-item').value = res.data.part_name ?? '';
-                            currentRow.querySelector('.form-material').value = res.data.material ?? '';
-                            
-                            let specText = [];
-                            if (res.data.drawing_no) specText.push(`Drawing: ${res.data.drawing_no}`);
-                            if (res.data.berat) specText.push(`Berat: ${res.data.berat} Kg`);
-                            currentRow.querySelector('.form-spesifikasi').value = specText.join(' | ');
+            Swal.fire({ 
+                title: 'Memuat Data...', 
+                allowOutsideClick: false, 
+                didOpen: () => { Swal.showLoading(); }
+            });
 
-                            if (res.data.total_price || res.data.price) {
-                                currentRow.querySelector('.price-input').value = res.data.total_price || res.data.price;
-                            }
-
-                            const qty = parseFloat(currentRow.querySelector('.qty-input').value) || 0;
-                            const price = parseFloat(currentRow.querySelector('.price-input').value) || 0;
-                            currentRow.querySelector('.subtotal-cell').value = 'Rp ' + (qty * price).toLocaleString('id-ID');
-                            updateTotal();
-
-                            Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data spesifikasi artikel dimuat.', timer: 1200, showConfirmButton: false });
+            fetch(`/articles/requirements/${encodeURIComponent(articleCode)}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Not found');
+                    return response.json();
+                })
+                .then(res => {
+                    if (res.success && res.data) {
+                        const d = res.data;
+                        if (d.part_name) currentRow.querySelector('.form-item').value = d.part_name;
+                        if (d.material) currentRow.querySelector('.form-material').value = d.material;
+                        
+                        let specList = [];
+                        if (d.drawing_no) {
+                            let dwg = `Drawing: ${d.drawing_no}`;
+                            if (d.drawing_rev) dwg += ` Rev: ${d.drawing_rev}`;
+                            specList.push(dwg);
                         }
-                    })
-                    .catch(() => {
-                        Swal.fire({ 
-                            icon: 'warning', 
-                            title: 'Artikel Baru!', 
-                            text: 'Kode artikel tidak ditemukan di database. Silakan isi data teknis secara manual.',
-                            confirmButtonText: 'Siap' 
-                        });
-                    });
-            }
-        });
+                        if (d.berat) {
+                            specList.push(`Berat: ${d.berat} Kg`);
+                        }
+                        if (d.remark) {
+                            specList.push(`Remark: ${d.remark}`);
+                        }
+                        currentRow.querySelector('.form-spesifikasi').value = specList.join(' | ');
 
+                        // JAGA HARGA HASIL NEGOSIASI: Hanya isi harga katalog jika input harga masih kosong atau 0
+                        const currentPrice = parseFloat(currentRow.querySelector('.price-input').value) || 0;
+                        if (currentPrice <= 0 && (d.total_price || d.price)) {
+                            currentRow.querySelector('.price-input').value = d.total_price || d.price;
+                        }
+
+                        updateTotal();
+                        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data spesifikasi artikel dimuat.', timer: 1200, showConfirmButton: false });
+                    }
+                })
+                .catch(() => {
+                    Swal.fire({ 
+                        icon: 'warning', 
+                        title: 'Artikel Baru!', 
+                        text: 'Kode artikel tidak ditemukan di database. Silakan isi data teknis secara manual.',
+                        confirmButtonText: 'Siap' 
+                    });
+                });
+        }
+
+        // =========================================================================
+        // 3. PENCARIAN ATAS DARI KOTAK CEK KETERSEDIAAN BARANG
+        // =========================================================================
         function performSearch() {
             const article = searchInput.value.trim();
             if(article === '') return;
@@ -438,29 +500,37 @@
                 .then(res => {
                     if(res.success && res.data) {
                         qcArea.classList.add('d-none');
-                        
+                        const d = res.data;
                         const firstRow = document.querySelector('#item-body .item-row');
                         if (firstRow) {
                             firstRow.querySelector('.form-article').value = article;
-                            firstRow.querySelector('.form-item').value = res.data.part_name ?? '';
-                            firstRow.querySelector('.form-material').value = res.data.material ?? '';
+                            if (d.part_name) firstRow.querySelector('.form-item').value = d.part_name;
+                            if (d.material) firstRow.querySelector('.form-material').value = d.material;
                             
-                            let specText = [];
-                            if (res.data.drawing_no) specText.push(`Drawing: ${res.data.drawing_no}`);
-                            if (res.data.berat) specText.push(`Berat: ${res.data.berat} Kg`);
-                            firstRow.querySelector('.form-spesifikasi').value = specText.join(' | ');
+                            let specList = [];
+                            if (d.drawing_no) {
+                                let dwg = `Drawing: ${d.drawing_no}`;
+                                if (d.drawing_rev) dwg += ` Rev: ${d.drawing_rev}`;
+                                specList.push(dwg);
+                            }
+                            if (d.berat) {
+                                specList.push(`Berat: ${d.berat} Kg`);
+                            }
+                            if (d.remark) {
+                                specList.push(`Remark: ${d.remark}`);
+                            }
+                            firstRow.querySelector('.form-spesifikasi').value = specList.join(' | ');
                             
-                            if (res.data.total_price || res.data.price) {
-                                firstRow.querySelector('.price-input').value = res.data.total_price || res.data.price;
+                            // JAGA HARGA HASIL NEGOSIASI
+                            const currentPrice = parseFloat(firstRow.querySelector('.price-input').value) || 0;
+                            if (currentPrice <= 0 && (d.total_price || d.price)) {
+                                firstRow.querySelector('.price-input').value = d.total_price || d.price;
                             }
                             
-                            const qty = parseFloat(firstRow.querySelector('.qty-input').value) || 0;
-                            const price = parseFloat(firstRow.querySelector('.price-input').value) || 0;
-                            firstRow.querySelector('.subtotal-cell').value = 'Rp ' + (qty * price).toLocaleString('id-ID');
                             updateTotal();
                         }
 
-                        Swal.fire({ icon: 'success', title: 'Data Ditemukan', text: 'Data berhasil ditarik ke Item #1', timer: 1500, showConfirmButton: false });
+                        Swal.fire({ icon: 'success', title: 'Data Ditemukan', text: 'Data spesifikasi ditarik ke Item #1', timer: 1500, showConfirmButton: false });
                     }
                 })
                 .catch(error => {
@@ -472,27 +542,34 @@
                 });
         }
 
-        btnSearch.addEventListener('click', performSearch);
-        searchInput.addEventListener('keypress', function(e) {
-            if(e.key === 'Enter') { e.preventDefault(); performSearch(); }
-        });
-
-        btnSendQC.addEventListener('click', function() {
-            const article = searchInput.value.trim();
-            Swal.fire({
-                title: 'Kirim Permintaan QC?',
-                text: `Meminta QC untuk membuat spesifikasi barang: ${article}`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Ya, Kirim!',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    Swal.fire('Terkirim!', 'Permintaan telah dikirim ke QC.', 'success');
-                }
+        if (btnSearch) btnSearch.addEventListener('click', performSearch);
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(e) {
+                if(e.key === 'Enter') { e.preventDefault(); performSearch(); }
             });
-        });
+        }
 
+        if (btnSendQC) {
+            btnSendQC.addEventListener('click', function() {
+                const article = searchInput.value.trim();
+                Swal.fire({
+                    title: 'Kirim Permintaan QC?',
+                    text: `Meminta QC untuk membuat spesifikasi barang: ${article}`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Kirim!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        Swal.fire('Terkirim!', 'Permintaan telah dikirim ke QC.', 'success');
+                    }
+                });
+            });
+        }
+
+        // =========================================================================
+        // 4. HITUNG GRAND TOTAL SECARA REAL-TIME & ON LOAD
+        // =========================================================================
         updateTotal();
     });
 
@@ -508,57 +585,63 @@
             </div>
             <div class="row g-2">
                 <div class="col-md-6"><label class="form-label small text-muted mb-1">No PO</label>
-                    <input type="text" name="po_no[]" class="form-control form-control-sm" value="<?php echo e($itemPoNo ?? $purchaseOrder->po_no ?? ''); ?>" readonly></div>
-                <div class="col-md-6"><label class="form-label small text-muted mb-1 text-dark"><i class="bi bi-keyboard text-info"></i> Article (Tekan Enter)</label>
+                    <input type="text" name="po_no[]" class="form-control form-control-sm bg-light fw-semibold" value="<?php echo e($itemPoNo ?? $purchaseOrder->po_no ?? ''); ?>" readonly></div>
+                <div class="col-md-6"><label class="form-label small text-muted mb-1 text-dark"><i class="bi bi-upc-scan text-info"></i> Article (Tekan Enter)</label>
                     <input type="text" name="article[]" class="form-control form-control-sm form-article text-uppercase fw-semibold" placeholder="Ketik Kode Artikel lalu tekan Enter"></div>            
                 <div class="col-md-6"><label class="form-label small text-muted mb-1">Nama Item <span class="text-danger">*</span></label>
-                    <input type="text" name="item[]" class="form-control form-control-sm form-item" placeholder="Nama item" required></div>
+                    <input type="text" name="item[]" class="form-control form-control-sm form-item fw-semibold" placeholder="Nama item" required></div>
                 <div class="col-md-6"><label class="form-label small text-muted mb-1">Material</label>
                     <input type="text" name="material[]" class="form-control form-control-sm form-material" placeholder="Material"></div>
-                <div class="col-md-6"><label class="form-label small text-muted mb-1">Spesifikasi (Drawing/Berat)</label>
-                    <input type="text" name="spesifikasi[]" class="form-control form-control-sm form-spesifikasi" placeholder="Spesifikasi teknis"></div>
+                <div class="col-md-6"><label class="form-label small text-muted mb-1">Spesifikasi (Drawing/Berat/Remark)</label>
+                    <input type="text" name="spesifikasi[]" class="form-control form-control-sm form-spesifikasi" placeholder="Drawing / Berat / Remark"></div>
                 <div class="col-md-6"><label class="form-label small text-muted mb-1">Qty <span class="text-danger">*</span></label>
-                    <input type="number" name="qty[]" class="form-control form-control-sm qty-input" value="1" min="1" required></div>
-                <div class="col-md-6"><label class="form-label small text-muted mb-1">Unit Price <span class="text-danger">*</span></label>
-                    <input type="number" name="unit_price[]" class="form-control form-control-sm price-input" value="0" min="0" step="0.01" required></div>
+                    <input type="number" name="qty[]" class="form-control form-control-sm qty-input fw-semibold" value="1" min="1" required></div>
+                <div class="col-md-6"><label class="form-label small text-muted mb-1"><i class="bi bi-lock-fill text-secondary me-1"></i>Unit Price (Harga Kesepakatan) <span class="badge bg-secondary-subtle text-secondary border ms-1" style="font-size: 0.7rem;">Terkunci</span> <span class="text-danger">*</span></label>
+                    <input type="number" name="unit_price[]" class="form-control form-control-sm price-input bg-light fw-bold text-success border-success" value="0" min="0" step="0.01" readonly required>
+                    <small class="text-muted d-block mt-1" style="font-size: 0.72rem;"><i class="bi bi-shield-lock me-1"></i>Harga terkunci otomatis</small></div>
                 <div class="col-md-6"><label class="form-label small text-muted mb-1">Subtotal</label>
-                    <input type="text" class="form-control form-control-sm subtotal-cell bg-light fw-semibold" value="Rp 0" readonly></div>
+                    <input type="text" class="form-control form-control-sm subtotal-cell bg-light fw-bold text-dark" value="Rp 0" readonly></div>
                 <div class="col-md-6"><label class="form-label small text-muted mb-1">Delivery Date</label>
                     <input type="date" name="delivery_date[]" class="form-control form-control-sm" value="<?php echo e($purchaseOrder->delivery_request ? \Carbon\Carbon::parse($purchaseOrder->delivery_request)->format('Y-m-d') : ''); ?>"></div>
                 <div class="col-md-6"><label class="form-label small text-muted mb-1">Supplier/Vendor</label>
-                    <input type="text" name="supplier[]" class="form-control form-control-sm" placeholder="Supplier/Vendor"></div>
+                    <input type="text" name="supplier[]" class="form-control form-control-sm" value="PT. Metinca Prima Industrial Works" placeholder="Supplier/Vendor"></div>
                 <div class="col-md-6"><label class="form-label small text-muted mb-1">PIC Buyer</label>
                     <input type="text" name="pic_buyer[]" class="form-control form-control-sm" value="<?php echo e($purchaseOrder->customer->name ?? ''); ?>" placeholder="Nama PIC"></div>
                 <div class="col-md-6"><label class="form-label small text-muted mb-1">Perusahaan Buyer</label>
-                    <input type="text" name="company_buyer[]" class="form-control form-control-sm" value="<?php echo e($purchaseOrder->company ?? ($purchaseOrder->quotation->company ?? '')); ?>" placeholder="Nama perusahaan"></div>
+                    <input type="text" name="company_buyer[]" class="form-control form-control-sm" value="<?php echo e($purchaseOrder->company ?? ($purchaseOrder->quotation->company ?? ($purchaseOrder->customer->company ?? ''))); ?>" placeholder="Nama perusahaan"></div>
                 <div class="col-md-12"><label class="form-label small text-muted mb-1">Notes</label>
                     <input type="text" name="notes[]" class="form-control form-control-sm" placeholder="Catatan tambahan"></div>
             </div>
         </div>`;
     }
 
-    document.getElementById('btn-add-row').addEventListener('click', function () {
+    document.getElementById('btn-add-row')?.addEventListener('click', function () {
         const count = document.querySelectorAll('#item-body .item-row').length + 1;
         document.getElementById('item-body').insertAdjacentHTML('beforeend', newRow(count));
         updateTotal();
     });
 
-    document.getElementById('item-body').addEventListener('click', function (e) {
+    document.getElementById('item-body')?.addEventListener('click', function (e) {
         if (e.target.closest('.btn-remove')) {
             if (document.querySelectorAll('#item-body .item-row').length > 1) {
                 e.target.closest('.item-row').remove();
                 updateRowNumbers();
                 updateTotal();
+            } else {
+                Swal.fire({ icon: 'info', title: 'Perhatian', text: 'Minimal harus ada 1 baris item PO.', timer: 1500, showConfirmButton: false });
             }
         }
     });
 
-    document.getElementById('item-body').addEventListener('input', function (e) {
+    // Realtime perhitungan subtotal per row dan grand total saat qty atau price diketik / diubah
+    document.getElementById('item-body')?.addEventListener('input', function (e) {
         if (e.target.classList.contains('qty-input') || e.target.classList.contains('price-input')) {
-            const row   = e.target.closest('.item-row');
-            const qty   = parseFloat(row.querySelector('.qty-input').value) || 0;
-            const price = parseFloat(row.querySelector('.price-input').value) || 0;
-            row.querySelector('.subtotal-cell').value = 'Rp ' + (qty * price).toLocaleString('id-ID');
+            updateTotal();
+        }
+    });
+
+    document.getElementById('item-body')?.addEventListener('change', function (e) {
+        if (e.target.classList.contains('qty-input') || e.target.classList.contains('price-input')) {
             updateTotal();
         }
     });
@@ -572,39 +655,26 @@
 
     function updateTotal() {
         let total = 0;
-        document.querySelectorAll('.subtotal-cell').forEach(cell => {
-            total += parseInt(cell.value.replace(/[^0-9]/g, '')) || 0;
+        document.querySelectorAll('#item-body .item-row').forEach(row => {
+            const qtyInput = row.querySelector('.qty-input');
+            const priceInput = row.querySelector('.price-input');
+            const subtotalCell = row.querySelector('.subtotal-cell');
+
+            const qty = parseFloat(qtyInput?.value) || 0;
+            const price = parseFloat(priceInput?.value) || 0;
+            const subtotal = qty * price;
+
+            if (subtotalCell) {
+                subtotalCell.value = 'Rp ' + Math.round(subtotal).toLocaleString('id-ID');
+            }
+            total += subtotal;
         });
-        document.getElementById('grand-total').textContent = 'Rp ' + total.toLocaleString('id-ID');
-    }
-    // MODUL 6: Auto-fill Spesifikasi & Harga dari Master Article
-    document.getElementById('item-body').addEventListener('change', function (e) {
-        if (e.target.name === 'article[]' && e.target.value.trim() !== '') {
-            const articleNo = e.target.value.trim();
-            const row = e.target.closest('.item-row');
-            
-            fetch('/article-requirements/' + encodeURIComponent(articleNo))
-                .then(res => res.json())
-                .then(res => {
-                    if (res.success && res.data) {
-                        const data = res.data;
-                        if (data.material && row.querySelector('input[name="material[]"]')) {
-                            row.querySelector('input[name="material[]"]').value = data.material;
-                        }
-                        if (data.drawing_no && row.querySelector('textarea[name="spesifikasi[]"]')) {
-                            row.querySelector('textarea[name="spesifikasi[]"]').value = 'Drawing No: ' + data.drawing_no + (data.drawing_rev ? ' (Rev: ' + data.drawing_rev + ')' : '');
-                        }
-                        if (data.price && row.querySelector('.price-input')) {
-                            row.querySelector('.price-input').value = data.price;
-                            const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
-                            row.querySelector('.subtotal-cell').value = 'Rp ' + (qty * data.price).toLocaleString('id-ID');
-                            updateTotal();
-                        }
-                    }
-                })
-                .catch(err => console.log('Article lookup error:', err));
+
+        const grandTotalEl = document.getElementById('grand-total');
+        if (grandTotalEl) {
+            grandTotalEl.textContent = 'Rp ' + Math.round(total).toLocaleString('id-ID');
         }
-    });
+    }
 </script>
 <?php $__env->stopPush(); ?>
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\sales_metinca\resources\views/purchase-orders-internal/create.blade.php ENDPATH**/ ?>

@@ -7,6 +7,7 @@ use App\Notifications\ContractNotification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\Contract;
+use App\Models\Quotation;
 use App\Models\User;
 use App\Models\Article;
 use App\Models\Negotiate;
@@ -38,12 +39,23 @@ class ContractController extends Controller
 
     public function index(Request $request)
     {
-        $filters = $request->only(['start_date','end_date','status','dept']);
+        $filters = $request->only(['start_date', 'end_date', 'status', 'dept', 'search']);
 
         $query = Contract::query();
-        if(Auth::user()->role == 'customer')
-        {
-            $query->where('customer_id','=',Auth::user()->id);
+        if (Auth::user()->role == 'customer') {
+            $query->where('customer_id', '=', Auth::user()->id);
+        }
+
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('contract_no', 'like', "%{$search}%")
+                  ->orWhere('order_no', 'like', "%{$search}%")
+                  ->orWhere('part_no', 'like', "%{$search}%")
+                  ->orWhere('part_name', 'like', "%{$search}%")
+                  ->orWhereHas('customer', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
+                  ->orWhereHas('quotation', fn($q2) => $q2->where('quotation_no', 'like', "%{$search}%"));
+            });
         }
 
         if (!empty($filters['start_date'])) {
@@ -65,8 +77,59 @@ class ContractController extends Controller
             });
         }
 
-        $contracts = $query->with(['customer','quotation','internalItem'])->latest()->paginate(10)->appends($filters);
-        return view('contracts.index', compact('contracts','filters'));
+        $allContracts = $query->with([
+            'customer',
+            'quotation',
+            'internalItem.purchaseOrder',
+            'article',
+            'requirements'
+        ])->latest()->get();
+
+        // Kelompokkan kontrak berdasarkan Purchase Order (PO Utama)
+        $grouped = $allContracts->groupBy(function ($contract) {
+            if ($contract->internalItem && $contract->internalItem->purchaseOrder) {
+                return $contract->internalItem->purchaseOrder->po_no ?? $contract->order_no;
+            }
+            $cleanPoNo = preg_replace('/-\d+$/', '', $contract->order_no);
+            return !empty($cleanPoNo) ? $cleanPoNo : ($contract->quotation->quotation_no ?? 'PO-' . $contract->id);
+        });
+
+        // Urutkan grup PO: data yang butuh diproses (ada penolakan manager / masih review / created) di atas, yang sudah selesai (done/production) di bawah
+        $grouped = $grouped->sortBy(function ($contractsInGroup) {
+            // Prioritas 1: Ada catatan penolakan dari Manager (perlu segera direvisi Sales)
+            $hasRejection = $contractsInGroup->contains(function ($c) {
+                return !empty($c->sales_reject_reason) || !empty($c->quality_reject_reason) 
+                    || !empty($c->ppc_reject_reason) || !empty($c->dev_engineering_reject_reason);
+            });
+            if ($hasRejection) return 1;
+
+            // Prioritas 2: Status masih dalam proses review / approval manager
+            $hasPendingReview = $contractsInGroup->contains(function ($c) {
+                return in_array(strtolower($c->status), ['review', 'created', 'amandement', 'amandement_pending', 'waiting_approval', 'draft']);
+            });
+            if ($hasPendingReview) return 2;
+
+            // Prioritas 3: Semua kontrak dalam PO sudah 100% disetujui / in production
+            $allDone = $contractsInGroup->every(function ($c) {
+                return in_array(strtolower($c->status), ['production', 'approved', 'done']);
+            });
+            if ($allDone) return 3;
+
+            return 4;
+        });
+
+        // Pagination untuk kumpulan grup PO
+        $page = $request->get('page', 1);
+        $perPage = 10;
+        $contracts = new \Illuminate\Pagination\LengthAwarePaginator(
+            $grouped->forPage($page, $perPage),
+            $grouped->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return view('contracts.index', compact('contracts', 'filters'));
     }
 
     /**
@@ -131,14 +194,35 @@ class ContractController extends Controller
             } else {
                 $amandementNo = $rawAmandementNo;
             }
-        } else {
-            // JIKA BELUM PERNAH ADA KONTRAK (KONTRAK BARU / ORIGINAL)
-            $latestContract  = null; 
-            $amandementNo    = 0;
-            $alasanAmandemen = '-';
         }
 
-        return view('contracts.create', compact('po', 'selectedItem', 'latestContract', 'amandementNo', 'alasanAmandemen'));
+        // Auto resolve article data jika tersedia dari PO Internal atau Quotation Item
+        $articleObj = null;
+        if ($selectedItem) {
+            if (!empty($selectedItem->article)) {
+                $articleObj = Article::where('article_no', $selectedItem->article)
+                    ->orWhere('internal_part_no', $selectedItem->article)
+                    ->first();
+            }
+            if (!$articleObj && !empty($selectedItem->item)) {
+                $articleObj = Article::where('part_name', $selectedItem->item)
+                    ->orWhere('article_no', $selectedItem->item)
+                    ->orWhere('internal_part_no', $selectedItem->item)
+                    ->first();
+            }
+        }
+
+        // Cek otorisasi Sales PIC
+        $user = Auth::user();
+        $targetPo = $po ?? ($selectedItem ? $selectedItem->purchaseOrder : null);
+        $salesPic = $targetPo?->sales_pic;
+        $isPicOrAdmin = $user->isAdmin() || ($user->isManager() && $user->divisi === 'sales') || ($user->isStaff() && $user->divisi === 'sales' && (!$salesPic || $salesPic->id === $user->id));
+        if (!$isPicOrAdmin) {
+            return redirect()->route('contracts.index')
+                ->with('error', 'Akses ditolak. Hanya Sales PIC penanggung jawab (' . ($salesPic->name ?? 'Sales PIC') . ') yang berhak membuat Contract Review Sheet untuk pesanan ini.');
+        }
+
+        return view('contracts.create', compact('po', 'selectedItem', 'latestContract', 'amandementNo', 'alasanAmandemen', 'articleObj'));
     }
 
     public function store(Request $request)
@@ -163,6 +247,15 @@ class ContractController extends Controller
             'requirements.*.*.requirement'      => 'required|string|max:255',
             'requirements.*.*.requirement_value'=> 'nullable|string|max:255',
         ]);
+
+        $user = Auth::user();
+        $quotation = Quotation::find($request->quotation_id);
+        $salesPic = $quotation?->request?->assignment?->sales;
+        $isPicOrAdmin = $user->isAdmin() || ($user->isManager() && $user->divisi === 'sales') || ($user->isStaff() && $user->divisi === 'sales' && (!$salesPic || $salesPic->id === $user->id));
+        if (!$isPicOrAdmin) {
+            return redirect()->route('contracts.index')
+                ->with('error', 'Akses ditolak. Hanya Sales PIC penanggung jawab (' . ($salesPic->name ?? 'Sales PIC') . ') yang berhak menyimpan Contract Review Sheet untuk pesanan ini.');
+        }
 
         DB::transaction(function () use ($request) {
 
@@ -269,64 +362,136 @@ class ContractController extends Controller
 
     public function show(Contract $contract)
     {
-        $contract->load(['customer','quotation.negotiates.user','requirements','article','internalItem']);
+        $contract->load([
+            'customer.account',
+            'quotation.request.assignment.sales',
+            'quotation.request.attachments',
+            'quotation.items.article',
+            'quotation.negotiates.user',
+            'quotation.negotiates.manager',
+            'requirements',
+            'article',
+            'internalItem.purchaseOrder.internals.contract',
+            'internalItem.purchaseOrder.customer',
+            'purchaseOrder.internals.contract',
+            'purchaseOrder.customer',
+            'salesApprover',
+            'qualityApprover',
+            'ppcApprover',
+            'devEngineeringApprover'
+        ]);
+
         $requirements = $contract->requirements;
         $grouped = $requirements->groupBy('requirement_from');
 
         // ====================================================================
-        // MODUL 8: Audit Trail Data untuk Modal "Riwayat Rekam Jejak Order"
+        // AUDIT TRAIL DATA LENGKAP: DARI REQUEST SAMPAI KONTRAK
         // ====================================================================
         $customerId = $contract->customer_id;
 
-        // 1. Total frekuensi riwayat transaksi customer sebelumnya
+        // 1. Total frekuensi riwayat transaksi customer
         $customerTotalPO = PurchaseOrder::where('customer_id', $customerId)->count();
-        $customerTotalQuotation = \App\Models\Quotation::where('customer_id', $customerId)->count();
+        $customerTotalQuotation = Quotation::where('customer_id', $customerId)->count();
         $customerTotalContracts = Contract::where('customer_id', $customerId)->count();
 
-        // 2. Log siklus negosiasi harga pada PO ini
+        // 2. Base PO & Purchase Order Model
+        $basePoNo = preg_replace('/-\d+$/', '', $contract->order_no);
+        $purchaseOrder = $contract->purchaseOrder 
+            ?? ($contract->internalItem ? $contract->internalItem->purchaseOrder : null) 
+            ?? PurchaseOrder::where('po_no', $basePoNo)->first();
+
+        // 3. Quotation, Request Project, & Sales PIC
+        $quotation = $contract->quotation 
+            ?? ($purchaseOrder ? $purchaseOrder->quotation : null) 
+            ?? Quotation::find($contract->quotation_id);
+
+        $requestProject = $quotation ? $quotation->request : null;
+        $salesPic = $contract->sales_pic 
+            ?? ($requestProject && $requestProject->assignment ? $requestProject->assignment->sales : null)
+            ?? ($purchaseOrder ? $purchaseOrder->sales_pic : null);
+
+        // 4. Riwayat Seluruh Negosiasi Harga (Multi-Round)
         $negotiations = collect();
-        if ($contract->quotation_id) {
-            $negotiations = Negotiate::where('quotation_id', $contract->quotation_id)
-                ->with('user')
+        if ($quotation) {
+            $negotiations = Negotiate::where('quotation_id', $quotation->id)
+                ->with(['user', 'manager'])
                 ->orderBy('created_at', 'asc')
                 ->get();
         }
 
-        // 3. Rekap amandemen (semua kontrak terkait order ini)
-        $amendmentHistory = Contract::where('order_no', $contract->order_no)
+        // 5. Rincian Item PO Internal
+        $internalItems = $purchaseOrder 
+            ? $purchaseOrder->internals()->with('contract')->get() 
+            : ($contract->internalItem ? collect([$contract->internalItem]) : collect());
+
+        // 6. Rekap Kontrak Terkait untuk PO Ini
+        $relatedContracts = Contract::where(function($q) use ($basePoNo, $contract) {
+                $q->where('order_no', 'like', $basePoNo . '%')
+                  ->orWhere('id', $contract->id);
+            })
+            ->with(['internalItem', 'salesApprover', 'qualityApprover', 'ppcApprover', 'devEngineeringApprover', 'requirements'])
+            ->orderBy('id', 'asc')
+            ->get();
+
+        // 7. Riwayat Lengkap Amandemen
+        $amendmentHistory = Contract::where('order_no', 'like', $basePoNo . '%')
             ->where('amandement_no', '>', 0)
-            ->with('internalItem')
+            ->with(['internalItem', 'salesApprover', 'qualityApprover', 'ppcApprover', 'devEngineeringApprover'])
             ->orderBy('amandement_no', 'asc')
             ->get();
 
-        // 4. Activity log terkait PO ini
-        $orderActivities = HistoryActivity::where('activity', 'LIKE', '%' . $contract->order_no . '%')
-            ->with('user')
-            ->orderBy('created_at', 'desc')
-            ->limit(20)
-            ->get();
+        // 8. Seluruh Log Aktivitas Sistem Terkait Order Ini
+        $orderActivities = HistoryActivity::where(function($q) use ($contract, $basePoNo, $quotation) {
+            $q->where('activity', 'LIKE', '%' . $contract->order_no . '%')
+              ->orWhere('activity', 'LIKE', '%' . $basePoNo . '%')
+              ->orWhere('activity', 'LIKE', '%' . $contract->contract_no . '%');
+            if ($quotation) {
+                $q->orWhere('activity', 'LIKE', '%' . $quotation->quotation_no . '%');
+            }
+        })->with('user')->orderBy('activity_time', 'asc')->get();
+
+        // Extract catatan amandemen dari riwayat aktivitas (termasuk yang ditolak/disetujui)
+        $amendmentEvents = $orderActivities->filter(function($act) {
+            return stripos($act->activity, 'amandemen') !== false;
+        });
 
         return view('contracts.show', compact(
             'contract', 'grouped',
             'customerTotalPO', 'customerTotalQuotation', 'customerTotalContracts',
-            'negotiations', 'amendmentHistory', 'orderActivities'
+            'purchaseOrder', 'quotation', 'requestProject', 'salesPic',
+            'negotiations', 'internalItems', 'relatedContracts', 'amendmentHistory', 'amendmentEvents', 'orderActivities'
         ));
     }
 
     public function edit(Contract $contract)
     {
+        $user = Auth::user();
+        $salesPic = $contract->sales_pic;
+        $isPicOrAdmin = $user->isAdmin() || ($user->isManager() && $user->divisi === 'sales') || ($user->isStaff() && $user->divisi === 'sales' && (!$salesPic || $salesPic->id === $user->id));
+        if (!$isPicOrAdmin) {
+            return redirect()->route('contracts.index')
+                ->with('error', 'Akses ditolak. Hanya Sales PIC penanggung jawab (' . ($salesPic->name ?? 'Sales PIC') . ') yang berhak mengedit kontrak ini.');
+        }
+
         $contract->load(['requirements','internalItem']);
         return view('contracts.edit', compact('contract'));
     }
 
-    public function update(Request $request, Contract $contract)
+    public function update(Request $request, $id)
     {
+        $contract = Contract::findOrFail($id);
+        $user = Auth::user();
+        $salesPic = $contract->sales_pic;
+        $isPicOrAdmin = $user->isAdmin() || ($user->isManager() && $user->divisi === 'sales') || ($user->isStaff() && $user->divisi === 'sales' && (!$salesPic || $salesPic->id === $user->id));
+        if (!$isPicOrAdmin) {
+            return redirect()->route('contracts.index')
+                ->with('error', 'Akses ditolak. Hanya Sales PIC penanggung jawab (' . ($salesPic->name ?? 'Sales PIC') . ') yang berhak mengupdate kontrak ini.');
+        }
+
         $request->validate([
             'customer_id'    => 'required|exists:users,id',
-            'quotation_id'   => 'required|exists:quotations,id',
-            'order_no'       => 'required|string|max:255',
-            'amandment_no'   => 'nullable|string|max:255',
-            'alasan_amandemen' => 'nullable|string',
+            'quotation_id'   => 'nullable|exists:quotations,id',
+            'order_no'       => 'required|string',
             'part_no'        => 'nullable|string|max:255',
             'part_name'      => 'nullable|string|max:255',
             'others_comment' => 'nullable|string',
@@ -347,17 +512,26 @@ class ContractController extends Controller
                     'others_comment'   => $request->others_comment,
                     'article_id'       => $request->article_id ?? null,
                     'status'           => 'review',
-                    
-                    // RESET SEMUA APPROVAL MANAGER AGAR MEREKA REVIEW ULANG
-                    'sales_approver'              => null,
-                    'ppc_approver'                => null,
-                    'quality_approver'            => null,
-                    'dev_engineering_approver'    => null,
-                    'sales_approved_at'           => null,
-                    'ppc_approved_at'             => null,
-                    'quality_approved_at'         => null,
-                    'dev_engineering_approved_at' => null,
                 ];
+
+                // Reset status reject pada divisi yang sebelumnya me-reject agar kembali menjadi "Menunggu Persetujuan Manager [Divisi]"
+                if ($contract->sales_reject_reason) {
+                    $dataUpdate['sales_reject_reason'] = null;
+                    $dataUpdate['sales_rejected_at'] = null;
+                }
+                if ($contract->quality_reject_reason) {
+                    $dataUpdate['quality_reject_reason'] = null;
+                    $dataUpdate['quality_rejected_at'] = null;
+                }
+                if ($contract->ppc_reject_reason) {
+                    $dataUpdate['ppc_reject_reason'] = null;
+                    $dataUpdate['ppc_rejected_at'] = null;
+                }
+                if ($contract->dev_engineering_reject_reason) {
+                    $dataUpdate['dev_engineering_reject_reason'] = null;
+                    $dataUpdate['dev_engineering_rejected_at'] = null;
+                }
+                $dataUpdate['rejected_by_dept'] = null;
 
                 if ($request->hasFile('po_pdf')) {
                     if ($contract->po_pdf && \Illuminate\Support\Facades\Storage::disk('public')->exists($contract->po_pdf)) {
@@ -368,16 +542,28 @@ class ContractController extends Controller
 
                 $contract->update($dataUpdate);
 
+                // Update requirements: perbarui yang belum diapprove
                 foreach ($request->requirements ?? [] as $id => $item) {
                     if (empty($item['requirement'])) continue;
 
                     if (is_numeric($id)) {
                         $req = $contract->requirements()->find($id);
                         if ($req) {
-                            $req->update([
-                                'requirement'       => $item['requirement'],
-                                'requirement_value' => $item['value'] ?? null,
-                            ]);
+                            $dept = strtolower(trim($req->requirement_from ?? ''));
+                            $isApproved = match($dept) {
+                                'sales'              => !empty($contract->sales_approver),
+                                'quality'            => !empty($contract->quality_approver),
+                                'ppc', 'ppic'        => !empty($contract->ppc_approver),
+                                'design engineering', 'de' => !empty($contract->dev_engineering_approver),
+                                default              => false
+                            };
+
+                            if (!$isApproved) {
+                                $req->update([
+                                    'requirement'       => $item['requirement'],
+                                    'requirement_value' => $item['value'] ?? null,
+                                ]);
+                            }
                         }
                     } else {
                         $contract->requirements()->create([
@@ -390,14 +576,14 @@ class ContractController extends Controller
 
                 HistoryActivity::create([
                     'user_id'       => Auth::user()->id,
-                    'activity'      => 'Update spesifikasi kontrak amandemen ' . ($contract->order_no ?? ''),
+                    'activity'      => 'Update dan pengajuan ulang spesifikasi kontrak ' . ($contract->contract_no ?? $contract->order_no),
                     'activity_time' => now()->format('Y-m-d H:i:s')
                 ]);
             });
 
             return redirect()
                 ->route('contracts.show', $contract->id)
-                ->with('success', 'Contract Amandemen & File PO berhasil diupdate.');
+                ->with('success', 'Revisi spesifikasi kontrak berhasil disimpan dan diajukan ulang untuk persetujuan Manager.');
 
         } catch (\Exception $e) {
             return redirect()
@@ -407,46 +593,73 @@ class ContractController extends Controller
         }
     }
 
-    public function approveManager($contractId)
+    public function approveManager(Request $request, $contractId)
     {
         $contract = Contract::findOrFail($contractId);
         $user = Auth::user();
-        $divisi = $user->divisi;
+        $divisi = strtolower(trim($user->divisi ?? ''));
 
         // ====================================================================
-        // MODUL 8: Sequential Approval — Sales → Quality → PPC → Design Engineering
+        // Non-sequential / Parallel Approval: Bebas siapa saja approve duluan
+        // Sales, Quality, PPC / PPIC, Design Engineering
         // ====================================================================
-        $approvalSequence = [
-            'sales'              => ['field' => 'sales_approver',           'at' => 'sales_approved_at',           'label' => 'Sales',              'prerequisite' => null],
-            'quality'            => ['field' => 'quality_approver',         'at' => 'quality_approved_at',         'label' => 'Quality',            'prerequisite' => 'sales'],
-            'ppc'                => ['field' => 'ppc_approver',             'at' => 'ppc_approved_at',             'label' => 'PPC',                'prerequisite' => 'quality'],
-            'design engineering' => ['field' => 'dev_engineering_approver', 'at' => 'dev_engineering_approved_at', 'label' => 'Design Engineering', 'prerequisite' => 'ppc'],
+        $approvalMapping = [
+            'sales'              => ['field' => 'sales_approver',           'at' => 'sales_approved_at',           'sig' => 'manager_sales_signature',   'label' => 'Sales'],
+            'quality'            => ['field' => 'quality_approver',         'at' => 'quality_approved_at',         'sig' => 'manager_quality_signature', 'label' => 'Quality'],
+            'ppc'                => ['field' => 'ppc_approver',             'at' => 'ppc_approved_at',             'sig' => 'manager_ppc_signature',     'label' => 'PPC'],
+            'ppic'               => ['field' => 'ppc_approver',             'at' => 'ppc_approved_at',             'sig' => 'manager_ppc_signature',     'label' => 'PPC'],
+            'design engineering' => ['field' => 'dev_engineering_approver', 'at' => 'dev_engineering_approved_at', 'sig' => 'manager_de_signature',      'label' => 'Design Engineering'],
+            'de'                 => ['field' => 'dev_engineering_approver', 'at' => 'dev_engineering_approved_at', 'sig' => 'manager_de_signature',      'label' => 'Design Engineering'],
         ];
 
-        if (!isset($approvalSequence[$divisi])) {
-            return redirect()->back()->with('error', 'Divisi Anda tidak memiliki hak approval pada kontrak ini.');
+        if (!isset($approvalMapping[$divisi])) {
+            return redirect()->back()->with('error', 'Divisi Anda (' . ($user->divisi ?? 'Unknown') . ') tidak memiliki hak approval pada kontrak ini.');
         }
 
-        $config = $approvalSequence[$divisi];
+        $config = $approvalMapping[$divisi];
 
         // Cek apakah sudah approve
         if ($contract->{$config['field']} != null) {
-            return redirect()->back()->with('error', 'Anda sudah melakukan approve.');
+            return redirect()->back()->with('error', 'Divisi Anda (' . $config['label'] . ') sudah melakukan approve sebelumnya.');
         }
 
-        // Cek prerequisite (sequential)
-        if ($config['prerequisite']) {
-            $prereqConfig = $approvalSequence[$config['prerequisite']];
-            if ($contract->{$prereqConfig['field']} === null) {
-                return redirect()->back()->with('error', 
-                    'Approval belum dapat dilakukan. Menunggu persetujuan dari Divisi ' 
-                    . $prereqConfig['label'] . ' terlebih dahulu.');
-            }
+        $rejectField = match($divisi) {
+            'sales'              => 'sales_reject_reason',
+            'quality'            => 'quality_reject_reason',
+            'ppc', 'ppic'        => 'ppc_reject_reason',
+            'design engineering', 'de' => 'dev_engineering_reject_reason',
+            default              => null
+        };
+
+        // Cek apakah sedang dalam status ditolak dan belum direvisi oleh Sales
+        if ($rejectField && !empty($contract->{$rejectField})) {
+            return redirect()->back()->with('error', 'Divisi Anda (' . $config['label'] . ') telah menolak kontrak ini. Menunggu tim Sales melakukan revisi data terlebih dahulu sebelum dapat di-approve.');
         }
 
-        // Eksekusi approval
+        // Simpan tanda tangan digital jika dikirim dari signature pad
+        if ($request->filled('signature')) {
+            $contract->{$config['sig']} = $request->input('signature');
+        }
+
+        // Eksekusi approval langsung tanpa prerequisite urutan!
         $contract->{$config['field']} = $user->id;
         $contract->{$config['at']} = now();
+
+        // Reset catatan reject divisi ini jika ada
+        if ($divisi == 'sales') {
+            $contract->sales_reject_reason = null;
+            $contract->sales_rejected_at = null;
+        } elseif ($divisi == 'quality') {
+            $contract->quality_reject_reason = null;
+            $contract->quality_rejected_at = null;
+        } elseif (in_array($divisi, ['ppc', 'ppic'])) {
+            $contract->ppc_reject_reason = null;
+            $contract->ppc_rejected_at = null;
+        } elseif (in_array($divisi, ['design engineering', 'de'])) {
+            $contract->dev_engineering_reject_reason = null;
+            $contract->dev_engineering_rejected_at = null;
+        }
+
         $contract->save();
 
         $sales = User::where('role','=','staff')->get();
@@ -461,19 +674,7 @@ class ContractController extends Controller
                     && $contract->dev_engineering_approver;
 
         if ($allApproved) {
-            if ($contract->amandement_no > 0) {
-                $contract->update(['status' => 'created']);
-                if ($contract->purchase_order_internal_id) {
-                    PurchaseOrderInternal::where('id', $contract->purchase_order_internal_id)
-                        ->update(['status' => 'created']);
-                }
-            } else {
-                $contract->update(['status' => 'contract']);
-                if ($contract->purchase_order_internal_id) {
-                    PurchaseOrderInternal::where('id', $contract->purchase_order_internal_id)
-                        ->update(['status' => 'contract']);
-                }
-            }
+            $contract->update(['status' => 'approved']);
         }
 
         HistoryActivity::create([
@@ -487,21 +688,87 @@ class ContractController extends Controller
 
     public function rejectManager(Request $request, $contractId)
     {
+        $request->validate([
+            'comment' => 'required|string|min:3',
+        ], [
+            'comment.required' => 'Alasan penolakan / permintaan revisi wajib diisi!',
+            'comment.min'      => 'Alasan penolakan minimal 3 karakter.'
+        ]);
+
         $contract = Contract::findOrFail($contractId);
-        if(Auth::user()->divisi == 'ppc') {
-            $contract->others_comment .= '; PPC-' . Carbon::parse(now())->format('d M Y'). ' : ' . $request->comment;
-        } elseif(Auth::user()->divisi == 'sales') {
-            $contract->others_comment .= '; Sales-' . now()->format('d M Y'). ' : ' . $request->comment;
-        } elseif(Auth::user()->divisi == 'design engineering') {
-            $contract->others_comment .= '; DE-' . now()->format('d M Y'). ' : ' . $request->comment;
-        } elseif(Auth::user()->divisi == 'quality') {
-            $contract->others_comment .= '; Quality-'. now()->format('d M Y'). ' : ' . $request->comment;
+        $user = Auth::user();
+        $divisi = strtolower(trim($user->divisi ?? ''));
+        $comment = trim($request->input('comment'));
+
+        $deptLabel = match($divisi) {
+            'sales'              => 'Sales',
+            'quality'            => 'Quality',
+            'ppc', 'ppic'        => 'PPC',
+            'design engineering', 'de' => 'Design Engineering',
+            default              => 'Manager'
+        };
+
+        $rejectField = match($divisi) {
+            'sales'              => 'sales_reject_reason',
+            'quality'            => 'quality_reject_reason',
+            'ppc', 'ppic'        => 'ppc_reject_reason',
+            'design engineering', 'de' => 'dev_engineering_reject_reason',
+            default              => null
+        };
+
+        if ($rejectField && !empty($contract->{$rejectField})) {
+            return redirect()->back()->with('error', 'Divisi Anda (' . $deptLabel . ') sudah menolak kontrak ini sebelumnya. Menunggu tim Sales melakukan revisi data.');
         }
 
+        // Reset approval & Catat penolakan pada divisi yang bersangkutan
+        if ($divisi == 'sales') {
+            $contract->sales_approver = null;
+            $contract->sales_approved_at = null;
+            $contract->manager_sales_signature = null;
+            $contract->sales_reject_reason = $comment;
+            $contract->sales_rejected_at = now();
+        } elseif ($divisi == 'quality') {
+            $contract->quality_approver = null;
+            $contract->quality_approved_at = null;
+            $contract->manager_quality_signature = null;
+            $contract->quality_reject_reason = $comment;
+            $contract->quality_rejected_at = now();
+        } elseif (in_array($divisi, ['ppc', 'ppic'])) {
+            $contract->ppc_approver = null;
+            $contract->ppc_approved_at = null;
+            $contract->manager_ppc_signature = null;
+            $contract->ppc_reject_reason = $comment;
+            $contract->ppc_rejected_at = now();
+        } elseif (in_array($divisi, ['design engineering', 'de'])) {
+            $contract->dev_engineering_approver = null;
+            $contract->dev_engineering_approved_at = null;
+            $contract->manager_de_signature = null;
+            $contract->dev_engineering_reject_reason = $comment;
+            $contract->dev_engineering_rejected_at = now();
+        } else {
+            $contract->sales_reject_reason = $comment;
+            $contract->sales_rejected_at = now();
+        }
+
+        $contract->rejected_by_dept = $divisi;
+        $contract->alasan_penolakan = $comment;
         $contract->status = 'revision';
+
+        // Catat ke catatan riwayat
+        $historyComment = strtoupper($deptLabel) . '-' . now()->format('d M Y H:i') . ' (REJECT): ' . $comment;
+        $contract->others_comment = !empty($contract->others_comment)
+            ? $contract->others_comment . "\n" . $historyComment
+            : $historyComment;
+
         $contract->save();
 
-        return redirect()->back()->with('success','Komentar berhasil ditambahkan.');
+        HistoryActivity::create([
+            'user_id'       => $user->id,
+            'activity'      => 'Menolak kontrak ' . ($contract->contract_no ?? $contract->order_no) . ' (Divisi ' . $deptLabel . '): ' . $comment,
+            'activity_time' => now()->format('Y-m-d H:i:s')
+        ]);
+
+        return redirect()->back()->with('success', 'Penolakan kontrak oleh Manager ' . $deptLabel . ' berhasil dicatat beserta alasan revisi.');
     }
 
     public function generatePdf($contractId)
@@ -524,22 +791,42 @@ class ContractController extends Controller
             'contract' => $contract,
         ]);
 
+        $pdf->setOption(['isRemoteEnabled' => true, 'isHtml5ParserEnabled' => true]);
         $pdf->setPaper('A4', 'portrait');
         return $pdf->stream("Contract-Review-{$contract->contract_no}.pdf");
     }
 
     public function finalize($id)
     {
-        $contract = Contract::findOrFail($id);
+        $contract = Contract::with([
+            'quotation.request.assignment.sales', 
+            'purchaseOrder.quotation.request.assignment.sales', 
+            'internalItem.purchaseOrder.quotation.request.assignment.sales'
+        ])->findOrFail($id);
 
-        if (Auth::user()->role !== 'admin' && !(Auth::user()->role === 'staff' && Auth::user()->divisi === 'sales')) { 
-            return redirect()->back()->with('error', 'Akses ditolak! Hanya Staff Sales yang dapat memfinalisasi kontrak.');
+        $user = Auth::user();
+
+        // 1. Otorisasi role: Admin, Staff Sales, atau Manager Sales
+        if ($user->role !== 'admin' && !($user->role === 'staff' && $user->divisi === 'sales') && !($user->role === 'manager' && $user->divisi === 'sales')) { 
+            return redirect()->back()->with('error', 'Akses ditolak! Hanya Staff Sales PIC atau Manajemen yang dapat memfinalisasi kontrak.');
         }
 
+        // 2. Otorisasi Sales PIC: Jika yang login adalah Staff Sales, harus sesuai dengan Sales PIC Request/Quotation
+        $salesPic = $contract->sales_pic;
+        $salesPicId = $salesPic?->id;
+
+        if ($user->role === 'staff' && $user->divisi === 'sales') {
+            if ($salesPicId && $salesPicId !== $user->id) {
+                return redirect()->back()->with('error', 'Akses ditolak. Hanya Staff Sales PIC pemegang tiket pesanan ini (' . ($salesPic->name ?? 'Sales PIC') . ') yang berhak memfinalisasi ke tahap produksi.');
+            }
+        }
+
+        // 3. Validasi 4 Approver (Sales, Quality, PPC, Design Engineering)
         if (!$contract->sales_approver || !$contract->ppc_approver || !$contract->quality_approver || !$contract->dev_engineering_approver) { 
-            return redirect()->back()->with('error', 'Gagal memfinalisasi. Kontrak belum disetujui sepenuhnya oleh 4 Divisi.');
+            return redirect()->back()->with('error', 'Gagal memfinalisasi. Kontrak belum disetujui sepenuhnya oleh 4 Divisi (Sales, Quality, PPC, Design Engineering).');
         }
 
+        // 4. Update status ke In Production
         $contract->status = 'production'; 
         $contract->save();
 
@@ -555,19 +842,28 @@ class ContractController extends Controller
             ]);
         }
 
+        $picName = $salesPic ? $salesPic->name : $user->name;
+
         HistoryActivity::create([
-            'user_id'       => Auth::user()->id,
-            'activity'      => 'Memfinalisasi kontrak ke status In Production (Dalam Produksi) untuk PO: ' . $contract->order_no,
+            'user_id'       => $user->id,
+            'activity'      => 'Sales PIC (' . $picName . ') memfinalisasi Contract Review Sheet #' . ($contract->contract_no ?? $contract->order_no) . ' ke tahap In Production',
             'activity_time' => now()->format('Y-m-d H:i:s')
         ]);
 
-        return redirect()->route('contracts.index')->with('success', 'Kontrak berhasil difinalisasi! Status kini In Production (Dalam Produksi).');
+        return redirect()->back()->with('success', 'Kontrak berhasil difinalisasi oleh Sales PIC (' . $picName . ')! Status pesanan kini resmi In Production (Dalam Produksi).');
     }
 
     // DELETE /contracts/{contract}
     public function destroy($id)
     {
         $contract = Contract::findOrFail($id);
+        $user = Auth::user();
+        $salesPic = $contract->sales_pic;
+        $isPicOrAdmin = $user->isAdmin() || ($user->isManager() && $user->divisi === 'sales') || ($user->isStaff() && $user->divisi === 'sales' && (!$salesPic || $salesPic->id === $user->id));
+        if (!$isPicOrAdmin) {
+            return redirect()->route('contracts.index')
+                ->with('error', 'Akses ditolak. Hanya Sales PIC penanggung jawab (' . ($salesPic->name ?? 'Sales PIC') . ') yang berhak menghapus kontrak ini.');
+        }
         
         $contractNo = $contract->contract_no;
 

@@ -170,6 +170,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/purchase-orders-internal/{purchaseOrder}/edit', [PurchaseOrderInternalController::class, 'edit'])->name('purchase-orders-internal.edit');
     Route::put('/purchase-orders-internal/{purchaseOrder}', [PurchaseOrderInternalController::class, 'update'])->name('purchase-orders-internal.update');
     Route::get('/purchase-orders-internal/item/{internal}', [PurchaseOrderInternalController::class, 'showItem'])->name('purchase-orders-internal.show-item');
+    Route::delete('/purchase-orders-internal/item/{internal}', [PurchaseOrderInternalController::class, 'destroyItem'])->name('purchase-orders-internal.destroy-item');
 
     // Export purchase orders to Excel
     Route::get('/purchase-orders/export', [PurchaseOrderController::class, 'export'])->name('purchase-orders.export');
@@ -194,33 +195,42 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('send/{id}/quotation', [QuotationController::class, 'send'])->name('quotations.send');
 
 
-    // Negotiate routes
+    // ============================================
+    // NEGOTIATION ROUTES
+    // ============================================
+    // Daftar semua negosiasi (Khusus Manager Sales & Admin)
+    Route::get('/negotiations', [NegotiateController::class, 'index'])->name('negotiations.index');
+    Route::post('/negotiations/{negotiate}/approve-price', [NegotiateController::class, 'approvePrice'])->name('negotiations.approve-price');
+    Route::post('/negotiations/{negotiate}/reject-price', [NegotiateController::class, 'rejectPrice'])->name('negotiations.reject-price');
+
+    // Portal Negosiasi Customer
     Route::get('quotations/{quotation}/negotiate', [NegotiateController::class, 'show'])->name('negotiate.show');
     Route::post('quotations/{quotation}/negotiate', [NegotiateController::class, 'store'])->name('negotiate.store');
 
-    // View negotiate untuk staff/manager/admin (halaman baru)
+    // View Negotiate Internal (Khusus Manager Sales & Admin)
     Route::get('quotations/{quotation}/show-nego', [NegotiateController::class, 'viewNego'])->name('negotiate.show-nego');
-    
-    //negotiate
-    Route::get('quotations/{quotation}/negotiate', [NegotiateController::class, 'show'])->name('negotiate.show');
-    Route::post('quotations/{quotation}/negotiate', [NegotiateController::class, 'store'])->name('negotiate.store');
-    Route::get('/quotations/export', [QuotationController::class, 'export'])->name('quotations.export');
-    Route::resource('quotations', QuotationController::class);
-
-    //export quotation to pdf
-    Route::get('quotations/{quotation}/export-pdf', [QuotationController::class, 'exportPdf'])
-                ->name('quotations.export-pdf');
-
-    Route::match(['patch', 'post'], '/quotations/{quotation}/close-negotiate', [App\Http\Controllers\NegotiateController::class, 'closeNegotiate'])->name('negotiate.close');
+    Route::match(['patch', 'post'], '/quotations/{quotation}/close-negotiate', [NegotiateController::class, 'closeNegotiate'])->name('negotiate.close');
 
     // Manager Override: Tambah kuota negosiasi per-quotation
     Route::post('/quotations/{id}/override-nego-limit', [QuotationController::class, 'overrideNegotiationLimit'])->name('quotations.override-nego-limit');
 
+    // Quotation Special Price Approval (Manager Sales & Admin)
+    Route::post('/quotations/{quotation}/approve-special-price', [QuotationController::class, 'approveSpecialPrice'])->name('quotations.approve-special-price');
+    Route::post('/quotations/{quotation}/reject-special-price', [QuotationController::class, 'rejectSpecialPrice'])->name('quotations.reject-special-price');
+
+    // Quotations
+    Route::get('/quotations/export', [QuotationController::class, 'export'])->name('quotations.export');
+    Route::resource('quotations', QuotationController::class);
+
+    // Export quotation to pdf
+    Route::get('quotations/{quotation}/export-pdf', [QuotationController::class, 'exportPdf'])
+                ->name('quotations.export-pdf');
+
     //polistint
     Route::get('/polistint', [PoListController::class, 'polistint'])->name('polistint');
 
-    Route::patch('approver_manager/{contractId}/contract', [ContractController::class, 'approveManager'])->name('contracts.approve-manager');
-    Route::patch('rejection_manager/{contractId}/contract', [ContractController::class, 'rejectManager'])->name('contracts.reject-manager');
+    Route::match(['post', 'patch'], 'approver_manager/{contractId}/contract', [ContractController::class, 'approveManager'])->name('contracts.approve-manager');
+    Route::match(['post', 'patch'], 'rejection_manager/{contractId}/contract', [ContractController::class, 'rejectManager'])->name('contracts.reject-manager');
     Route::get('/contract/{contractId}/pdf', [ContractController::class, 'generatePdf'])
     ->name('contract.pdf');
     Route::post('/contracts/{id}/finalize', [ContractController::class, 'finalize'])->name('contracts.finalize');

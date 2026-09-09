@@ -47,8 +47,8 @@
                                 <input type="text" class="form-control form-control-sm bg-light" name="order_no" value="<?php echo e($selectedItem->po_no ?? ($po->po_no . (isset($selectedItem) ? '-' . $selectedItem->id : ''))); ?>" readonly>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label mb-1 fw-semibold small">PART NO</label>
-                                <input type="text" class="form-control form-control-sm bg-light" id="partNumber" name="part_no" value="<?php echo e($selectedItem->part_no ?? $selectedItem->article_no ?? ''); ?>" readonly>
+                                <label class="form-label mb-1 fw-semibold small">PART NUMBER</label>
+                                <input type="text" class="form-control form-control-sm bg-light fw-semibold text-uppercase" id="partNumber" name="part_no" value="<?php echo e($selectedItem->part_no ?? ($articleObj->internal_part_no ?? ($articleObj->part_number ?? ($selectedItem->article ?? ($articleObj->article_no ?? ''))))); ?>" readonly>
                             </div>
 
                             
@@ -68,16 +68,16 @@
 
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small">PART NAME</label>
-                                <input type="text" class="form-control form-control-sm bg-light" id="partName" name="part_name" value="<?php echo e($selectedItem->item ?? ''); ?>" readonly>
+                                <input type="text" class="form-control form-control-sm bg-light fw-semibold" id="partName" name="part_name" value="<?php echo e($selectedItem->item ?? ($articleObj->part_name ?? '')); ?>" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small">LOCATION</label>
                                 <input type="text" class="form-control form-control-sm bg-light" id="location" name="location" value="PT. Metinca (Jakarta)" readonly>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label mb-1 fw-semibold small">ARTICLE</label>
-                                <input type="hidden" id="articleId" name="article_id">
-                                <input type="text" class="form-control form-control-sm" id="articleInput" placeholder="Ketik kode article lalu tekan enter">
+                                <label class="form-label mb-1 fw-semibold small">SEARCH ARTICLE</label>
+                                <input type="hidden" id="articleId" name="article_id" value="<?php echo e($articleObj->id ?? ''); ?>">
+                                <input type="text" class="form-control form-control-sm text-uppercase fw-semibold" id="articleInput" value="<?php echo e($selectedItem->article ?? ($articleObj->article_no ?? ($articleObj->internal_part_no ?? ''))); ?>" placeholder="Ketik kode article lalu tekan enter">
                             </div>
                         </div>
                     </div>
@@ -128,6 +128,13 @@
                             ['requirement' => 'Tool',           'requirement_value' => ''],
                             ['requirement' => 'Fixtures',       'requirement_value' => ''],
                         ],
+                    ];
+
+                    $defaultReqNames = [
+                        'sales'              => ['price', 'quantity', 'delivery required', 'supply condition', 'special / customer requirement'],
+                        'quality'            => ['drawing', 'standard / spec', 'inspection'],
+                        'ppc'                => ['material requirement', 'pattern wax', 'purchasing', 'sub contracting'],
+                        'design engineering' => ['master job card', 'wra / wi', 'dies', 'tool', 'fixtures'],
                     ];
 
                     // Cek apakah ada data requirement dari kontrak sebelumnya yang tersimpan di DB
@@ -191,6 +198,11 @@
                                 </thead>
                                 <tbody class="requirement-body" data-dept="<?php echo e($dept); ?>">
                                     <?php $__currentLoopData = $requirements; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $req): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php
+                                        $reqName = is_array($req) ? ($req['requirement'] ?? '') : ($req->requirement ?? '');
+                                        $reqVal  = is_array($req) ? ($req['requirement_value'] ?? '') : ($req->requirement_value ?? '');
+                                        $isDefault = in_array(strtolower(trim($reqName)), $defaultReqNames[$dept] ?? []);
+                                    ?>
                                     <tr>
                                         <td>
                                             <input type="hidden"
@@ -198,19 +210,27 @@
                                                 value="<?php echo e($dept); ?>">
                                             <input type="text"
                                                 name="requirements[<?php echo e($dept); ?>][<?php echo e($index); ?>][requirement]"
-                                                class="form-control form-control-sm"
-                                                value="<?php echo e($req['requirement']); ?>">
+                                                class="form-control form-control-sm <?php echo e($isDefault ? 'bg-light fw-semibold text-dark' : ''); ?>"
+                                                value="<?php echo e($reqName); ?>"
+                                                <?php echo e($isDefault ? 'readonly' : ''); ?>
+
+                                                placeholder="Requirement">
                                         </td>
                                         <td>
                                             <input type="text"
                                                 name="requirements[<?php echo e($dept); ?>][<?php echo e($index); ?>][requirement_value]"
                                                 class="form-control form-control-sm"
-                                                value="<?php echo e($req['requirement_value']); ?>">
+                                                value="<?php echo e($reqVal); ?>"
+                                                placeholder="Keterangan / Value">
                                         </td>
                                         <td class="text-center">
-                                            <button type="button" class="btn btn-sm btn-danger remove-row">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
+                                            <?php if(!$isDefault): ?>
+                                                <button type="button" class="btn btn-sm btn-danger remove-row" title="Hapus Baris Kustom">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            <?php else: ?>
+                                                <span class="text-muted small fw-bold" title="Requirement Default tidak dapat dihapus">-</span>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
@@ -340,24 +360,23 @@ document.addEventListener('DOMContentLoaded', function () {
             row.innerHTML = `
                 <td>
                     <input type="hidden" name="requirements[${dept}][${index}][requirement_from]" value="${dept}">
-                    <input type="text" name="requirements[${dept}][${index}][requirement]" class="form-control form-control-sm" placeholder="Requirement">
+                    <input type="text" name="requirements[${dept}][${index}][requirement]" class="form-control form-control-sm" placeholder="Nama Requirement">
                 </td>
                 <td>
-                    <input type="text" name="requirements[${dept}][${index}][requirement_value]" class="form-control form-control-sm" placeholder="Value / Description">
+                    <input type="text" name="requirements[${dept}][${index}][requirement_value]" class="form-control form-control-sm" placeholder="Action Required / Remark">
                 </td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-danger remove-row"><i class="bi bi-trash"></i></button>
+                    <button type="button" class="btn btn-sm btn-danger remove-row" title="Hapus Baris Kustom"><i class="bi bi-trash"></i></button>
                 </td>`;
             tbody.appendChild(row);
         });
     });
 
-    // REMOVE REQUIREMENT ROW
+    // REMOVE REQUIREMENT ROW (Hanya untuk baris kustom yang ditambahkan)
     document.addEventListener('click', function (e) {
         if (e.target.closest('.remove-row')) {
-            const row   = e.target.closest('tr');
-            const tbody = row.closest('tbody');
-            if (tbody.children.length > 1) row.remove();
+            const row = e.target.closest('tr');
+            row.remove();
         }
     });
 
@@ -384,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (response.success && response.data) {
                     const d = response.data;
 
-                    document.getElementById('partNumber').value = d.internal_part_no ?? d.part_number ?? '';
+                    document.getElementById('partNumber').value = d.internal_part_no ?? d.part_number ?? d.article_no ?? '';
                     document.getElementById('partName').value   = d.part_name   || '';
                     document.getElementById('articleId').value  = d.id          || '';
 

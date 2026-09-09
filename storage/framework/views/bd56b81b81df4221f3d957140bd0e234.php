@@ -33,74 +33,178 @@
     <?php endif; ?>
 
     <section class="section">
-        <div class="card">
+        <div class="card shadow-sm">
             <div class="card-header bg-primary text-white py-3">
-                <h5 class="card-title text-white mb-0"><i class="bi bi-patch-check-fill me-2"></i>Daftar Antrean Amandemen PO</h5>
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h5 class="card-title text-white mb-0"><i class="bi bi-patch-check-fill me-2"></i>Pusat Persetujuan & Riwayat Amandemen PO</h5>
+                </div>
             </div>
+            
             <div class="card-body mt-3">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th width="5%" class="text-center">No</th>
-                                <th width="15%">No. PO</th>
-                                <th width="20%">Customer</th>
-                                <th width="35%">Target Item & Alasan Amandemen</th>
-                                <th width="15%" class="text-center">Tanggal Diajukan</th>
-                                <th width="10%" class="text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php $counter = 0; ?>
-                            <?php $__empty_1 = true; $__currentLoopData = $pendingContracts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $contract): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                                <?php
-                                    $counter++;
-                                    $targetItem = $contract->purchaseOrderInternal;
-                                    $po = $contract->purchase_order ?? ($targetItem ? $targetItem->purchaseOrder : null);
-                                    $customer = $contract->customer ?? ($po ? $po->customer : null);
-                                    $targetInternalId = $targetItem->id ?? null;
-                                    $reason = $contract->alasan_amandemen ?? 'Pengajuan amandemen item.';
-                                ?>
-                                 <tr>
-                                    <td class="text-center fw-bold"><?php echo e($counter); ?></td>
-                                    <td>
-                                        <strong class="text-primary"><?php echo e($targetItem->po_no ?? $po->po_no ?? $contract->order_no ?? '-'); ?></strong>
-                                        <?php if($po): ?>
-                                            <br><small class="text-muted">PO ID: #<?php echo e($po->id); ?></small>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <strong><?php echo e($customer->name ?? '-'); ?></strong>
-                                    </td>
-                                    <td>
-                                        <?php if($targetItem): ?>
-                                            <span class="badge bg-warning text-dark mb-1"><i class="bi bi-box-seam me-1"></i><?php echo e($targetItem->item); ?> (<?php echo e(number_format($targetItem->qty)); ?> pcs)</span>
-                                            <br>
-                                        <?php endif; ?>
-                                        <span class="text-dark fst-italic">"<?php echo e(Str::limit($reason, 60)); ?>"</span>
-                                    </td>
-                                    <td class="text-center small">
-                                        <?php echo e($contract->updated_at ? $contract->updated_at->format('d-m-Y H:i') : '-'); ?>
-
-                                    </td>
-                                    <td class="text-center">
-                                        <button type="button" class="btn btn-primary btn-sm px-3 font-weight-bold" 
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#reviewModalContract<?php echo e($contract->id); ?>">
-                                            <i class="bi bi-eye-fill me-1"></i> Review Detail
-                                        </button>
-                                    </td>
-                                </tr>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                                <tr>
-                                    <td colspan="6" class="text-center py-4 text-muted">
-                                        <i class="bi bi-check2-circle fs-3 d-block mb-2 text-success"></i>
-                                        Tidak ada antrean pengajuan amandemen saat ini.
-                                    </td>
-                                </tr>
+                
+                <ul class="nav nav-tabs mb-3" id="amandementTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-bold" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending-tab-pane" type="button" role="tab" aria-controls="pending-tab-pane" aria-selected="true">
+                            <i class="bi bi-hourglass-split me-1 text-warning"></i> Antrean Menunggu Persetujuan
+                            <?php if(count($pendingContracts) > 0): ?>
+                                <span class="badge bg-danger rounded-pill ms-1"><?php echo e(count($pendingContracts)); ?></span>
+                            <?php else: ?>
+                                <span class="badge bg-secondary rounded-pill ms-1">0</span>
                             <?php endif; ?>
-                        </tbody>
-                    </table>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-tab-pane" type="button" role="tab" aria-controls="history-tab-pane" aria-selected="false">
+                            <i class="bi bi-clock-history me-1 text-primary"></i> Riwayat Amandemen Selesai
+                            <span class="badge bg-secondary rounded-pill ms-1"><?php echo e(count($historyContracts ?? [])); ?></span>
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="amandementTabContent">
+                    
+                    <div class="tab-pane fade show active" id="pending-tab-pane" role="tabpanel" aria-labelledby="pending-tab" tabindex="0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="5%" class="text-center">No</th>
+                                        <th width="15%">No. PO</th>
+                                        <th width="18%">Customer</th>
+                                        <th width="37%">Target Item & Alasan Amandemen</th>
+                                        <th width="13%" class="text-center">Tanggal Diajukan</th>
+                                        <th width="12%" class="text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php $counter = 0; ?>
+                                    <?php $__empty_1 = true; $__currentLoopData = $pendingContracts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $contract): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                        <?php
+                                            $counter++;
+                                            $targetItem = $contract->purchaseOrderInternal;
+                                            $po = $contract->purchase_order ?? ($targetItem ? $targetItem->purchaseOrder : null);
+                                            $customer = $contract->customer ?? ($po ? $po->customer : null);
+                                            $targetInternalId = $targetItem->id ?? null;
+                                            $reason = $contract->alasan_amandemen ?? 'Pengajuan amandemen item.';
+                                            $displayItem = $targetItem ? $targetItem->item : ($contract->part_name ?? 'Item PO');
+                                            $displayQty = $targetItem ? $targetItem->qty : ($contract->qty ?? 1);
+                                        ?>
+                                         <tr>
+                                            <td class="text-center fw-bold"><?php echo e($counter); ?></td>
+                                            <td>
+                                                <strong class="text-primary"><?php echo e($targetItem->po_no ?? $po->po_no ?? $contract->order_no ?? '-'); ?></strong>
+                                                <?php if($po): ?>
+                                                    <br><small class="text-muted">PO ID: #<?php echo e($po->id); ?></small>
+                                                <?php endif; ?>
+                                            </td>
+                                             <?php
+                                                $salesPic = $contract->sales_pic ?? ($po ? $po->sales_pic : null);
+                                             ?>
+                                             <td>
+                                                 <strong><?php echo e($customer->name ?? '-'); ?></strong>
+                                                 <?php if($salesPic): ?>
+                                                     <br><span class="badge bg-light text-primary border extra-small"><i class="bi bi-person-fill me-1"></i>PIC: <?php echo e($salesPic->name); ?></span>
+                                                 <?php endif; ?>
+                                             </td>
+                                            <td>
+                                                <span class="badge bg-warning text-dark mb-1"><i class="bi bi-box-seam me-1"></i><?php echo e($displayItem); ?> (<?php echo e(number_format($displayQty)); ?> pcs)</span>
+                                                <br>
+                                                <span class="text-dark fst-italic">"<?php echo e(Str::limit($reason, 80)); ?>"</span>
+                                            </td>
+                                            <td class="text-center small">
+                                                <?php echo e($contract->updated_at ? $contract->updated_at->format('d-m-Y H:i') : '-'); ?>
+
+                                            </td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-primary btn-sm px-3 font-weight-bold" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#reviewModalContract<?php echo e($contract->id); ?>">
+                                                    <i class="bi bi-eye-fill me-1"></i> Review Detail
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                                        <tr>
+                                            <td colspan="6" class="text-center py-5 text-muted">
+                                                <i class="bi bi-check2-circle fs-2 d-block mb-2 text-success"></i>
+                                                <span class="fw-semibold">Tidak ada antrean pengajuan amandemen saat ini.</span>
+                                                <p class="small text-muted mb-0">Semua pengajuan amandemen telah diproses atau belum ada permintaan revisi baru dari Customer.</p>
+                                            </td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    
+                    <div class="tab-pane fade" id="history-tab-pane" role="tabpanel" aria-labelledby="history-tab" tabindex="0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="5%" class="text-center">No</th>
+                                        <th width="15%">No. PO / Kontrak</th>
+                                        <th width="18%">Customer</th>
+                                        <th width="32%">Target Item & Alasan Customer</th>
+                                        <th width="15%" class="text-center">Hasil Keputusan</th>
+                                        <th width="15%" class="text-center">Tanggal Selesai</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php $hCounter = 0; ?>
+                                    <?php $__empty_1 = true; $__currentLoopData = $historyContracts ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $hContract): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                        <?php
+                                            $hCounter++;
+                                            $hTargetItem = $hContract->purchaseOrderInternal;
+                                            $hPo = $hContract->purchase_order ?? ($hTargetItem ? $hTargetItem->purchaseOrder : null);
+                                            $hCustomer = $hContract->customer ?? ($hPo ? $hPo->customer : null);
+                                            $hItem = $hTargetItem ? $hTargetItem->item : ($hContract->part_name ?? 'Item PO');
+                                            $hReason = $hContract->alasan_amandemen ?? 'Revisi item PO';
+                                        ?>
+                                        <tr>
+                                            <td class="text-center fw-bold"><?php echo e($hCounter); ?></td>
+                                            <td>
+                                                <strong class="text-primary"><?php echo e($hTargetItem->po_no ?? $hPo->po_no ?? $hContract->order_no ?? '-'); ?></strong>
+                                                <br><small class="text-muted">Kontrak: <?php echo e($hContract->contract_no); ?></small>
+                                            </td>
+                                            <td>
+                                                <strong><?php echo e($hCustomer->name ?? '-'); ?></strong>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary text-white mb-1"><i class="bi bi-box-seam me-1"></i><?php echo e($hItem); ?> (Rev #<?php echo e($hContract->amandement_no); ?>)</span>
+                                                <br>
+                                                <span class="text-dark small fst-italic">"<?php echo e(Str::limit($hReason, 70)); ?>"</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <?php if($hContract->status === 'rejected'): ?>
+                                                    <span class="badge bg-danger mb-1"><i class="bi bi-x-circle me-1"></i>Ditolak</span>
+                                                    <?php if($hContract->alasan_penolakan): ?>
+                                                        <br><small class="text-danger fw-semibold" title="<?php echo e($hContract->alasan_penolakan); ?>"><?php echo e(Str::limit($hContract->alasan_penolakan, 30)); ?></small>
+                                                    <?php endif; ?>
+                                                <?php else: ?>
+                                                    <span class="badge bg-success mb-1"><i class="bi bi-check-circle me-1"></i>Disetujui</span>
+                                                    <?php if($hContract->catatan_sales): ?>
+                                                        <br><small class="text-success" title="<?php echo e($hContract->catatan_sales); ?>"><?php echo e(Str::limit($hContract->catatan_sales, 30)); ?></small>
+                                                    <?php endif; ?>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="text-center small">
+                                                <?php echo e($hContract->updated_at ? $hContract->updated_at->format('d-m-Y H:i') : '-'); ?>
+
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                                        <tr>
+                                            <td colspan="6" class="text-center py-4 text-muted">
+                                                Belum ada riwayat amandemen yang selesai diproses.
+                                            </td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -132,41 +236,96 @@
 
                 
                 <div class="modal-body">
+                    <?php
+                        $displayItemName = $targetItem ? $targetItem->item : ($contract->part_name ?? ($contract->article ? $contract->article->part_name : 'Item PO'));
+                        $displayPartNo = $contract->contract_no ?? ($targetItem ? ($targetItem->part_no ?? $targetItem->article) : ($contract->part_no ?? '-'));
+                        $displayQty = $targetItem ? $targetItem->qty : ($contract->qty ?? 1);
+                        $displayAmendNo = $contract->amandement_no ?? 1;
+                        $displayCustomerName = $customer->name ?? ($po && $po->customer ? $po->customer->name : 'Customer');
+                        $displayPoNo = $po->po_no ?? $contract->order_no ?? '-';
+                        $displayQuotationNo = ($po && $po->quotation) ? $po->quotation->quotation_no : ($contract->quotation ? $contract->quotation->quotation_no : '-');
+                        
+                        $alasanLengkap = $contract->alasan_amandemen 
+                            ?? ($targetItem && $targetItem->contract ? $targetItem->contract->alasan_amandemen : null)
+                            ?? ($po && $po->contracts ? $po->contracts->whereNotNull('alasan_amandemen')->last()->alasan_amandemen : null)
+                            ?? ($po && $po->reason ? $po->reason : null)
+                            ?? 'Customer mengajukan penyesuaian/revisi pada item pesanan ini.';
+                    ?>
+
+                    <?php
+                        $modalSalesPic = $contract->sales_pic ?? ($po ? $po->sales_pic : null);
+                        $currentUser = auth()->user();
+                        $canProcessAmandement = $currentUser->isAdmin() 
+                            || ($currentUser->isManager() && $currentUser->divisi === 'sales') 
+                            || ($currentUser->isStaff() && $currentUser->divisi === 'sales' && (!$modalSalesPic || $modalSalesPic->id === $currentUser->id));
+                    ?>
+
                     
                     <div class="row g-2 mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="p-2 border rounded bg-light">
-                                <small class="text-muted d-block">Nama Customer:</small>
-                                <strong><?php echo e($customer->name ?? '-'); ?></strong>
+                                <small class="text-muted d-block fw-semibold">Nama Customer:</small>
+                                <strong class="text-dark"><?php echo e($displayCustomerName); ?></strong>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="p-2 border rounded bg-light">
-                                <small class="text-muted d-block">No. PO & Quotation Asal:</small>
-                                <strong class="text-primary"><?php echo e($po->po_no ?? $contract->order_no ?? '-'); ?></strong> <small>(<?php echo e($po->quotation->quotation_no ?? '-'); ?>)</small>
+                                <small class="text-muted d-block fw-semibold">No. PO & Quotation Asal:</small>
+                                <strong class="text-primary"><?php echo e($displayPoNo); ?></strong> <small class="text-muted">(<?php echo e($displayQuotationNo); ?>)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-2 border rounded bg-light">
+                                <small class="text-muted d-block fw-semibold">Sales PIC Penanggung Jawab:</small>
+                                <strong class="text-primary"><i class="bi bi-person-fill me-1"></i><?php echo e($modalSalesPic->name ?? '-'); ?></strong>
                             </div>
                         </div>
                     </div>
 
                     
-                    <?php if($targetItem): ?>
-                        <div class="alert alert-light-warning border border-warning mb-3 p-3 rounded">
-                            <div class="d-flex align-items-center mb-1">
-                                <i class="bi bi-exclamation-diamond-fill text-warning fs-5 me-2"></i>
-                                <strong class="text-dark">Target Item Yang Diamandemen:</strong>
+                    <div class="card border border-warning bg-light-warning mb-3 shadow-sm" style="background-color: #fffdf2 !important;">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-exclamation-diamond-fill text-warning fs-5 me-2"></i>
+                                    <strong class="text-dark fs-6">Target Item Yang Diamandemen:</strong>
+                                </div>
+                                <span class="badge bg-warning text-dark fw-bold px-2 py-1">
+                                    <i class="bi bi-arrow-repeat me-1"></i>Amandemen Rev #<?php echo e($displayAmendNo); ?>
+
+                                </span>
                             </div>
-                            <div class="ms-4 small text-dark">
-                                <div><strong>Nama Item:</strong> <?php echo e($targetItem->item); ?></div>
-                                <div><strong>Part No / Kontrak:</strong> <code><?php echo e($contract->contract_no ?? $targetItem->part_no ?? '-'); ?></code></div>
-                                <div><strong>Kuantitas PO:</strong> <?php echo e(number_format($targetItem->qty)); ?> pcs</div>
+                            <div class="row g-2 small text-dark ps-2">
+                                <div class="col-md-5">
+                                    <span class="text-muted d-block">Nama Part / Item:</span>
+                                    <strong class="fs-6 text-dark"><?php echo e($displayItemName); ?></strong>
+                                </div>
+                                <div class="col-md-4">
+                                    <span class="text-muted d-block">No. Part / Kontrak:</span>
+                                    <span class="badge bg-dark text-white"><?php echo e($displayPartNo); ?></span>
+                                </div>
+                                <div class="col-md-3">
+                                    <span class="text-muted d-block">Kuantitas PO:</span>
+                                    <strong class="text-dark"><?php echo e(number_format($displayQty)); ?> pcs</strong>
+                                </div>
                             </div>
                         </div>
-                    <?php endif; ?>
+                    </div>
 
                     
-                    <div class="alert alert-warning border border-warning mb-3">
-                        <h6 class="fw-bold text-dark mb-1"><i class="bi bi-chat-left-text-fill me-1"></i> Alasan Amandemen dari Customer:</h6>
-                        <p class="mb-0 text-dark fst-italic fs-6">"<?php echo e($alasanLengkap); ?>"</p>
+                    <div class="card border border-warning mb-3 shadow-sm" style="background-color: #fff8e6 !important;">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="bi bi-chat-left-quote-fill text-warning fs-5 me-2"></i>
+                                <h6 class="fw-bold text-dark mb-0">Alasan Permintaan Amandemen dari Customer:</h6>
+                            </div>
+                            <div class="p-2 mt-2 bg-white rounded border border-warning-subtle text-dark fw-semibold fst-italic">
+                                "<?php echo e($alasanLengkap); ?>"
+                            </div>
+                            <small class="text-muted d-block mt-1 ps-1">
+                                <i class="bi bi-info-circle me-1"></i>Harap telaah alasan di atas dengan jadwal produksi & ketersediaan material pabrik sebelum memutuskan.
+                            </small>
+                        </div>
                     </div>
 
                     
@@ -300,15 +459,21 @@
                 
                 <div class="modal-footer bg-light d-flex justify-content-between">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-danger btn-sm font-weight-bold px-3" data-bs-toggle="collapse" data-bs-target="#rejectCollapseContract<?php echo e($contract->id); ?>">
-                            <i class="bi bi-x-circle me-1"></i> Reject
-                        </button>
-                        
-                        <button type="submit" form="approveFormContract<?php echo e($contract->id); ?>" class="btn btn-success btn-sm font-weight-bold px-3">
-                            <i class="bi bi-check-circle me-1"></i> Approve
-                        </button>
-                    </div>
+                    <?php if($canProcessAmandement): ?>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-danger btn-sm font-weight-bold px-3" data-bs-toggle="collapse" data-bs-target="#rejectCollapseContract<?php echo e($contract->id); ?>">
+                                <i class="bi bi-x-circle me-1"></i> Reject
+                            </button>
+                            
+                            <button type="submit" form="approveFormContract<?php echo e($contract->id); ?>" class="btn btn-success btn-sm font-weight-bold px-3">
+                                <i class="bi bi-check-circle me-1"></i> Approve
+                            </button>
+                        </div>
+                    <?php else: ?>
+                        <div class="alert alert-warning py-1 px-2 mb-0 extra-small">
+                            <i class="bi bi-lock-fill me-1"></i>Hanya Sales PIC (<?php echo e($modalSalesPic->name ?? 'Sales PIC'); ?>) atau Manager yang berhak memproses amandemen ini.
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

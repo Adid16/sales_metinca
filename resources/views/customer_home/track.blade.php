@@ -7,8 +7,6 @@
             $step = 2; 
         } elseif ($status == 'production') {
             $step = 3; 
-        } elseif ($status == 'ship') {
-            $step = 4;
         }
     @endphp
 @endif

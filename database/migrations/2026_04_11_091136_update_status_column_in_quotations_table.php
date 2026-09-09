@@ -13,8 +13,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('quotations', function (Blueprint $table) {
-            //
-            DB::statement("ALTER TABLE quotations MODIFY COLUMN status ENUM('created','sent','accepted','po','negotiating') DEFAULT 'created'");
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement("ALTER TABLE quotations MODIFY COLUMN status ENUM('created','sent','accepted','po','negotiating') DEFAULT 'created'");
+            } else {
+                $table->string('status', 50)->default('created')->change();
+            }
         });
     }
 
@@ -24,8 +27,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('quotations', function (Blueprint $table) {
-            //
-            DB::statement("ALTER TABLE quotations MODIFY COLUMN status ENUM('created','sent','accepted','po') DEFAULT 'created'");
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement("ALTER TABLE quotations MODIFY COLUMN status ENUM('created','sent','accepted','po') DEFAULT 'created'");
+            } else {
+                $table->string('status', 50)->default('created')->change();
+            }
         });
     }
 };

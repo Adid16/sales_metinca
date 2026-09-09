@@ -494,18 +494,22 @@
                         'sales'              => [
                             'id'   => $contract->sales_approver,
                             'date' => $contract->sales_approved_at,
+                            'sig'  => $contract->manager_sales_signature,
                         ],
                         'quality'            => [
                             'id'   => $contract->quality_approver,
                             'date' => $contract->quality_approved_at,
+                            'sig'  => $contract->manager_quality_signature,
                         ],
                         'ppc'                => [
                             'id'   => $contract->ppc_approver,
                             'date' => $contract->ppc_approved_at,
+                            'sig'  => $contract->manager_ppc_signature,
                         ],
                         'design engineering' => [
                             'id'   => $contract->dev_engineering_approver,
                             'date' => $contract->dev_engineering_approved_at,
+                            'sig'  => $contract->manager_de_signature,
                         ],
                     ];
 
@@ -516,28 +520,41 @@
 
                 <?php $__currentLoopData = $deptOrder; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $deptCode): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <?php if(isset($groupedDetails[$deptCode]) && count($groupedDetails[$deptCode]) > 0): ?>
+                        <?php
+                            $itemCount = count($groupedDetails[$deptCode]);
+                            $approverInfo = $deptApprovers[$deptCode] ?? null;
+                            $approverName = ($approverInfo && !empty($approverInfo['id'])) ? ($approverUsers[$approverInfo['id']] ?? '') : '';
+                            $signatureImg = $approverInfo['sig'] ?? null;
+                            $approvedDate = (!empty($approverInfo['date'])) ? \Carbon\Carbon::parse($approverInfo['date'])->format('d/m/Y') : '';
+                        ?>
                         <?php $__currentLoopData = $groupedDetails[$deptCode]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $detail): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <tr class="<?php echo e($deptClasses[$deptCode] ?? ''); ?>">
                                 <?php if($index === 0): ?>
-                                    <td class="dept-col" rowspan="<?php echo e(count($groupedDetails[$deptCode])); ?>">
+                                    <td class="dept-col" rowspan="<?php echo e($itemCount); ?>" style="vertical-align: middle; text-align: center;">
                                         <?php echo e($deptLabels[$deptCode] ?? strtoupper(substr($deptCode, 0, 2))); ?>
 
                                     </td>
                                 <?php endif; ?>
                                 <td class="req-col"><?php echo e($detail->requirement ?? ''); ?></td>
-                                <td class="check-col text-center">
-                                    <?php if($index === 0): ?>
-                                        <?php echo e($approverUsers[$deptApprovers[$deptCode]['id']] ?? ''); ?>
-
-                                    <?php endif; ?>
-                                </td>
-                                <td class="check-col text-center">
-                                    <?php if($index === 0 && !empty($deptApprovers[$deptCode]['date'])): ?>
-                                        <?php echo e(\Carbon\Carbon::parse($deptApprovers[$deptCode]['date'])->format('d/m/Y')); ?>
-
-                                    <?php endif; ?>
-                                    
-                                </td>
+                                <?php if($index === 0): ?>
+                                    <td class="check-col text-center" rowspan="<?php echo e($itemCount); ?>" style="vertical-align: middle; text-align: center; padding: 2px;">
+                                        <?php if(!empty($signatureImg)): ?>
+                                            <img src="<?php echo e($signatureImg); ?>" alt="Tanda Tangan" style="max-height: 38px; max-width: 72px; object-fit: contain; display: block; margin: 0 auto 2px auto;">
+                                        <?php endif; ?>
+                                        <?php if(!empty($approverName)): ?>
+                                            <div style="font-size: 8px; font-weight: bold; line-height: 1.1; margin-top: 1px;"><?php echo e($approverName); ?></div>
+                                        <?php else: ?>
+                                            &nbsp;
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="check-col text-center" rowspan="<?php echo e($itemCount); ?>" style="vertical-align: middle; text-align: center;">
+                                        <?php if(!empty($approvedDate)): ?>
+                                            <span style="font-size: 9px; font-weight: bold;"><?php echo e($approvedDate); ?></span>
+                                        <?php else: ?>
+                                            &nbsp;
+                                        <?php endif; ?>
+                                    </td>
+                                <?php endif; ?>
                                 <td class="remark-col"><?php echo nl2br(e($detail->requirement_value ?? '')); ?></td>
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>

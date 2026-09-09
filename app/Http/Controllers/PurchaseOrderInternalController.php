@@ -15,32 +15,62 @@ class PurchaseOrderInternalController extends Controller
     private function authorizeAccess()
     {
         $user = Auth::user();
-        if (!($user->isAdmin() || $user->isStaff())) {
+        if (!($user->isAdmin() || $user->isStaff() || $user->isManager())) {
             abort(403, 'Unauthorized.');
         }
         return $user;
+    }
+
+    private function checkPicAuthorization(PurchaseOrder $purchaseOrder): bool
+    {
+        $user = Auth::user();
+        if (!$user) return false;
+
+        // Admin & Manager Sales memiliki hak supervisi manajerial
+        if ($user->isAdmin() || ($user->isManager() && $user->divisi === 'sales')) {
+            return true;
+        }
+
+        // Staff Sales harus sesuai dengan Sales PIC
+        if ($user->isStaff() && $user->divisi === 'sales') {
+            $salesPic = $purchaseOrder->sales_pic;
+            if ($salesPic && $salesPic->id !== $user->id) {
+                return false;
+            }
+            return true;
+        }
+
+        return false;
     }
     
     // GET /purchase-orders-internal
     public function index(Request $request)
     {
         $this->authorizeAccess();
+        $user = Auth::user();
         $filters = $request->only(['search', 'start_date', 'end_date']);
 
-        $query = PurchaseOrderInternal::with([
-            'purchaseOrder.customer', 
-            'purchaseOrder.quotation',
-            'purchaseOrder.contract'
-        ])->latest();
+        $query = PurchaseOrder::has('internals')->with([
+            'customer', 
+            'quotation.request.assignment.sales',
+            'contract',
+            'internals.contract'
+        ]);
+
+        // Staff Sales HANYA MELIHAT PO Internal yang di-PIC oleh dirinya sendiri
+        if ($user->isStaff() && $user->divisi === 'sales') {
+            $query->whereHas('quotation.request.assignment', function ($q) use ($user) {
+                $q->where('sales_id', $user->id);
+            });
+        }
 
         if (!empty($filters['search'])) {
-            $query->where(function ($q) use ($filters) {
-                $q->where('item', 'like', '%' . $filters['search'] . '%')
-                ->orWhere('po_no', 'like', '%' . $filters['search'] . '%')
-                ->orWhereHas('purchaseOrder.customer', fn($q2) =>
-                        $q2->where('name', 'like', '%' . $filters['search'] . '%'))
-                ->orWhereHas('purchaseOrder.quotation', fn($q2) =>
-                        $q2->where('quotation_no', 'like', '%' . $filters['search'] . '%'));
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('po_no', 'like', "%{$search}%")
+                ->orWhereHas('customer', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
+                ->orWhereHas('quotation', fn($q2) => $q2->where('quotation_no', 'like', "%{$search}%"))
+                ->orWhereHas('internals', fn($q2) => $q2->where('item', 'like', "%{$search}%")->orWhere('po_no', 'like', "%{$search}%"));
             });
         }
 
@@ -51,19 +81,42 @@ class PurchaseOrderInternalController extends Controller
             $query->whereDate('created_at', '<=', $filters['end_date']);
         }
 
-        $items = $query->paginate(10);
-        return view('purchase-orders-internal.index', compact('items', 'filters'));
+        $query->orderBy('created_at', 'desc');
+
+        $pos = $query->paginate(10);
+        return view('purchase-orders-internal.index', compact('pos', 'filters'));
     }
 
     // GET /purchase-orders-internal/{purchaseOrder}/create
     public function create(Request $request, PurchaseOrder $purchaseOrder)
     {
         $this->authorizeAccess();
+
+        if (!$this->checkPicAuthorization($purchaseOrder)) {
+            return redirect()->route('purchase-orders.index')
+                ->with('error', 'Akses ditolak. Hanya Sales PIC penanggung jawab (' . ($purchaseOrder->sales_pic->name ?? 'Sales PIC') . ') yang berhak membuat PO Internal untuk pesanan ini.');
+        }
         
         $internalId      = $request->query('internal_id');
         $quotationItemId = $request->query('quotation_item_id');
 
-        $purchaseOrder->load(['customer', 'quotation.items', 'internals']);
+        $purchaseOrder->load(['customer.account', 'quotation.customer.account', 'quotation.items.article', 'internals']);
+
+        // Pastikan relasi article di quotation->items selalu ter-resolve jika quotation ada
+        if ($purchaseOrder->quotation && $purchaseOrder->quotation->items) {
+            foreach ($purchaseOrder->quotation->items as $qItemRow) {
+                if (!$qItemRow->article) {
+                    $foundArticle = \App\Models\Article::where('id', $qItemRow->article_id)
+                        ->orWhere('part_name', $qItemRow->item)
+                        ->orWhere('article_no', $qItemRow->item)
+                        ->orWhere('internal_part_no', $qItemRow->item)
+                        ->first();
+                    if ($foundArticle) {
+                        $qItemRow->setRelation('article', $foundArticle);
+                    }
+                }
+            }
+        }
 
         $selectedItem = null;
         $contract     = null;
@@ -99,6 +152,13 @@ class PurchaseOrderInternalController extends Controller
             ? ($selectedItem->po_no ?? ($purchaseOrder->po_no . '-' . $selectedItem->id)) 
             : ($qItem ? ($purchaseOrder->po_no . '-' . $qItemIndex) : $purchaseOrder->po_no);
 
+        // Ambil profil nama perusahaan buyer
+        $customerCompany = $purchaseOrder->customer?->company 
+            ?? $purchaseOrder->customer?->account?->company 
+            ?? $purchaseOrder->company 
+            ?? $purchaseOrder->quotation?->company 
+            ?? '';
+
         return view('purchase-orders-internal.create', [
             'purchaseOrder'   => $purchaseOrder,
             'po'              => $purchaseOrder,
@@ -107,7 +167,8 @@ class PurchaseOrderInternalController extends Controller
             'itemPoNo'        => $itemPoNo,
             'internalId'      => $internalId,
             'quotationItemId' => $quotationItemId,
-            'qItem'           => $qItem
+            'qItem'           => $qItem,
+            'customerCompany' => $customerCompany,
         ]);
     }
  
@@ -115,6 +176,11 @@ class PurchaseOrderInternalController extends Controller
     public function store(Request $request, PurchaseOrder $purchaseOrder)
     {
         $this->authorizeAccess();
+
+        if (!$this->checkPicAuthorization($purchaseOrder)) {
+            return redirect()->route('purchase-orders.index')
+                ->with('error', 'Akses ditolak. Hanya Sales PIC penanggung jawab (' . ($purchaseOrder->sales_pic->name ?? 'Sales PIC') . ') yang berhak menginput PO Internal untuk pesanan ini.');
+        }
 
         $request->validate([
             'item.*'          => 'required|string|max:255',
@@ -159,6 +225,7 @@ class PurchaseOrderInternalController extends Controller
                     'pic_buyer'     => $request->pic_buyer[$index]     ?? null,
                     'company_buyer' => $request->company_buyer[$index] ?? null,
                     'notes'         => $request->notes[$index]         ?? null,
+                    'status'        => 'created',
                 ];
 
                 if ($existingId && $purchaseOrder->internals()->where('id', $existingId)->exists()) {
@@ -193,9 +260,11 @@ class PurchaseOrderInternalController extends Controller
     // GET /purchase-orders-internal/{purchaseOrder}
     public function show(PurchaseOrder $purchaseOrder)
     {
-        $user = Auth::user();
-        if (!($user->isAdmin() || $user->isStaff())) {
-            abort(403);
+        $this->authorizeAccess();
+
+        if (!$this->checkPicAuthorization($purchaseOrder)) {
+            return redirect()->route('purchase-orders-internal.index')
+                ->with('error', 'Akses ditolak. PO Internal ini ditangani oleh Sales PIC lain (' . ($purchaseOrder->sales_pic->name ?? 'Sales PIC') . ').');
         }
 
         $purchaseOrder->load(['customer', 'quotation', 'internals']);
@@ -204,10 +273,13 @@ class PurchaseOrderInternalController extends Controller
 
     public function showItem(PurchaseOrderInternal $internal)
     {
-        $user = Auth::user();
-        if (!($user->isAdmin() || $user->isStaff())) {
-            abort(403);
+        $this->authorizeAccess();
+
+        if ($internal->purchaseOrder && !$this->checkPicAuthorization($internal->purchaseOrder)) {
+            return redirect()->route('purchase-orders-internal.index')
+                ->with('error', 'Akses ditolak. Item PO Internal ini ditangani oleh Sales PIC lain (' . ($internal->purchaseOrder->sales_pic->name ?? 'Sales PIC') . ').');
         }
+
         $internal->load('purchaseOrder.quotation', 'purchaseOrder.customer');
         return view('purchase-orders-internal.show-item', compact('internal'));
     }
@@ -228,6 +300,11 @@ class PurchaseOrderInternalController extends Controller
     public function destroyItem(PurchaseOrderInternal $internal)
     {
         $this->authorizeAccess();
+
+        if ($internal->purchaseOrder && !$this->checkPicAuthorization($internal->purchaseOrder)) {
+            return response()->json(['success' => false, 'error' => 'Akses ditolak. Hanya Sales PIC penanggung jawab yang berhak menghapus item ini.'], 403);
+        }
+
         $internal->delete();
         return response()->json(['success' => true]);
     }

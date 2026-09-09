@@ -133,68 +133,86 @@
     <script src="{{ asset('assets/extensions/simple-datatables/umd/simple-datatables.js') }}"></script>
     <script src="{{ asset('assets/static/js/pages/simple-datatables.js') }}"></script>
     <script>
-        // let dataTable = new simpleDatatables.DataTable("#table1");
-
-
-        const showBtns = document.querySelectorAll('.btn-show');
-        const modalShowContent = document.getElementById('modalContent');
-
-        showBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const id = btn.dataset.id;
-
-                modalShowContent.innerHTML = `
-            <div class="modal-body text-center">
-                <div class="spinner-border" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-            </div>
-        `;
-
-                fetch(`/purchase-orders/${id}`)
-                    .then(response => response.text())
-                    .then(html => {
-                        modalShowContent.innerHTML = html;
-                    })
-                    .catch(error => {
-                        modalShowContent.innerHTML = `
-                    <div class="modal-body text-danger text-center">
-                        Gagal memuat data
-                    </div>
-                `;
-                        console.error(error);
-                    });
+        function injectModalHtml(container, html) {
+            container.innerHTML = html;
+            container.querySelectorAll('script').forEach(oldScript => {
+                const newScript = document.createElement('script');
+                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                oldScript.parentNode.replaceChild(newScript, oldScript);
             });
-        });
+            container.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
+        }
 
-        const editBtn = document.querySelectorAll('.btn-edit');
-        const editModalContent = document.getElementById('editModalContent');
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-show');
+            if (!btn) return;
+            const modalShowContent = document.getElementById('modalContent');
+            if (!modalShowContent) return;
+            const id = btn.dataset.id;
+            const internalId = btn.dataset.internalId;
 
-        editBtn.forEach(btn => {
-            btn.addEventListener('click',()=>{
-                const id = btn.dataset.id;
-
-                editModalContent.innerHTML = `
-                <div class="modal-body text-center">
-                    <div class="spinner-border" role="status">
+            modalShowContent.innerHTML = `
+                <div class="modal-body text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
                 </div>
-                `;
+            `;
 
-                fetch(`/purchase-orders/${id}/edit`)
-                    .then(response => response.text())
-                    .then(html => {
-                        editModalContent.innerHTML = html;
-                    })
-                    .catch(error => {
-                        editModalContent.innerHTML = `
-                    <div class="modal-body text-danger text-center">
-                        Gagal memuat data
+            let fetchUrl = `/purchase-orders/${id}`;
+            if (internalId) {
+                fetchUrl += `?internal_id=${internalId}`;
+            }
+
+            fetch(fetchUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed loading');
+                    return response.text();
+                })
+                .then(html => {
+                    injectModalHtml(modalShowContent, html);
+                })
+                .catch(error => {
+                    modalShowContent.innerHTML = `
+                        <div class="modal-body text-danger text-center py-4">
+                            Gagal memuat data
+                        </div>
+                    `;
+                    console.error(error);
+                });
+        });
+
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-edit');
+            if (!btn) return;
+            const editModalContent = document.getElementById('editModalContent');
+            if (!editModalContent) return;
+            const id = btn.dataset.id;
+
+            editModalContent.innerHTML = `
+                <div class="modal-body text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
-                `;
-                    })
-            });
+                </div>
+            `;
+
+            fetch(`/purchase-orders/${id}/edit`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed loading edit');
+                    return response.text();
+                })
+                .then(html => {
+                    injectModalHtml(editModalContent, html);
+                })
+                .catch(error => {
+                    editModalContent.innerHTML = `
+                        <div class="modal-body text-danger text-center py-4">
+                            Gagal memuat data
+                        </div>
+                    `;
+                });
         });
     </script>
 @endpush

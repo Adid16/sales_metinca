@@ -1,51 +1,42 @@
  
-<?php $__env->startSection('title'); ?>
-    PT. Metinca Prima Industrial Works
-<?php $__env->stopSection(); ?>
+
+<?php $__env->startSection('title', 'PT. Metinca Prima Industrial Works'); ?>
  
+
 <?php $__env->startPush('styles'); ?>
     <link rel="stylesheet" href="<?php echo e(asset('assets/compiled/css/app.css')); ?>">
     <link rel="stylesheet" href="<?php echo e(asset('assets/compiled/css/app-dark.css')); ?>">
     <style>
-        .negotiate-card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-            margin-bottom: 20px;
+        .timeline { position: relative; padding: 20px 0; }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 0; bottom: 0;
+            left: 20px;
+            width: 2px;
+            background: #e0e6ed;
         }
-        .negotiate-card .card-header {
-            border-radius: 12px 12px 0 0;
-            padding: 10px 18px;
-            font-weight: 600;
-            font-size: 12px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            background-color: #f0f4f8;
-            color: #555;
-            border-bottom: 1px solid #e0e6ed;
+        .timeline-item { position: relative; margin-bottom: 24px; padding-left: 50px; }
+        .timeline-badge {
+            position: absolute;
+            left: 10px; top: 0;
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px;
         }
-        .negotiate-card .card-body { padding: 18px; }
-        .info-row { display: flex; margin-bottom: 8px; font-size: 14px; }
-        .info-label { width: 130px; color: #888; flex-shrink: 0; }
-        .info-sep { margin-right: 8px; color: #ccc; }
-        .info-value { font-weight: 500; color: #333; }
-        .page-header-card {
-            background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%);
-            border-radius: 12px;
-            padding: 18px 24px;
-            color: white;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .page-header-card .company-name { font-size: 18px; font-weight: 700; }
-        .page-header-card .company-tagline { font-size: 12px; opacity: .85; margin-top: 2px; }
+        .timeline-badge.customer { background: #7c4dff; color: #fff; }
+        .timeline-badge.pt { background: #00bcd4; color: #fff; }
+        .badge-status-waiting { background: #ff9800; color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 12px; }
+        .badge-status-accepted { background: #4caf50; color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 12px; }
+        .badge-status-rejected { background: #f44336; color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 12px; }
+        .badge-status-closed { background: #9e9e9e; color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 12px; }
+        .badge-status-negotiate { background: #2196f3; color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 12px; }
         .item-table th {
-            background-color: #f5f7fa;
+            background: #f8f9fa;
             font-size: 12px;
             font-weight: 600;
-            color: #666;
+            color: #555;
             border-bottom: 2px solid #e0e6ed;
         }
         .item-table td { vertical-align: middle; font-size: 13px; }
@@ -62,8 +53,9 @@
  
 <?php $__env->startSection('content'); ?>
 <?php
-    // JAMINAN BIAR TIDAK UNDEFINED: Ambil data negosiasi paling atas/terakhir dari koleksi history
     $lastNegotiation = $negotiations->first();
+    $isInternalSales = auth()->check() && (auth()->user()->isAdmin() || auth()->user()->divisi === 'sales');
+    $isManagerSales  = auth()->check() && (auth()->user()->isAdmin() || (auth()->user()->isManager() && auth()->user()->divisi === 'sales'));
 ?>
  
 <div class="card shadow-sm">
@@ -78,49 +70,121 @@
     <div class="card-body px-4 py-4">
  
         
-        <?php if(in_array($quotation->status, ['accepted', 'po', 'rejected', 'ship'])): ?>
+        <?php
+            $currentNegoCount = \App\Models\Negotiate::where('quotation_id', $quotation->id)->where('action', 'negotiate')->count();
+            $effectiveLimit = \App\Services\SystemSettingService::effectiveNegotiationLimit($quotation);
+            $quotaExceeded = $currentNegoCount >= $effectiveLimit;
+            $maxRounds = floor($effectiveLimit / 2);
+        ?>
+
+        <div class="alert alert-permanent <?php echo e($quotaExceeded ? 'alert-danger' : 'alert-info'); ?> d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 shadow-sm" style="border-left: 4px solid <?php echo e($quotaExceeded ? '#dc3545' : '#0dcaf0'); ?>;">
+            <div>
+                <div class="d-flex align-items-center flex-wrap gap-1">
+                    <i class="bi <?php echo e($quotaExceeded ? 'bi-exclamation-octagon-fill text-danger' : 'bi-info-circle-fill text-info'); ?> me-2 fs-5"></i>
+                    <span class="fw-bold" style="font-size: 0.92rem;">
+                        Batas Negosiasi Harga: Counter Negosiasi Ke-<strong><?php echo e($currentNegoCount); ?></strong> dari Maksimal <strong><?php echo e($effectiveLimit); ?>x</strong>
+                        <span class="text-muted fw-normal">(<?php echo e($maxRounds); ?>x Saling Balas)</span>
+                    </span>
+                    <?php if($quotation->negotiation_override_quota > 0): ?>
+                        <span class="badge bg-warning text-dark ms-2"><i class="bi bi-shield-check me-1"></i>Termasuk Override +<?php echo e($quotation->negotiation_override_quota); ?>x</span>
+                    <?php endif; ?>
+                </div>
+                <small class="d-block text-muted mt-1 ms-4 ps-1">
+                    <?php if($quotaExceeded): ?>
+                        <span class="text-danger fw-semibold"><i class="bi bi-lock-fill me-1"></i>Kuota negosiasi telah habis (<?php echo e($currentNegoCount); ?>/<?php echo e($effectiveLimit); ?>x). Silakan sepakati harga penawaran terakhir atau hubungi Manager Sales.</span>
+                    <?php else: ?>
+                        <span>Sisa kuota: <strong><?php echo e($effectiveLimit - $currentNegoCount); ?>x</strong> kesempatan pengajuan penawaran. (1x Saling Balas = 1 Customer + 1 Sales).</span>
+                    <?php endif; ?>
+                </small>
+            </div>
+            
+            
+            <?php if($isManagerSales): ?>
+                <button type="button" class="btn btn-sm btn-warning text-dark fw-bold ms-auto text-nowrap shadow-sm" data-bs-toggle="modal" data-bs-target="#overrideModalShow">
+                    <i class="bi bi-plus-circle-fill me-1"></i> Manager Override (+Kuota)
+                </button>
+            <?php endif; ?>
+        </div>
+
+        
+        <?php if($isManagerSales): ?>
+        <div class="modal fade" id="overrideModalShow" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title fw-bold"><i class="bi bi-shield-lock-fill me-2"></i>Manager Override Kuota Negosiasi</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form action="<?php echo e(route('quotations.override-nego-limit', $quotation->id)); ?>" method="POST">
+                        <?php echo csrf_field(); ?>
+                        <div class="modal-body">
+                            <p class="small text-muted mb-2">Gunakan fitur ini untuk menambah kuota negosiasi harga bagi customer pada Quotation <strong>#<?php echo e($quotation->quotation_no); ?></strong>.</p>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Jumlah Kuota Tambahan:</label>
+                                <select name="additional_quota" class="form-select form-select-sm" required>
+                                    <option value="1">+1 Kali Negosiasi Tambahan</option>
+                                    <option value="2">+2 Kali Negosiasi Tambahan (1 Putaran Saling Balas)</option>
+                                    <option value="4">+4 Kali Negosiasi Tambahan (2 Putaran Saling Balas)</option>
+                                    <option value="6">+6 Kali Negosiasi Tambahan (3 Putaran Saling Balas)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light">
+                            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-sm btn-warning fw-bold text-dark"><i class="bi bi-check-lg me-1"></i> Tambahkan Kuota</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        
+        <?php if(in_array($quotation->status, ['accepted', 'po', 'rejected'])): ?>
             <?php
                 $closedNego = $negotiations->whereIn('action', ['closed', 'accept'])->first();
             ?>
-            <div class="mb-3 d-flex align-items-center gap-3" style="background: linear-gradient(135deg, #d4edda, #c3e6cb); border: 1.5px solid #28a745; border-radius: 10px; padding: 16px;">
-                <div style="font-size: 32px; line-height:1;">
-                    <i class="bi bi-patch-check-fill text-success"></i>
-                </div>
-                <div style="flex:1;">
-                    <div class="fw-bold text-success" style="font-size:15px;">
-                        Negosiasi Telah Disetujui oleh PT. Metinca Prima
+            <div class="mb-3 d-flex align-items-center justify-content-between flex-wrap gap-3 shadow-sm" style="background: linear-gradient(135deg, #d4edda, #c3e6cb); border: 1.5px solid #28a745; border-radius: 10px; padding: 16px;">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="font-size: 32px; line-height:1;">
+                        <i class="bi bi-patch-check-fill text-success"></i>
                     </div>
-                    <div class="text-muted" style="font-size:12px;">
-                        Harga yang telah disepakati berlaku sebagai harga final. Negosiasi tidak dapat dilanjutkan.
+                    <div>
+                        <div class="fw-bold text-success" style="font-size:15px;">
+                            Negosiasi Telah Disetujui oleh PT. Metinca Prima
+                        </div>
+                        <div class="text-muted" style="font-size:12px;">
+                            Harga yang telah disepakati berlaku sebagai harga final. Negosiasi tidak dapat dilanjutkan.
+                        </div>
+                        
+                        <?php if($quotation->accepted_date): ?>
+                            <div class="mt-1" style="font-size:11px; color:#555;">
+                                <i class="bi bi-clock me-1"></i> Disetujui pada:
+                                <strong><?php echo e(\Carbon\Carbon::parse($quotation->accepted_date)->format('d F Y, H:i')); ?> WIB</strong>
+                            </div>
+                        <?php endif; ?>
+     
+                        <?php if($closedNego && $closedNego->negotiated_total): ?>
+                            <div class="mt-1" style="font-size:11px; color:#555;">
+                                <i class="bi bi-tag me-1"></i> Total harga final:
+                                <strong class="text-success">Rp <?php echo e(number_format($closedNego->negotiated_total, 0, ',', '.')); ?></strong>
+                            </div>
+                        <?php endif; ?>
                     </div>
-                    
-                    <?php if($quotation->accepted_date): ?>
-                        <div class="mt-1" style="font-size:11px; color:#555;">
-                            <i class="bi bi-clock me-1"></i> Disetujui pada:
-                            <strong><?php echo e(\Carbon\Carbon::parse($quotation->accepted_date)->format('d F Y, H:i')); ?> WIB</strong>
-                        </div>
-                    <?php endif; ?>
- 
-                    <?php if($closedNego && $closedNego->negotiated_total): ?>
-                        <div class="mt-1" style="font-size:11px; color:#555;">
-                            <i class="bi bi-tag me-1"></i> Total harga final:
-                            <strong class="text-success">Rp <?php echo e(number_format($closedNego->negotiated_total, 0, ',', '.')); ?></strong>
-                        </div>
-                    <?php endif; ?>
                 </div>
                 
-                <div class="ms-auto d-flex flex-column gap-1 text-center">
-                    <?php if(auth()->check() && auth()->user()->isCustomer()): ?>
-                        <a href="<?php echo e(route('purchase-orders.create', ['quotation_id' => $quotation->id])); ?>" class="btn btn-success btn-sm fw-semibold">
+                <?php if(auth()->check() && auth()->user()->isCustomer()): ?>
+                    <div>
+                        <a href="<?php echo e(route('purchase-orders.create', ['quotation_id' => $quotation->id])); ?>" class="btn btn-success btn-sm fw-semibold shadow-sm">
                             <i class="bi bi-bag-check me-1"></i> Buat PO Sekarang
                         </a>
-                    <?php endif; ?>
-                </div>
+                    </div>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
  
         
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
             <div>
                 <h6 class="mb-0 fw-bold text-uppercase" style="color: black; letter-spacing: 1px;">
                     PT. Metinca Prima Industrial Works
@@ -128,7 +192,7 @@
                 <small class="text-muted">Manufacturing & Industrial Solutions</small>
             </div>
             
-            <div class="d-flex gap-1 align-items-center">
+            <div class="d-flex gap-2 align-items-center flex-wrap">
                 
                 <?php if(auth()->check() && auth()->user()->isCustomer()): ?>
                     <a href="<?php echo e(route('negotiate.show', ['quotation' => $quotation->id])); ?>" class="btn btn-sm btn-warning">
@@ -148,7 +212,7 @@
                 <?php endif; ?>
  
                 
-                <?php if(auth()->check() && (auth()->user()->isStaff() || auth()->user()->isManager() || auth()->user()->isAdmin())): ?>
+                <?php if($isInternalSales): ?>
                     <?php if($quotation->status == 'created'): ?>
                         <a href="<?php echo e(route('quotations.edit', $quotation->id)); ?>" class="btn btn-warning btn-sm text-dark fw-bold">
                             <i class="bi bi-pencil-square"></i> Edit Quotation
@@ -169,7 +233,7 @@
                     </a>
                 <?php endif; ?>
  
-                <a href="<?php echo e(route('quotations.export-pdf', $quotation->id)); ?>" class="btn btn-sm btn-danger">
+                <a href="<?php echo e(route('quotations.export-pdf', $quotation->id)); ?>" class="btn btn-sm btn-danger" title="Export PDF">
                     <i class="bi bi-file-earmark-pdf"></i>
                 </a>
                 <a href="<?php echo e(route('quotations.index')); ?>" class="btn btn-sm btn-light fw-semibold">
@@ -223,100 +287,33 @@
                 </div>
             </div>
         </div>
-
-        
-        <?php if(isset($po) && $po): ?>
-            <div class="card border border-warning mb-4">
-                <div class="card-header px-3 py-2 bg-light-warning d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0 fw-bold text-dark text-uppercase" style="letter-spacing: 1px; font-size: 0.78rem;">
-                        <i class="bi bi-file-earmark-richtext-fill text-warning me-1"></i> Terhubung Dengan Purchase Order (PO) & Status Amandemen Item
-                    </h6>
-                    <span class="badge bg-warning text-dark fw-bold">PO No: <?php echo e($po->po_no); ?></span>
-                </div>
-                <div class="card-body p-3">
-                    <div class="row g-2 mb-3">
-                        <div class="col-md-6">
-                            <small class="text-muted d-block">Nomor PO External:</small>
-                            <strong><?php echo e($po->po_no); ?></strong>
-                        </div>
-                        <div class="col-md-6">
-                            <small class="text-muted d-block">Status PO Master:</small>
-                            <span class="badge bg-primary text-uppercase"><?php echo e($po->status); ?></span>
-                        </div>
-                    </div>
-
-                    <h6 class="fw-bold text-dark mb-2 small"><i class="bi bi-boxes me-1"></i> Rincian Item PO & Status Amandemen:</h6>
-                    <div class="table-responsive">
-                        <table class="table table-sm table-bordered align-middle mb-0">
-                            <thead class="table-secondary text-uppercase small">
-                                <tr>
-                                    <th class="text-center" width="5%">#</th>
-                                    <th>Nama Item</th>
-                                    <th class="text-center" width="15%">Qty PO</th>
-                                    <th class="text-center" width="25%">Status Amandemen Item</th>
-                                    <th>Catatan Alasan Amandemen</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php $__empty_1 = true; $__currentLoopData = $po->internals; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                                    <?php
-                                        $contract = $item->contract;
-                                        $contractStatus = $contract ? strtolower($contract->status) : 'none';
-                                    ?>
-                                    <tr>
-                                        <td class="text-center"><?php echo e($i + 1); ?></td>
-                                        <td class="fw-bold"><?php echo e($item->item); ?></td>
-                                        <td class="text-center fw-bold"><?php echo e(number_format($item->qty)); ?> pcs</td>
-                                        <td class="text-center">
-                                            <?php if($contractStatus == 'amandement'): ?>
-                                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> Amandemen Disetujui</span>
-                                            <?php elseif($contractStatus == 'amandement_pending'): ?>
-                                                <span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i> Pending Review</span>
-                                            <?php elseif($contractStatus == 'rejected'): ?>
-                                                <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i> Amandemen Ditolak</span>
-                                            <?php elseif($contract && !empty($contract->alasan_amandemen)): ?>
-                                                <span class="badge bg-info text-dark"><i class="bi bi-pencil-square me-1"></i> Diamandemen</span>
-                                            <?php else: ?>
-                                                <span class="badge bg-secondary">Normal</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <?php if($contract && !empty($contract->alasan_amandemen)): ?>
-                                                <span class="small text-dark fst-italic">"<?php echo e($contract->alasan_amandemen); ?>"</span>
-                                            <?php else: ?>
-                                                <span class="text-muted small">-</span>
-                                            <?php endif; ?>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                                    <tr>
-                                        <td colspan="5" class="text-center text-muted small py-2">Belum ada item internal pada PO ini.</td>
-                                    </tr>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        <?php endif; ?>
  
         
         <div class="card border mb-4">
-            <div class="card-header px-3 py-2" style="background: #e9ecef;">
+            <div class="card-header px-3 py-2 d-flex justify-content-between align-items-center" style="background: #e9ecef;">
                 <h6 class="mb-0 fw-bold text-uppercase" style="letter-spacing: 1px; font-size: 0.78rem;">
                     <i class="bi bi-list-ul me-1"></i>Pricelist Item Quotation
                 </h6>
+                <?php if($isInternalSales): ?>
+                    <span class="badge bg-white text-dark border">
+                        <i class="bi bi-shield-check text-primary me-1"></i>Master Price List & Floor Price System
+                    </span>
+                <?php endif; ?>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-bordered mb-0">
+                    <table class="table table-bordered mb-0 align-middle">
                         <thead class="bg-light text-dark">
                             <tr>
-                                <th width="5%" class="text-center py-2">No</th>
-                                <th class="text-center py-2">Item</th>
-                                <th width="10%" class="text-center py-2">Qty</th>
-                                <th width="20%" class="text-center py-2">Unit Price</th>
-                                <th width="20%" class="text-center py-2">Subtotal</th>
+                                <th width="4%" class="text-center py-2">No</th>
+                                <th class="py-2">Item & Spesifikasi Article</th>
+                                <th width="8%" class="text-center py-2">Qty</th>
+                                <th width="18%" class="text-center py-2">Price List (Awal)</th>
+                                <?php if($isInternalSales): ?>
+                                    <th width="15%" class="text-center py-2">Batas Bawah (Floor)</th>
+                                <?php endif; ?>
+                                <th width="18%" class="text-center py-2">Harga Final / Nego</th>
+                                <th width="16%" class="text-center py-2">Subtotal</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -333,23 +330,47 @@
                                 
                                 $origTotal = $quotation->items->sum(function ($i) use ($lastItems) {
                                     $itemData = $lastItems->firstWhere('id', $i->id);
-                                    return ($itemData['original_price'] ?? $i->price) * $i->qty;
+                                    return ($itemData['original_price'] ?? ($i->original_price ?: $i->price)) * $i->qty;
                                 });
-                                $negoTotal = $lastNego?->negotiated_total ?? $origTotal;
+                                $negoTotal = $lastNego?->negotiated_total ?? $quotation->items->sum(fn($i) => $i->price * $i->qty);
                             ?>
  
                             <?php $__empty_1 = true; $__currentLoopData = $quotation->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                 <?php
-                                    $lastItemData = $lastItems->firstWhere('id', $item->id);
-                                    $displayPrice = $lastItemData['negotiated_price'] ?? $item->price;
-                                    $displaySub   = $displayPrice * $item->qty;
-                                    $originalPrice = $lastItemData['original_price'] ?? $item->price;
-                                    $originalSub   = $originalPrice * $item->qty;
+                                    $lastItemData  = $lastItems->firstWhere('id', $item->id);
+                                    $originalPrice = (float) ($lastItemData['original_price'] ?? ($item->original_price ?: $item->price));
+                                    $displayPrice  = (float) ($lastItemData['negotiated_price'] ?? $item->price);
+                                    $displaySub    = $displayPrice * $item->qty;
+                                    
+                                    $floorInfo   = $floorPrices[$item->id] ?? ['floor_price' => 0];
+                                    $floorPrice  = (float) ($item->floor_price ?: ($floorInfo['floor_price'] ?? 0));
+                                    $isBelow     = ($floorPrice > 0 && $displayPrice < $floorPrice);
                                 ?>
                                 <tr>
-                                    <td class="text-center"><?php echo e($index + 1); ?></td>
-                                    <td><?php echo e($item->item); ?></td>
+                                    <td class="text-center fw-bold"><?php echo e($index + 1); ?></td>
+                                    <td>
+                                        <div class="fw-bold"><?php echo e($item->item); ?></div>
+                                        <?php if($item->article): ?>
+                                            <small class="text-muted">
+                                                Art. No: <span class="fw-semibold"><?php echo e($item->article->article_no); ?></span>
+                                                <?php if($item->article->material): ?> &bull; Mat: <?php echo e($item->article->material); ?> <?php endif; ?>
+                                            </small>
+                                        <?php endif; ?>
+                                    </td>
                                     <td class="text-center"><?php echo e($item->qty); ?></td>
+                                    <td class="text-end">
+                                        Rp <?php echo e(number_format($originalPrice, 0, ',', '.')); ?>
+
+                                    </td>
+                                    <?php if($isInternalSales): ?>
+                                        <td class="text-end">
+                                            <?php if($floorPrice > 0): ?>
+                                                <span class="text-muted fw-semibold">Rp <?php echo e(number_format($floorPrice, 0, ',', '.')); ?></span>
+                                            <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
+                                    <?php endif; ?>
                                     <td class="text-end">
                                         <?php if($lastItemData && $originalPrice != $displayPrice): ?>
                                             <small class="text-muted text-decoration-line-through d-block">
@@ -357,28 +378,29 @@
 
                                             </small>
                                         <?php endif; ?>
-                                        Rp <?php echo e(number_format($displayPrice, 0, ',', '.')); ?>
+                                        <span class="fw-bold <?php echo e($isBelow ? 'text-danger' : 'text-dark'); ?>">
+                                            Rp <?php echo e(number_format($displayPrice, 0, ',', '.')); ?>
 
-                                    </td>
-                                    <td class="text-end">
-                                        <?php if($lastItemData && $originalSub != $displaySub): ?>
-                                            <small class="text-muted text-decoration-line-through d-block">
-                                                Rp <?php echo e(number_format($originalSub, 0, ',', '.')); ?>
-
-                                            </small>
+                                        </span>
+                                        <?php if($isInternalSales && $isBelow): ?>
+                                            <div class="badge bg-light-danger text-danger border border-danger mt-1" style="font-size: 0.7rem;">
+                                                <i class="bi bi-exclamation-triangle me-1"></i>Di bawah batas bawah
+                                            </div>
                                         <?php endif; ?>
+                                    </td>
+                                    <td class="text-end fw-bold">
                                         Rp <?php echo e(number_format($displaySub, 0, ',', '.')); ?>
 
                                     </td>
                                 </tr>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                                <tr><td colspan="5" class="text-center text-muted fst-italic py-3">Tidak ada item</td></tr>
+                                <tr><td colspan="<?php echo e($isInternalSales ? 7 : 6); ?>" class="text-center text-muted fst-italic py-3">Tidak ada item</td></tr>
                             <?php endif; ?>
                         </tbody>
                         <tfoot style="background: #f0f4ff;">
                             <tr>
-                                <th colspan="4" class="text-end py-2"><?php echo e($lastNego ? 'NEGOTIATED TOTAL' : 'TOTAL'); ?></th>
-                                <th class="text-end py-2 fw-bold <?php echo e($lastNego ? 'text-danger' : ''); ?>">
+                                <th colspan="<?php echo e($isInternalSales ? 6 : 5); ?>" class="text-end py-2"><?php echo e($lastNego ? 'NEGOTIATED GRAND TOTAL' : 'GRAND TOTAL'); ?></th>
+                                <th class="text-end py-2 fw-bold text-primary fs-6">
                                     Rp <?php echo e(number_format($negoTotal, 0, ',', '.')); ?>
 
                                 </th>
@@ -397,7 +419,7 @@
                         <i class="bi bi-arrow-left-right me-1"></i>Hasil Negosiasi Terakhir
                     </h6>
                     <small class="text-muted">
-                        <?php echo e($lastNegotiation->from_customer ? ($quotation->customer->name ?? 'Customer') : 'PT. Metinca'); ?> &middot; <?php echo e($lastNegotiation->created_at->format('d M Y, H:i')); ?>
+                        <?php echo e($lastNegotiation->from_customer ? ($quotation->customer->name ?? 'Customer') : 'PT. Metinca Prima'); ?> &middot; <?php echo e($lastNegotiation->created_at->format('d M Y, H:i')); ?>
 
                     </small>
                 </div>
@@ -458,7 +480,7 @@
                 <div class="card border h-100">
                     <div class="card-header py-2 px-3" style="background: #e9ecef;">
                         <h6 class="mb-0 fw-bold text-uppercase" style="letter-spacing: 1px; font-size: 0.78rem;">
-                            <i class="bi bi-sticky me-1"></i>Message
+                            <i class="bi bi-sticky me-1"></i>Message / Notes
                         </h6>
                     </div>
                     <div class="card-body py-2 px-3">
@@ -496,8 +518,9 @@
             <span><i class="bi bi-clock me-1"></i>Created: <?php echo e(\Carbon\Carbon::parse($quotation->created_at)->format('d F Y, H:i')); ?> WIB</span>
             <span><?php echo e($quotation->quotation_no); ?></span>
         </div>
- 
+
     </div>
 </div>
+
 <?php $__env->stopSection(); ?>
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\sales_metinca\resources\views/quotations/show.blade.php ENDPATH**/ ?>

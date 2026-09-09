@@ -9,9 +9,7 @@
         <div class="p-2">
             <label for="selectStatus" class="">Status</label>
             <select name="status" id="selectStatus" class="form-control">
-                <option value="">Pilih status</option>
-                <option value="production">Production</option>
-                <option value="ship">Ship</option>
+                <option value="production" {{ $purchase_order->status == 'production' ? 'selected' : '' }}>Production</option>
             </select>
         </div>
     </div>

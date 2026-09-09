@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\SystemSettingService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -9,9 +10,8 @@ class Article extends Model
 {
     use HasFactory;
 
-    // Daftarkan semua kolom database di sini agar bisa disimpan lewat Controller
     protected $fillable = [
-        'internal_part_no', // Pastikan sesuai dengan nama kolom migration asli Anda
+        'internal_part_no',
         'article_no',
         'part_name',
         'index_no',
@@ -25,18 +25,60 @@ class Article extends Model
         'lokasi_pengerjaan',
         'remark',
         
-        // KOLOM HARGA BARU (Wajib ditambahkan di sini)
+        // Kolom Harga
         'casting_price',
         'machining_price',
-        'price', 
+        'price',
+        'price_list',
+        'floor_price',
+        'bottom_price',
         'pdf_attachment',
     ];
 
+    protected $casts = [
+        'price'           => 'float',
+        'price_list'      => 'float',
+        'floor_price'     => 'float',
+        'bottom_price'    => 'float',
+        'casting_price'   => 'float',
+        'machining_price' => 'float',
+    ];
+
     /**
-     * Relasi ke model User/Customer (jika diperlukan)
+     * Relasi ke model User/Customer
      */
     public function customer()
     {
         return $this->belongsTo(User::class, 'customer_id');
+    }
+
+    /**
+     * Dapatkan harga price list efektif (fallback ke price jika price_list null)
+     */
+    public function getEffectivePriceListAttribute(): float
+    {
+        return (float) ($this->price_list ?? $this->price ?? 0);
+    }
+
+    /**
+     * Dapatkan batas bawah harga (Floor Price / Bottom Price)
+     */
+    public function getEffectiveFloorPriceAttribute(): float
+    {
+        if ($this->floor_price !== null && $this->floor_price > 0) {
+            return (float) $this->floor_price;
+        }
+
+        if ($this->bottom_price !== null && $this->bottom_price > 0) {
+            return (float) $this->bottom_price;
+        }
+
+        $basePrice = $this->effective_price_list;
+        if ($basePrice > 0) {
+            $margin = SystemSettingService::minPriceMarginPercentage();
+            return round($basePrice * (1 - ($margin / 100)), 2);
+        }
+
+        return 0.0;
     }
 }

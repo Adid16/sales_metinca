@@ -100,26 +100,29 @@
                                     @enderror
                                 </div>
 
-                                {{-- 5. UPLOAD LAMPIRAN BERKAS BARU --}}
+                                {{-- 5. UPLOAD LAMPIRAN BERKAS BARU (WAJIB) --}}
                                 <div class="col-12 mb-3">
-                                    <label class="form-label font-weight-bold">Upload Dokumen Pendukung Amandemen <small class="text-muted">(Opsional)</small></label>
+                                    <label class="form-label font-weight-bold">Upload Dokumen Pendukung Amandemen <span class="text-danger">* (Wajib Diunggah)</span></label>
                                     <div class="card border">
                                         <div class="card-content">
                                             <div class="card-body">
-                                                <input type="file" name="attachments" class="multiple-files-filepond">
+                                                <input type="file" name="attachments" class="multiple-files-filepond" required>
                                             </div>
                                         </div>
                                     </div>
+                                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Format berkas yang didukung: PDF, JPG, PNG, DOC/DOCX, XLS/XLSX (Maks. 10MB).</small>
                                     @error('attachments')
-                                        <span class="text-danger small">{{ $message }}</span>
+                                        <div class="text-danger small mt-1 font-weight-bold">{{ $message }}</div>
                                     @enderror
                                 </div>
 
                                 {{-- TOMBOL SUBMIT & RESET --}}
                                 <div class="col-12 d-flex justify-content-end mt-3">
                                     <a href="{{ route('purchase-orders.index') }}" class="btn btn-secondary me-1 mb-1">Kembali</a>
-                                    <button type="submit" class="btn btn-warning me-1 mb-1 font-weight-bold text-white">Kirim Amandemen</button>
-                                    <button type="reset" class="btn btn-light-secondary me-1 mb-1">Reset</button>
+                                    <button type="submit" class="btn btn-warning me-1 mb-1 font-weight-bold text-white" {{ $quotaExceeded ? 'disabled' : '' }}>
+                                        <i class="bi bi-send-fill me-1"></i> Kirim Amandemen
+                                    </button>
+                                    <button type="reset" class="btn btn-light-secondary me-1 mb-1" {{ $quotaExceeded ? 'disabled' : '' }}>Reset</button>
                                 </div>
                             </div>
                         </form>

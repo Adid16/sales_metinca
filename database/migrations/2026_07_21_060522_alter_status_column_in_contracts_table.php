@@ -1,18 +1,31 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        // Mengubah kolom status ke VARCHAR(50) agar bebas menampung 'rejected', 'approved', dll.
-        DB::statement("ALTER TABLE contracts MODIFY COLUMN status VARCHAR(50) DEFAULT 'created'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE contracts MODIFY COLUMN status VARCHAR(50) DEFAULT 'created'");
+        } else {
+            Schema::table('contracts', function (Blueprint $table) {
+                $table->string('status', 50)->default('created')->change();
+            });
+        }
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE contracts MODIFY COLUMN status VARCHAR(50) DEFAULT 'created'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE contracts MODIFY COLUMN status VARCHAR(50) DEFAULT 'created'");
+        } else {
+            Schema::table('contracts', function (Blueprint $table) {
+                $table->string('status', 50)->default('created')->change();
+            });
+        }
     }
 };

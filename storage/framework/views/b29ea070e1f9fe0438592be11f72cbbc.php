@@ -112,20 +112,21 @@ unset($__errorArgs, $__bag); ?>
 
                                 
                                 <div class="col-12 mb-3">
-                                    <label class="form-label font-weight-bold">Upload Dokumen Pendukung Amandemen <small class="text-muted">(Opsional)</small></label>
+                                    <label class="form-label font-weight-bold">Upload Dokumen Pendukung Amandemen <span class="text-danger">* (Wajib Diunggah)</span></label>
                                     <div class="card border">
                                         <div class="card-content">
                                             <div class="card-body">
-                                                <input type="file" name="attachments" class="multiple-files-filepond">
+                                                <input type="file" name="attachments" class="multiple-files-filepond" required>
                                             </div>
                                         </div>
                                     </div>
+                                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Format berkas yang didukung: PDF, JPG, PNG, DOC/DOCX, XLS/XLSX (Maks. 10MB).</small>
                                     <?php $__errorArgs = ['attachments'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
 if (isset($message)) { $__messageOriginal = $message; }
 $message = $__bag->first($__errorArgs[0]); ?>
-                                        <span class="text-danger small"><?php echo e($message); ?></span>
+                                        <div class="text-danger small mt-1 font-weight-bold"><?php echo e($message); ?></div>
                                     <?php unset($message);
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
@@ -135,8 +136,10 @@ unset($__errorArgs, $__bag); ?>
                                 
                                 <div class="col-12 d-flex justify-content-end mt-3">
                                     <a href="<?php echo e(route('purchase-orders.index')); ?>" class="btn btn-secondary me-1 mb-1">Kembali</a>
-                                    <button type="submit" class="btn btn-warning me-1 mb-1 font-weight-bold text-white">Kirim Amandemen</button>
-                                    <button type="reset" class="btn btn-light-secondary me-1 mb-1">Reset</button>
+                                    <button type="submit" class="btn btn-warning me-1 mb-1 font-weight-bold text-white" <?php echo e($quotaExceeded ? 'disabled' : ''); ?>>
+                                        <i class="bi bi-send-fill me-1"></i> Kirim Amandemen
+                                    </button>
+                                    <button type="reset" class="btn btn-light-secondary me-1 mb-1" <?php echo e($quotaExceeded ? 'disabled' : ''); ?>>Reset</button>
                                 </div>
                             </div>
                         </form>

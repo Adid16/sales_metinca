@@ -2,7 +2,7 @@
 @extends('layouts.app')
 
 {{-- Set title berdasarkan page --}}
-@section('title', 'PT. Metinca Prima Industrial Works')
+@section('title', 'Edit Contract Review Sheet - PT. Metinca Prima Industrial Works')
 
 @section('content')
 
@@ -20,9 +20,8 @@
     </div>
 @endif
 
-{{-- ====== TAMBAHKAN BLOK KODE INI UNTUK MENAMPILKAN ERROR VALIDASI ====== --}}
-@if ($errors->any())
-    <div class="alert alert-danger alert-dismissible fade show">
+@if (isset($errors) && $errors->any())
+    <div class="alert alert-danger alert-permanent alert-dismissible fade show mb-3">
         <h6 class="fw-bold"><i class="bi bi-exclamation-triangle-fill"></i> Data Gagal Disimpan:</h6>
         <ul class="mb-0 small">
             @foreach ($errors->all() as $error)
@@ -32,9 +31,39 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 @endif
-{{-- ===================================================================== --}}
 
-{{-- PERBAIKAN: Ditambahkan enctype="multipart/form-data" agar form ini bisa memproses upload file PDF baru --}}
+{{-- ================= ALERT REVISI / PENOLAKAN MANAGER (PERMANEN TIDAK AKAN MENGHILANG) ================= --}}
+@php
+    $rejections = [];
+    if (!empty($contract->sales_reject_reason)) $rejections['Manager Sales'] = $contract->sales_reject_reason;
+    if (!empty($contract->quality_reject_reason)) $rejections['Manager Quality'] = $contract->quality_reject_reason;
+    if (!empty($contract->ppc_reject_reason)) $rejections['Manager PPC'] = $contract->ppc_reject_reason;
+    if (!empty($contract->dev_engineering_reject_reason)) $rejections['Manager Design Engineering'] = $contract->dev_engineering_reject_reason;
+@endphp
+
+@if(!empty($rejections))
+    <div class="card border-danger border-2 shadow-sm mb-4 alert-permanent">
+        <div class="card-header bg-danger text-white py-2 d-flex align-items-center">
+            <i class="bi bi-exclamation-octagon-fill fs-5 me-2"></i>
+            <h6 class="fw-bold mb-0 text-white">Catatan Permintaan Revisi / Penolakan dari Manager</h6>
+        </div>
+        <div class="card-body bg-danger-subtle p-3">
+            <ul class="mb-2 list-unstyled">
+                @foreach($rejections as $mgr => $rsn)
+                    <li class="p-2 mb-2 bg-white rounded border border-danger-subtle text-dark">
+                        <strong class="text-danger"><i class="bi bi-person-x-fill me-1"></i>{{ $mgr }}:</strong>
+                        <span class="fst-italic fw-semibold ms-1 text-dark">"{{ $rsn }}"</span>
+                    </li>
+                @endforeach
+            </ul>
+            <div class="small text-muted bg-white p-2 rounded border">
+                <i class="bi bi-info-circle-fill text-primary me-1"></i>
+                Bagian departemen yang telah disetujui sebelumnya otomatis <b>terkunci</b>. Anda hanya perlu memperbaiki bagian yang diminta di atas.
+            </div>
+        </div>
+    </div>
+@endif
+
 <form action="{{ route('contracts.update', $contract->id) }}" method="POST" enctype="multipart/form-data">
     @csrf
     @method('PUT')
@@ -42,20 +71,6 @@
     <section id="multiple-column-form">
         <div class="row match-height">
             <div class="col-12">
-
-                @if (session('success'))
-                    <div class="alert alert-success alert-dismissible fade show">
-                        {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                @endif
-
-                @if (session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show">
-                        {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                @endif
 
                 {{-- ================= CARD 1: HEADER UTAMA ================= --}}
                 <div class="card shadow-sm mb-3">
@@ -65,7 +80,6 @@
                         </h5>
                     </div>
                 </div>
-                
 
                 {{-- ================= CARD 2: LEMBAR TINJAUAN KONTRAK + INPUTAN ================= --}}
                 <div class="card mb-0">
@@ -95,30 +109,23 @@
                             <input type="text" class="form-control form-control-sm" name="order_no" value="{{ $contract->order_no }}" readonly>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label mb-1 fw-semibold small">PART NO</label>
-                            <input type="text" class="form-control form-control-sm" id="partNumber" name="part_no" value="{{ $contract->part_no }}" readonly>
+                            <label class="form-label mb-1 fw-semibold small">PART NUMBER</label>
+                            <input type="text" class="form-control form-control-sm text-uppercase fw-semibold" id="partNumber" name="part_no" value="{{ $contract->part_no ?? ($contract->article->internal_part_no ?? ($contract->article->part_number ?? ($contract->article->article_no ?? ($contract->internalItem->part_no ?? '')))) }}" readonly>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label mb-1 fw-semibold small">AMANDMENT NO</label>
                             @php
-                                // 1. Ambil angka amandemen terakhir (jika null maka 0)
-                                $currentAmandement = (int)($contract->amandement_no ?? $contract->amandment_no ?? 0);
+                                $currentAmandement = (int)($contract->amandement_no ?? 0);
+                                $isAmandemenStatus = in_array(strtolower($contract->status), ['amandemen', 'amandement', 'amandement_pending']);
+                                $suggestedAmandement = $isAmandemenStatus ? $currentAmandement : $currentAmandement;
                                 
-                                // 2. Jika status kontrak sedang 'amandement', otomatis tambahkan 1
-                                $isAmandemenStatus = in_array(strtolower($contract->status), ['amandemen', 'amandement']);
-                                $suggestedAmandement = $isAmandemenStatus ? $currentAmandement + 1 : $currentAmandement;
-                                
-                                // 3. Gabungkan angka dan alasan untuk tampilan
                                 $displayText = $suggestedAmandement;
-                                if ($isAmandemenStatus && !empty($contract->alasan_amandemen)) {
+                                if (!empty($contract->alasan_amandemen)) {
                                     $displayText .= ': ' . $contract->alasan_amandemen;
                                 }
                             @endphp
                             
-                            {{-- Input hidden: ini yang akan dikirim dan disimpan ke database (hanya angka) --}}
                             <input type="hidden" name="amandement_no" value="{{ $suggestedAmandement }}">
-                            
-                            {{-- Input text: ini hanya untuk tampilan visual di layar (angka + alasan) --}}
                             <input type="text" class="form-control form-control-sm" value="{{ $displayText }}" readonly>
                         </div>
                         <div class="col-md-6">
@@ -127,12 +134,12 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label mb-1 fw-semibold small">LOCATION</label>
-                            <input type="text" class="form-control form-control-sm" id="location" name="location" value="{{ old('location', $contract->article->lokasi_text) ?? '-' }}" readonly>
+                            <input type="text" class="form-control form-control-sm" id="location" name="location" value="{{ old('location', $contract->article->lokasi_text ?? '-') }}" readonly>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label mb-1 fw-semibold small">ARTICLE</label>
-                                <input type="hidden" id="articleId" name="article_id" value="{{ $contract->article_id }}">
-                                <input type="text" class="form-control form-control-sm" id="articleInput" placeholder="Ketik kode article lalu tekan enter" value="{{ old('article_no', $contract->article->article_no ?? '-') }}">
+                            <input type="hidden" id="articleId" name="article_id" value="{{ $contract->article_id }}">
+                            <input type="text" class="form-control form-control-sm" id="articleInput" placeholder="Ketik kode article" value="{{ old('article_no', $contract->article->article_no ?? '-') }}">
                         </div>
                     </div>
                 </div>
@@ -142,6 +149,12 @@
             {{-- ================= CARD 3-6: REQUIREMENTS PER DEPARTEMEN ================= --}}
             @php
                 $departments = ['sales', 'quality', 'ppc', 'design engineering'];
+                $deptLabels = [
+                    'sales'              => 'SALES',
+                    'quality'            => 'QUALITY',
+                    'ppc'                => 'PPC',
+                    'design engineering' => 'DESIGN ENGINEERING',
+                ];
                 $deptColors  = [
                     'sales'              => '#0d6efd',
                     'quality'            => '#198754',
@@ -154,6 +167,12 @@
                     'ppc'                => 'bi-gear',
                     'design engineering' => 'bi-pencil-ruler',
                 ];
+                $defaultReqNames = [
+                    'sales'              => ['price', 'quantity', 'delivery required', 'supply condition', 'special / customer requirement'],
+                    'quality'            => ['drawing', 'standard / spec', 'inspection'],
+                    'ppc'                => ['material requirement', 'pattern wax', 'purchasing', 'sub contracting'],
+                    'design engineering' => ['master job card', 'wra / wi', 'dies', 'tool', 'fixtures'],
+                ];
                 $grouped = $contract->requirements->groupBy('requirement_from');
             @endphp
 
@@ -162,110 +181,163 @@
                     $requirements = $grouped[$dept] ?? collect();
                     $color        = $deptColors[$dept]       ?? 'black';
                     $icon         = $deptIcons[$dept]        ?? 'bi-list-ul';
+
+                    $isDeptApproved = match($dept) {
+                        'sales'              => !empty($contract->sales_approver),
+                        'quality'            => !empty($contract->quality_approver),
+                        'ppc'                => !empty($contract->ppc_approver),
+                        'design engineering' => !empty($contract->dev_engineering_approver),
+                        default              => false
+                    };
+
+                    $deptRejectReason = match($dept) {
+                        'sales'              => $contract->sales_reject_reason,
+                        'quality'            => $contract->quality_reject_reason,
+                        'ppc'                => $contract->ppc_reject_reason,
+                        'design engineering' => $contract->dev_engineering_reject_reason,
+                        default              => null
+                    };
                 @endphp
 
                 <div class="card shadow-sm mb-3">
                     <div class="card-header d-flex justify-content-between align-items-center py-2"
-                        style=" solid {{ $color }}; background:#6c757d;">
-                        <h6 class="mb-0 fw-bold text-uppercase"
-                            style="font-size:0.82rem; letter-spacing:1px; color:black;">
-                            <i class=""></i>{{ $dept }}
+                        style="border-bottom: 2px solid {{ $color }}; background:#6c757d;">
+                        <h6 class="mb-0 fw-bold text-uppercase text-white"
+                            style="font-size:0.82rem; letter-spacing:1px;">
+                            <i class="bi {{ $icon }} me-1"></i>{{ $deptLabels[$dept] ?? strtoupper($dept) }}
                         </h6>
-                        <button type="button" class="btn btn-sm btn-secondary add-row"
-                            data-dept="{{ $dept }}">
-                            <i class="bi bi-plus-lg me-1"></i>Add Requirement
-                        </button>
+
+                        <div>
+                            @if($isDeptApproved)
+                                <span class="badge bg-success" style="font-size: 0.75rem;">
+                                    <i class="bi bi-check-circle-fill me-1"></i>Sudah Disetujui (Terkunci)
+                                </span>
+                            @elseif(!empty($deptRejectReason))
+                                <span class="badge bg-danger" style="font-size: 0.75rem;">
+                                    <i class="bi bi-x-circle-fill me-1"></i>Ditolak - Perlu Revisi
+                                </span>
+                                <button type="button" class="btn btn-sm btn-light ms-2 add-row"
+                                    data-dept="{{ $dept }}">
+                                    <i class="bi bi-plus-lg me-1"></i>Add Requirement
+                                </button>
+                            @else
+                                <span class="badge bg-secondary me-2" style="font-size: 0.75rem;">
+                                    <i class="bi bi-clock me-1"></i>Menunggu Persetujuan
+                                </span>
+                                <button type="button" class="btn btn-sm btn-light add-row"
+                                    data-dept="{{ $dept }}">
+                                    <i class="bi bi-plus-lg me-1"></i>Add Requirement
+                                </button>
+                            @endif
+                        </div>
                     </div>
+
+                    @if(!empty($deptRejectReason))
+                        <div class="alert alert-danger alert-permanent m-2 py-2 px-3 small border border-danger-subtle bg-danger-subtle text-danger-emphasis rounded">
+                            <i class="bi bi-chat-left-quote-fill me-1 text-danger"></i> <b>Catatan Penolakan Manager:</b> <span class="fst-italic fw-semibold text-dark">"{{ $deptRejectReason }}"</span>
+                        </div>
+                    @endif
+
                     <div class="card-body p-0">
                         <table class="table table-bordered align-middle mb-0">
                             <thead style="background:#e9ecef;">
                                 <tr>
-                                    <th width="30%"><center>Requirement</center></th>
-                                    <th><center>Action Required / Remark</center></th>
+                                    <th width="30%" class="text-center">Requirement</th>
+                                    <th class="text-center">Action Required / Remark</th>
                                     <th width="60px" class="text-center">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="requirement-body" data-dept="{{ $dept }}">
-                                    @foreach ($requirements as $index => $req)
-                                    <tr>
-                                        <td>
-                                            <input type="hidden"
-                                                name="requirements[{{ $req->id }}][id]"
-                                                value="{{ $req->id }}">
+                                </tr>
+                            </thead>
+                            <tbody class="requirement-body" data-dept="{{ $dept }}">
+                                @foreach ($requirements as $index => $req)
+                                @php
+                                    $isDefault = in_array(strtolower(trim($req->requirement)), $defaultReqNames[$dept] ?? []);
+                                @endphp
+                                <tr>
+                                    <td>
+                                        <input type="hidden"
+                                            name="requirements[{{ $req->id }}][id]"
+                                            value="{{ $req->id }}">
 
-                                            <input type="text"
-                                                name="requirements[{{ $req->id }}][requirement]"
-                                                class="form-control form-control-sm"
-                                                value="{{ $req->requirement }}">
-                                        </td>
-                                        <td>
-                                            <input type="text"
-                                                name="requirements[{{ $req->id }}][value]"
-                                                class="form-control form-control-sm"
-                                                value="{{ $req->requirement_value }}">
-                                        </td>
-                                        <td class="text-center">
-                                            <button type="button" class="btn btn-sm btn-danger remove-row">
+                                        <input type="text"
+                                            name="requirements[{{ $req->id }}][requirement]"
+                                            class="form-control form-control-sm {{ $isDefault || $isDeptApproved ? 'bg-light fw-semibold text-dark' : '' }}"
+                                            value="{{ $req->requirement }}"
+                                            {{ $isDefault || $isDeptApproved ? 'readonly' : '' }}>
+                                    </td>
+                                    <td>
+                                        <input type="text"
+                                            name="requirements[{{ $req->id }}][value]"
+                                            class="form-control form-control-sm {{ $isDeptApproved ? 'bg-light text-muted' : '' }}"
+                                            value="{{ $req->requirement_value }}"
+                                            placeholder="Keterangan / Value"
+                                            {{ $isDeptApproved ? 'readonly' : '' }}>
+                                    </td>
+                                    <td class="text-center">
+                                        @if(!$isDefault && !$isDeptApproved)
+                                            <button type="button" class="btn btn-sm btn-danger remove-row" title="Hapus Baris Kustom">
                                                 <i class="bi bi-trash"></i>
                                             </button>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
+                                        @else
+                                            <span class="text-muted small fw-bold" title="Terkunci">-</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
                     </div>
-                    {{-- END CARD DEPT --}}
+                </div>
+                {{-- END CARD DEPT --}}
 
-                @endforeach
+            @endforeach
 
-                {{-- ================= CARD TERAKHIR: OTHERS COMMENT + FILE UPDATE ================= --}}
-                <div class="card shadow-sm mb-3">
-                    <div class="card-header py-2"
-                        style="solid #6c757d; background:#6c757d;">
-                        <h6 class="mb-0 fw-bold text-uppercase"
-                            style="font-size:0.82rem; letter-spacing:1px; color:black;">
-                            Others / Comment
-                        </h6>
+            {{-- ================= CARD TERAKHIR: OTHERS COMMENT + FILE UPDATE ================= --}}
+            <div class="card shadow-sm mb-3">
+                <div class="card-header py-2"
+                    style="background:#6c757d;">
+                    <h6 class="mb-0 fw-bold text-uppercase text-white"
+                        style="font-size:0.82rem; letter-spacing:1px;">
+                        Others / Comment
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <textarea name="others_comment" class="form-control mt-2" rows="3"
+                        placeholder="Tulis komentar tambahan...">{{ $contract->others_comment }}</textarea>
+
+                    {{-- Komponen File Upload PO PDF Baru & Deteksi Berkas Lama --}}
+                    <div class="mt-3 text-start">
+                        <label class="form-label mb-1 fw-semibold small text-dark">
+                            <i class="bi bi-file-earmark-pdf-fill text-danger"></i> UPDATE DOKUMEN PO ASLI (PDF)
+                        </label>
+
+                        @if($contract->po_pdf)
+                            <div class="mb-2 p-2 border rounded bg-light d-flex justify-content-between align-items-center" style="font-size: 12px;">
+                                <span>
+                                    <i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i> Berkas PO Saat Ini: 
+                                    <a href="{{ asset('storage/' . $contract->po_pdf) }}" target="_blank" class="fw-bold text-primary text-decoration-underline">
+                                        Lihat PDF Terupload
+                                    </a>
+                                </span>
+                                <span class="badge bg-secondary text-dark">Kosongkan jika tidak ingin diubah</span>
+                            </div>
+                        @endif
+
+                        <input type="file" name="po_pdf" class="form-control form-control-sm" accept="application/pdf">
+                        <small class="text-muted" style="font-size: 11px;">* Format file wajib PDF (Maksimal 2MB)</small>
                     </div>
-                    <div class="card-body">
-                        <textarea name="others_comment" class="form-control mt-2" rows="3"
-                            placeholder="Tulis komentar tambahan...">{{ $contract->others_comment }}</textarea>
 
-                        {{-- PERBAIKAN: Penambahan Komponen File Upload PO PDF Baru & Deteksi Berkas Lama --}}
-                        <div class="mt-3 text-start">
-                            <label class="form-label mb-1 fw-semibold small text-dark">
-                                <i class="bi bi-file-earmark-pdf-fill text-danger"></i> UPDATE DOKUMEN PO ASLI (PDF)
-                            </label>
-
-                            @if($contract->po_pdf)
-                                <div class="mb-2 p-2 border rounded bg-light d-flex justify-content-between align-items-center" style="font-size: 12px;">
-                                    <span>
-                                        <i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i> Berkas PO Saat Ini: 
-                                        <a href="{{ asset('storage/' . $contract->po_pdf) }}" target="_blank" class="fw-bold text-primary text-decoration-underline">
-                                            Lihat PDF Terupload
-                                        </a>
-                                    </span>
-                                    <span class="badge bg-secondary text-dark">Kosongkan jika tidak ingin diubah</span>
-                                </div>
-                            @endif
-
-                            <input type="file" name="po_pdf" class="form-control form-control-sm" accept="application/pdf">
-                            <small class="text-muted" style="font-size: 11px;">* Format file wajib PDF (Maksimal 2MB)</small>
-                        </div>
-
-                        {{-- BUTTONS --}}
-                        <div class="d-flex justify-content-end gap-2 mt-4">
-                            <a href="{{ route('contracts.index') }}" class="btn btn-sm btn-light">Cancel</a>
-                            <button type="submit" class="btn btn-sm btn-primary">
-                                Update
-                            </button>
-                        </div>
+                    {{-- BUTTONS --}}
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="{{ route('contracts.show', $contract->id) }}" class="btn btn-sm btn-light border">Batal</a>
+                        <button type="submit" class="btn btn-sm btn-primary fw-bold px-3">
+                            <i class="bi bi-save me-1"></i> Simpan & Ajukan Ulang
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 </form>
 
 @endsection
@@ -281,109 +353,44 @@ document.addEventListener('DOMContentLoaded', function () {
         'July','August','September','October','November','December'];
     const month = monthNames[today.getMonth()];
     const year  = today.getFullYear();
-    document.getElementById('dataRecord').value = day + ' ' + month + ' ' + year;
+    const dataRecordEl = document.getElementById('dataRecord');
+    if (dataRecordEl) {
+        dataRecordEl.value = day + ' ' + month + ' ' + year;
+    }
 
-    // ADD REQUIREMENT ROW
+    // ADD ROW REQUIREMENT
     document.querySelectorAll('.add-row').forEach(button => {
         button.addEventListener('click', function () {
-            const dept  = this.dataset.dept;
+            const dept = this.dataset.dept;
             const tbody = document.querySelector(`.requirement-body[data-dept="${dept}"]`);
-            const index = tbody.children.length;
-            const row   = document.createElement('tr');
+            if (!tbody) return;
+
+            const index = Date.now();
+            const row = document.createElement('tr');
             row.innerHTML = `
                 <td>
-                    <input type="hidden" name="requirements[${dept}][${index}][requirement_from]" value="${dept}">
-                    <input type="text" name="requirements[${dept}][${index}][requirement]" class="form-control form-control-sm" placeholder="Requirement">
+                    <input type="hidden" name="requirements[new_${index}][from]" value="${dept}">
+                    <input type="text" name="requirements[new_${index}][requirement]" class="form-control form-control-sm" placeholder="Nama Requirement Baru" required>
                 </td>
                 <td>
-                    <input type="text" name="requirements[${dept}][${index}][requirement_value]" class="form-control form-control-sm" placeholder="Value / Description">
+                    <input type="text" name="requirements[new_${index}][value]" class="form-control form-control-sm" placeholder="Keterangan / Value" required>
                 </td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-danger remove-row"><i class="bi bi-trash"></i></button>
-                </td>`;
+                    <button type="button" class="btn btn-sm btn-danger remove-row" title="Hapus Baris">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
             tbody.appendChild(row);
         });
     });
 
-    // REMOVE REQUIREMENT ROW
+    // REMOVE ROW
     document.addEventListener('click', function (e) {
         if (e.target.closest('.remove-row')) {
-            const row   = e.target.closest('tr');
-            const tbody = row.closest('tbody');
-            if (tbody.children.length > 1) row.remove();
+            e.target.closest('tr').remove();
         }
     });
-
-    // AUTO FILL DARI ARTICLE
-    document.getElementById('articleInput').addEventListener('keydown', function (e) {
-        if (e.key !== 'Enter') return;
-        e.preventDefault();
-
-        const articleNo = this.value.trim();
-        if (!articleNo) return;
-
-        const input = this;
-        input.classList.remove('border-success', 'border-danger');
-        input.classList.add('border-warning');
-
-        fetch(`/article-requirements/${articleNo}`)
-            .then(res => res.json())
-            .then(data => {
-                input.classList.remove('border-warning');
-
-                if (data.data) {
-                    const d = data.data;
-
-                    document.getElementById('partNumber').value = d.part_number || '';
-                    document.getElementById('partName').value   = d.part_name   || '';
-                    document.getElementById('articleId').value  = d.id          || '';
-
-                    const locationMap = {
-                        1: 'PT. Metinca (Jakarta)',
-                        2: 'PT. Metal Castindo',
-                        3: 'PT. Metinca S3',
-                        4: 'Valve',
-                    };
-                    document.getElementById('location').value = locationMap[d.lokasi_pengerjaan] || '';
-
-                    // Auto fill Drawing di quality
-                    document.querySelectorAll('input[name^="requirements[quality]"]').forEach(inp => {
-                        if (inp.name.includes('[requirement]') && inp.value.toLowerCase() === 'drawing') {
-                            const idx = inp.name.match(/requirements\[quality\]\[(\d+)\]\[requirement\]/)[1];
-                            const val = document.querySelector(`input[name="requirements[quality][${idx}][requirement_value]"]`);
-                            if (val) val.value = d.drawing_no || '';
-                        }
-                    });
-
-                    // Auto fill Material Requirement di ppc
-                    document.querySelectorAll('input[name^="requirements[ppc]"]').forEach(inp => {
-                        if (inp.name.includes('[requirement]') && inp.value.toLowerCase() === 'material requirement') {
-                            const idx = inp.name.match(/requirements\[ppc\]\[(\d+)\]\[requirement\]/)[1];
-                            const val = document.querySelector(`input[name="requirements[ppc][${idx}][requirement_value]"]`);
-                            if (val) val.value = d.material || '';
-                        }
-                    });
-
-                    input.classList.add('border-success');
-                    setTimeout(() => input.classList.remove('border-success'), 2000);
-
-                } else {
-                    document.getElementById('partNumber').value = '';
-                    document.getElementById('partName').value   = '';
-                    document.getElementById('articleId').value  = '';
-                    document.getElementById('location').value   = '';
-
-                    input.classList.add('border-danger');
-                    setTimeout(() => input.classList.remove('border-danger'), 2000);
-                    alert('Article tidak ditemukan.');
-                }
-            })
-            .catch(() => {
-                input.classList.remove('border-warning');
-                alert('Gagal mengambil data artikel.');
-            });
-    });
-
 });
 </script>
 @endpush

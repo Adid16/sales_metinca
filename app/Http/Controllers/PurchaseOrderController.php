@@ -39,10 +39,16 @@ class PurchaseOrderController extends Controller
     {
         $filters = $request->only(['start_date', 'end_date', 'status', 'type']);
 
-        $query = PurchaseOrder::with(['customer', 'quotation', 'internals', 'contracts']);
+        $query = PurchaseOrder::with(['customer', 'quotation.request.assignment.sales', 'internals', 'contracts']);
 
-        if (Auth::user()->role == 'customer') {
-            $query->where('customer_id', Auth::user()->id);
+        $user = Auth::user();
+        if ($user->role == 'customer') {
+            $query->where('customer_id', $user->id);
+        } elseif ($user->role === 'staff' && $user->divisi === 'sales') {
+            // Staff Sales HANYA BISA MELIHAT PO yang di-PIC oleh dirinya sendiri
+            $query->whereHas('quotation.request.assignment', function ($q) use ($user) {
+                $q->where('sales_id', $user->id);
+            });
         }
 
         if (!empty($filters['start_date'])) {
@@ -59,21 +65,44 @@ class PurchaseOrderController extends Controller
 
         if (!empty($filters['type'])) {
             if ($filters['type'] === 'new') {
-                $query->whereNotIn('status', ['amandement', 'amandement_pending'])
+                $query->whereNotIn('purchase_orders.status', ['amandement', 'amandement_pending'])
+                    ->whereDoesntHave('internals', function ($q) {
+                        $q->whereIn('purchase_order_internals.status', ['amandement', 'amandement_pending']);
+                    })
                     ->whereDoesntHave('contracts', function ($q) {
-                        $q->where('amandement_no', '>', 0);
+                        $q->whereIn('contracts.status', ['amandement', 'amandement_pending']);
+                    })
+                    ->whereDoesntHave('internalContracts', function ($q) {
+                        $q->whereIn('contracts.status', ['amandement', 'amandement_pending']);
                     });
             } elseif ($filters['type'] === 'amandement') {
                 $query->where(function ($q) {
-                    $q->whereIn('status', ['amandement', 'amandement_pending'])
+                    $q->whereIn('purchase_orders.status', ['amandement', 'amandement_pending'])
+                        ->orWhereHas('internals', function ($qSub) {
+                            $qSub->whereIn('purchase_order_internals.status', ['amandement', 'amandement_pending']);
+                        })
                         ->orWhereHas('contracts', function ($qSub) {
-                            $qSub->where('amandement_no', '>', 0);
+                            $qSub->whereIn('contracts.status', ['amandement', 'amandement_pending']);
+                        })
+                        ->orWhereHas('internalContracts', function ($qSub) {
+                            $qSub->whereIn('contracts.status', ['amandement', 'amandement_pending']);
                         });
                 });
             }
         }
 
-        $pos = $query->latest()->paginate(10)->appends($filters);
+        $pos = $query->orderByRaw("
+            CASE 
+                WHEN status = 'amandement_pending' THEN 1
+                WHEN status = 'pending' THEN 2
+                WHEN status = 'draft' THEN 3
+                WHEN status = 'sent' THEN 4
+                WHEN status = 'amandement' THEN 5
+                WHEN status = 'production' THEN 6
+                WHEN status = 'completed' OR status = 'finished' THEN 7
+                ELSE 8
+            END ASC, created_at DESC
+        ")->paginate(10)->appends($filters);
 
         return view('purchase-orders.index', compact('pos', 'filters'));
     }
@@ -145,10 +174,28 @@ class PurchaseOrderController extends Controller
 
         // Ambil status PO & Kontrak (lowercase agar aman)
         $poStatus       = strtolower($lastPo->status ?? '');
-        $contractStatus = $contract ? strtolower($contract->status) : null;
+        $contractStatus = $contract ? strtolower($contract->status ?? '') : null;
+        $itemStatus     = $selectedItem ? strtolower($selectedItem->status ?? '') : null;
+
+        // KUNCI PRODUKSI: Jika status sudah masuk produksi / done, amandemen DILARANG TOTAL!
+        if (in_array($poStatus, ['production', 'done']) 
+            || ($contractStatus && in_array($contractStatus, ['production', 'done']))
+            || ($itemStatus && in_array($itemStatus, ['production', 'done']))) {
+            return redirect()->route('purchase-orders.index')->with('error', 'Item / Pesanan ini sudah masuk tahap produksi (In Production / Selesai) dan tidak dapat diajukan amandemen lagi.');
+        }
+
+        // KUNCI BATAS AMANDEMEN: Maksimal 2x amandemen
+        $maxAmendmentLimit = SystemSettingService::maxAmendmentLimit();
+        $currentAmendmentNo = (int) ($contract ? ($contract->amandement_no ?? 0) : 0);
+
+        if ($currentAmendmentNo >= $maxAmendmentLimit) {
+            return redirect()->route('purchase-orders.index')->with('error', 
+                'Item ini telah mencapai batas maksimal amandemen (' . $currentAmendmentNo . '/' . $maxAmendmentLimit . ' kali). Tidak dapat mengajukan amandemen lagi.'
+            );
+        }
 
         // Daftar status PO / Kontrak yang diizinkan untuk amandemen customer
-        $allowedStatuses = ['sent', 'review', 'contract', 'created', 'po', 'approved', 'production'];
+        $allowedStatuses = ['sent', 'review', 'contract', 'created', 'po', 'approved'];
 
         $isAllowed = in_array($poStatus, $allowedStatuses) || ($contractStatus && in_array($contractStatus, $allowedStatuses));
 
@@ -167,11 +214,7 @@ class PurchaseOrderController extends Controller
                 ->value('requirement_value') 
             : ($selectedItem->qty ?? 0);
 
-        $lastAmendment = Contract::where('order_no', $lastPo->po_no)
-                                 ->orderByDesc('amandement_no')
-                                 ->first();
-                                 
-        $nextAmendmentNo = $lastAmendment ? ($lastAmendment->amandement_no) : 1;
+        $nextAmendmentNo = $currentAmendmentNo + 1;
 
         $itemPoNo = $selectedItem 
             ? ($selectedItem->po_no ?? ($lastPo->po_no . '-' . $selectedItem->id)) 
@@ -227,7 +270,7 @@ class PurchaseOrderController extends Controller
 
             HistoryActivity::create([
                 'user_id'       => Auth::user()->id,
-                'activity'      => 'Membuat PO',
+                'activity'      => 'Membuat PO ' . $newPO->po_no,
                 'activity_time' => now()->format('Y-m-d H:i:s')
             ]);
 
@@ -246,9 +289,29 @@ class PurchaseOrderController extends Controller
     {
         $po = PurchaseOrder::with([
             'quotation.request.assignment.sales', 
+            'quotation.items.article',
             'customer', 
-            'internals.contract'
+            'internals.contract.article',
+            'internals.contract.requirements',
+            'internals.contracts.article',
+            'internals.contracts.requirements'
         ])->findOrFail($id);
+
+        $user = Auth::user();
+        if ($user->role === 'customer' && $po->customer_id !== $user->id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        if ($user->role === 'staff' && $user->divisi === 'sales') {
+            $salesPic = $po->sales_pic;
+            if ($salesPic && $salesPic->id !== $user->id) {
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['error' => 'Akses ditolak. PO ini ditangani oleh Sales PIC lain.'], 403);
+                }
+                return redirect()->route('purchase-orders.index')
+                    ->with('error', 'Akses ditolak. PO ini ditangani oleh Sales PIC lain (' . ($salesPic->name ?? 'Sales PIC') . ').');
+            }
+        }
 
         $internalId = $request->query('internal_id');
         $selectedItem = null;
@@ -266,8 +329,11 @@ class PurchaseOrderController extends Controller
     public function edit(PurchaseOrder $purchase_order)
     {
         $user = Auth::user();
-        if (! ($user->isAdmin() || ($user->isStaff() && $user->divisi === 'sales' && in_array($purchase_order->status, ['contract', 'review', 'production', 'ship']))) ) {
-            abort(403, 'Unauthorized action.');
+        $salesPic = $purchase_order->sales_pic;
+        $isPicOrAdmin = $user->isAdmin() || ($user->isManager() && $user->divisi === 'sales') || ($user->isStaff() && $user->divisi === 'sales' && (!$salesPic || $salesPic->id === $user->id));
+        if (!$isPicOrAdmin) {
+            return redirect()->route('purchase-orders.index')
+                ->with('error', 'Akses ditolak. Hanya Sales PIC penanggung jawab (' . ($salesPic->name ?? 'Sales PIC') . ') yang berhak mengedit PO ini.');
         }
 
         return view('purchase-orders.edit-partial', compact('purchase_order'));
@@ -279,12 +345,15 @@ class PurchaseOrderController extends Controller
     public function update(Request $request, PurchaseOrder $purchaseOrder)
     {
         $user = Auth::user();
-        if (! ($user->isAdmin() || ($user->isStaff() && $user->divisi === 'sales')) ) {
-            abort(403, 'Unauthorized action.');
+        $salesPic = $purchaseOrder->sales_pic;
+        $isPicOrAdmin = $user->isAdmin() || ($user->isManager() && $user->divisi === 'sales') || ($user->isStaff() && $user->divisi === 'sales' && (!$salesPic || $salesPic->id === $user->id));
+        if (!$isPicOrAdmin) {
+            return redirect()->route('purchase-orders.index')
+                ->with('error', 'Akses ditolak. Hanya Sales PIC penanggung jawab (' . ($salesPic->name ?? 'Sales PIC') . ') yang berhak mengupdate PO ini.');
         }
 
         $validated = $request->validate([
-            'status' => 'required|in:production,ship'
+            'status' => 'required|in:production'
         ]);
 
         $purchaseOrder->update($validated);
@@ -305,8 +374,13 @@ class PurchaseOrderController extends Controller
      */
     public function createContract(Request $request, $idPo)
     {
-        if (!auth()->user()->isAdmin() && strtolower(auth()->user()->divisi) !== 'sales') {
-            abort(403, 'UNAUTHORIZED ACTION.');
+        $po = is_numeric($idPo) ? PurchaseOrder::find($idPo) : PurchaseOrder::where('po_no', $idPo)->first();
+        $user = Auth::user();
+        $salesPic = $po?->sales_pic;
+        $isPicOrAdmin = $user->isAdmin() || ($user->isManager() && $user->divisi === 'sales') || ($user->isStaff() && $user->divisi === 'sales' && (!$salesPic || $salesPic->id === $user->id));
+        if (!$isPicOrAdmin) {
+            return redirect()->route('purchase-orders.index')
+                ->with('error', 'Akses ditolak. Hanya Sales PIC penanggung jawab (' . ($salesPic->name ?? 'Sales PIC') . ') yang berhak membuat Contract Review Sheet untuk PO ini.');
         }
 
         return app(\App\Http\Controllers\ContractController::class)->create($request, $idPo);
@@ -334,35 +408,50 @@ class PurchaseOrderController extends Controller
      */
     public function storeAmandement(Request $request, $id)
     {
+        $request->validate([
+            'alasan_amandemen' => 'required|string|max:1000',
+            'attachments'      => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx|max:10240',
+        ], [
+            'alasan_amandemen.required' => 'Alasan / pesan perubahan dokumen wajib diisi!',
+            'attachments.required'      => 'Dokumen pendukung amandemen wajib diunggah!',
+            'attachments.file'          => 'Berkas lampiran amandemen tidak valid.',
+            'attachments.mimes'         => 'Format dokumen harus berupa PDF, JPG, PNG, DOC/DOCX, atau XLS/XLSX.',
+            'attachments.max'           => 'Ukuran dokumen maksimal adalah 10MB.',
+        ]);
+
         $po = PurchaseOrder::findOrFail($id);
         $internalId = $request->input('purchase_order_internal_id');
 
-        // ====================================================================
-        // MODUL 7: Cek batas maksimal amandemen per item
-        // ====================================================================
-        $maxAmendmentLimit = SystemSettingService::maxAmendmentLimit();
-
-        if ($internalId) {
-            $currentAmendmentCount = Contract::where('purchase_order_internal_id', $internalId)
-                ->where('amandement_no', '>', 0)
-                ->max('amandement_no') ?? 0;
-        } else {
-            $currentAmendmentCount = Contract::where('order_no', $po->po_no)
-                ->where('amandement_no', '>', 0)
-                ->max('amandement_no') ?? 0;
-        }
-
-        if ($currentAmendmentCount >= $maxAmendmentLimit) {
-            return redirect()->back()->with('error', 
-                'Kuota amandemen telah habis (' . $currentAmendmentCount . '/' . $maxAmendmentLimit . ' kali). '
-                . 'Tidak dapat mengajukan amandemen baru untuk item ini.');
-        }
-
         // Cari Kontrak Spesifik berdasarkan purchase_order_internal_id
         if ($internalId) {
-            $kontrakAwal = Contract::where('purchase_order_internal_id', $internalId)->first();
+            $kontrakAwal = Contract::where('purchase_order_internal_id', $internalId)->orderByDesc('amandement_no')->first();
+            $selectedItem = PurchaseOrderInternal::find($internalId);
         } else {
-            $kontrakAwal = Contract::where('order_no', $po->po_no)->first();
+            $kontrakAwal = Contract::where('order_no', $po->po_no)->orderByDesc('amandement_no')->first();
+            $selectedItem = null;
+        }
+
+        $poStatus       = strtolower($po->status ?? '');
+        $contractStatus = $kontrakAwal ? strtolower($kontrakAwal->status ?? '') : null;
+        $itemStatus     = $selectedItem ? strtolower($selectedItem->status ?? '') : null;
+
+        // KUNCI PRODUKSI:
+        if (in_array($poStatus, ['production', 'done']) 
+            || ($contractStatus && in_array($contractStatus, ['production', 'done']))
+            || ($itemStatus && in_array($itemStatus, ['production', 'done']))) {
+            return redirect()->route('purchase-orders.index')->with('error', 'Item / Pesanan ini sudah masuk tahap produksi (In Production / Selesai) dan tidak dapat diajukan amandemen lagi.');
+        }
+
+        // ====================================================================
+        // MODUL 7: Cek batas maksimal amandemen per item (Maks 2x)
+        // ====================================================================
+        $maxAmendmentLimit = SystemSettingService::maxAmendmentLimit();
+        $currentAmendmentCount = (int) ($kontrakAwal ? ($kontrakAwal->amandement_no ?? 0) : 0);
+
+        if ($currentAmendmentCount >= $maxAmendmentLimit) {
+            return redirect()->route('purchase-orders.index')->with('error', 
+                'Kuota amandemen telah habis (' . $currentAmendmentCount . '/' . $maxAmendmentLimit . ' kali). '
+                . 'Tidak dapat mengajukan amandemen baru untuk item ini.');
         }
 
         DB::transaction(function () use ($request, $po, $internalId, $kontrakAwal) {
@@ -376,12 +465,54 @@ class PurchaseOrderController extends Controller
                     'status'                     => 'amandement_pending',
                     'alasan_amandemen'           => $request->alasan_amandemen,
                     'amandement_no'              => 1,
+                    // Reset review untuk seluruh 4 divisi manager
+                    'sales_approver'             => null,
+                    'sales_approved_at'          => null,
+                    'manager_sales_signature'    => null,
+                    'sales_reject_reason'        => null,
+                    'sales_rejected_at'          => null,
+                    'quality_approver'           => null,
+                    'quality_approved_at'        => null,
+                    'manager_quality_signature'  => null,
+                    'quality_reject_reason'      => null,
+                    'quality_rejected_at'        => null,
+                    'ppc_approver'               => null,
+                    'ppc_approved_at'            => null,
+                    'manager_ppc_signature'      => null,
+                    'ppc_reject_reason'          => null,
+                    'ppc_rejected_at'            => null,
+                    'dev_engineering_approver'   => null,
+                    'dev_engineering_approved_at'=> null,
+                    'manager_de_signature'       => null,
+                    'dev_engineering_reject_reason' => null,
+                    'dev_engineering_rejected_at'=> null,
                 ]);
             } else {
                 $kontrakAwal->update([
-                    'alasan_amandemen' => $request->alasan_amandemen,
-                    'amandement_no'    => ($kontrakAwal->amandement_no ?? 0) + 1,
-                    'status'           => 'amandement_pending',
+                    'alasan_amandemen'           => $request->alasan_amandemen,
+                    'amandement_no'              => ($kontrakAwal->amandement_no ?? 0) + 1,
+                    'status'                     => 'amandement_pending',
+                    // Reset review untuk seluruh 4 divisi manager
+                    'sales_approver'             => null,
+                    'sales_approved_at'          => null,
+                    'manager_sales_signature'    => null,
+                    'sales_reject_reason'        => null,
+                    'sales_rejected_at'          => null,
+                    'quality_approver'           => null,
+                    'quality_approved_at'        => null,
+                    'manager_quality_signature'  => null,
+                    'quality_reject_reason'      => null,
+                    'quality_rejected_at'        => null,
+                    'ppc_approver'               => null,
+                    'ppc_approved_at'            => null,
+                    'manager_ppc_signature'      => null,
+                    'ppc_reject_reason'          => null,
+                    'ppc_rejected_at'            => null,
+                    'dev_engineering_approver'   => null,
+                    'dev_engineering_approved_at'=> null,
+                    'manager_de_signature'       => null,
+                    'dev_engineering_reject_reason' => null,
+                    'dev_engineering_rejected_at'=> null,
                 ]);
             }
 
@@ -390,6 +521,10 @@ class PurchaseOrderController extends Controller
                 $file = $request->file('attachments');
                 $filename = time() . '_' . $file->getClientOriginalName();
                 $file->storeAs('uploads', $filename, 'public');
+
+                $kontrakAwal->update([
+                    'po_pdf' => 'uploads/' . $filename
+                ]);
 
                 $po->attachment = !empty($po->attachment) ? $po->attachment . ',' . $filename : $filename;
                 $po->save();
@@ -410,13 +545,45 @@ class PurchaseOrderController extends Controller
             abort(403, 'Akses ditolak. Hanya Staff atau Manager yang dapat mengakses halaman ini.');
         }
 
-        // Ambil SEMUA kontrak item yang sedang diajukan amandemennya (status = amandement_pending)
-        $pendingContracts = Contract::with(['customer', 'quotation', 'purchaseOrderInternal.purchaseOrder.customer'])
-            ->where('status', 'amandement_pending')
-            ->latest('updated_at')
-            ->get();
+        // Ambil kontrak item yang sedang diajukan amandemennya (status = amandement_pending)
+        $pendingQuery = Contract::with([
+            'customer', 
+            'quotation.request.assignment.sales', 
+            'purchaseOrderInternal.purchaseOrder.quotation.request.assignment.sales', 
+            'purchaseOrder.quotation.request.assignment.sales',
+            'requirements'
+        ])->where('status', 'amandement_pending');
 
-        return view('purchase-orders.approval-amandement', compact('pendingContracts'));
+        // Riwayat amandemen yang sudah diproses (Disetujui / Ditolak)
+        $historyQuery = Contract::with([
+            'customer', 
+            'quotation.request.assignment.sales', 
+            'purchaseOrderInternal.purchaseOrder.quotation.request.assignment.sales', 
+            'purchaseOrder.quotation.request.assignment.sales',
+            'requirements'
+        ])->where('amandement_no', '>', 0)
+          ->where('status', '!=', 'amandement_pending');
+
+        if ($user->role === 'staff' && $user->divisi === 'sales') {
+            // Staff Sales HANYA BISA MELIHAT & MEMPROSES Amandemen PO yang di-PIC oleh dirinya sendiri
+            $picFilter = function ($q) use ($user) {
+                $q->whereHas('quotation.request.assignment', function ($sub) use ($user) {
+                    $sub->where('sales_id', $user->id);
+                })->orWhereHas('purchaseOrderInternal.purchaseOrder.quotation.request.assignment', function ($sub) use ($user) {
+                    $sub->where('sales_id', $user->id);
+                })->orWhereHas('purchaseOrder.quotation.request.assignment', function ($sub) use ($user) {
+                    $sub->where('sales_id', $user->id);
+                });
+            };
+
+            $pendingQuery->where($picFilter);
+            $historyQuery->where($picFilter);
+        }
+
+        $pendingContracts = $pendingQuery->latest('updated_at')->get();
+        $historyContracts = $historyQuery->latest('updated_at')->limit(20)->get();
+
+        return view('purchase-orders.approval-amandement', compact('pendingContracts', 'historyContracts'));
     }
 
     /**
@@ -444,12 +611,41 @@ class PurchaseOrderController extends Controller
                 ?? Contract::where('order_no', $po->po_no)->latest('id')->first();
         }
 
+        // VALIDASI SALES PIC: Hanya Sales PIC pemegang tiket atau Atasan (Manager Sales / Admin) yang berhak
+        $salesPic = $contract ? $contract->sales_pic : $po->sales_pic;
+        $isPicOrAdmin = $user->isAdmin() || ($user->isManager() && $user->divisi === 'sales') || ($user->isStaff() && $user->divisi === 'sales' && (!$salesPic || $salesPic->id === $user->id));
+        if (!$isPicOrAdmin) {
+            return redirect()->back()
+                ->with('error', 'Akses ditolak. Hanya Sales PIC penanggung jawab (' . ($salesPic->name ?? 'Sales PIC') . ') atau Manager/Admin yang berhak menyetujui amandemen PO ini.');
+        }
+
         DB::transaction(function () use ($request, $po, $contract, $user) {
             if ($contract) {
                 $contract->update([
-                    'status'           => 'amandement',
-                    'alasan_penolakan' => null,
-                    'catatan_sales'    => $request->input('catatan', 'Amandemen item disetujui.')
+                    'status'                         => 'amandement',
+                    'alasan_penolakan'               => null,
+                    'catatan_sales'                  => $request->input('catatan', 'Amandemen item disetujui.'),
+                    // Pastikan seluruh review manager di-reset untuk siklus review amandemen
+                    'sales_approver'                 => null,
+                    'sales_approved_at'              => null,
+                    'manager_sales_signature'        => null,
+                    'sales_reject_reason'            => null,
+                    'sales_rejected_at'              => null,
+                    'quality_approver'               => null,
+                    'quality_approved_at'            => null,
+                    'manager_quality_signature'      => null,
+                    'quality_reject_reason'          => null,
+                    'quality_rejected_at'            => null,
+                    'ppc_approver'                   => null,
+                    'ppc_approved_at'                => null,
+                    'manager_ppc_signature'          => null,
+                    'ppc_reject_reason'              => null,
+                    'ppc_rejected_at'                => null,
+                    'dev_engineering_approver'   => null,
+                    'dev_engineering_approved_at'=> null,
+                    'manager_de_signature'       => null,
+                    'dev_engineering_reject_reason' => null,
+                    'dev_engineering_rejected_at'=> null,
                 ]);
 
                 // ====================================================================
@@ -464,6 +660,7 @@ class PurchaseOrderController extends Controller
                             'qty'       => $newQty,
                             'unit_price'=> $newPrice,
                             'subtotal'  => $newQty * $newPrice,
+                            'status'    => 'amandement',
                         ]);
                     }
                 }
@@ -514,6 +711,14 @@ class PurchaseOrderController extends Controller
         } else {
             $contract = Contract::where('order_no', $po->po_no)->where('status', 'amandement_pending')->latest('id')->first()
                 ?? Contract::where('order_no', $po->po_no)->latest('id')->first();
+        }
+
+        // VALIDASI SALES PIC: Hanya Sales PIC pemegang tiket atau Atasan (Manager Sales / Admin) yang berhak
+        $salesPic = $contract ? $contract->sales_pic : $po->sales_pic;
+        $isPicOrAdmin = $user->isAdmin() || ($user->isManager() && $user->divisi === 'sales') || ($user->isStaff() && $user->divisi === 'sales' && (!$salesPic || $salesPic->id === $user->id));
+        if (!$isPicOrAdmin) {
+            return redirect()->back()
+                ->with('error', 'Akses ditolak. Hanya Sales PIC penanggung jawab (' . ($salesPic->name ?? 'Sales PIC') . ') atau Manager/Admin yang berhak menolak amandemen PO ini.');
         }
 
         DB::transaction(function () use ($request, $po, &$contract, $user, $internalId) {

@@ -22,7 +22,7 @@
                                 <div class="form-group mb-0 d-flex align-items-center">
                                     <label for="article_no" class="col-sm-4 col-form-label font-weight-bold text-primary">Article No / Code <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control form-control-sm @error('article_no') is-invalid @enderror"
-                                        id="article_no" name="article_no" value="{{ old('article_no') }}" placeholder="Ketik nomor artikel di sini... (Contoh: ART-BRK-01)" required>
+                                        id="article_no" name="article_no" value="{{ old('article_no', request('article_no')) }}" placeholder="Ketik nomor artikel di sini... (Contoh: ART-BRK-01)" required>
                                     @error('article_no')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -41,7 +41,7 @@
                             <div class="col-md-7">
                                 <div class="form-group mb-0 d-flex align-items-center">
                                     <label for="part_number" class="col-sm-4 col-form-label">Internal Part No</label>
-                                    <input type="text" class="form-with-autofill form-control form-control-sm" id="part_number" name="part_number" value="{{ old('part_number') }}">
+                                    <input type="text" class="form-with-autofill form-control form-control-sm" id="part_number" name="part_number" value="{{ old('part_number', request('part_number', request('part_no'))) }}">
                                 </div>
                             </div>  
                         </div>
@@ -51,7 +51,7 @@
                             <div class="col-md-7">
                                 <div class="form-group mb-0 d-flex align-items-center">
                                     <label for="part_name" class="col-sm-4 col-form-label">Part Name</label>
-                                    <input type="text" class="form-with-autofill form-control form-control-sm" id="part_name" name="part_name" value="{{ old('part_name') }}">
+                                    <input type="text" class="form-with-autofill form-control form-control-sm" id="part_name" name="part_name" value="{{ old('part_name', request('part_name', request('item'))) }}">
                                 </div>
                             </div>
                         </div>
@@ -61,7 +61,7 @@
                             <div class="col-md-7">
                                 <div class="form-group mb-0 d-flex align-items-center">
                                     <label for="index_no" class="col-sm-4 col-form-label">Index</label>
-                                    <input type="text" class="form-with-autofill form-control form-control-sm" id="index_no" name="index_no" value="{{ old('index_no') }}">
+                                    <input type="text" class="form-with-autofill form-control form-control-sm" id="index_no" name="index_no" value="{{ old('index_no', request('index_no')) }}">
                                 </div>
                             </div>
                         </div>
@@ -71,7 +71,7 @@
                             <div class="col-md-7">
                                 <div class="form-group mb-0 d-flex align-items-center">
                                     <label for="berat" class="col-sm-4 col-form-label">Berat (Kg)</label>
-                                    <input type="number" step="0.01" class="form-with-autofill form-control form-control-sm" id="berat" name="berat" value="{{ old('berat') }}">
+                                    <input type="number" step="0.01" class="form-with-autofill form-control form-control-sm" id="berat" name="berat" value="{{ old('berat', request('berat')) }}">
                                 </div>
                             </div>
                         </div>
@@ -81,7 +81,7 @@
                             <div class="col-md-7">
                                 <div class="form-group mb-0 d-flex align-items-center">
                                     <label for="die_no" class="form-label col-sm-4 col-form-label">Die No</label>
-                                    <input type="text" class="form-with-autofill form-control form-control-sm" id="die_no" name="die_no" value="{{ old('die_no') }}">
+                                    <input type="text" class="form-with-autofill form-control form-control-sm" id="die_no" name="die_no" value="{{ old('die_no', request('die_no')) }}">
                                 </div>
                             </div>
                         </div>
@@ -91,7 +91,7 @@
                             <div class="col-md-7">
                                 <div class="form-group mb-0 d-flex align-items-center">
                                     <label for="material" class="form-label col-sm-4 col-form-label">Material</label>
-                                    <input type="text" class="form-with-autofill form-control form-control-sm" id="material" name="material" value="{{ old('material') }}">
+                                    <input type="text" class="form-with-autofill form-control form-control-sm" id="material" name="material" value="{{ old('material', request('material')) }}">
                                 </div>
                             </div>
                         </div>
@@ -101,7 +101,7 @@
                             <div class="col-md-7">
                                 <div class="form-group mb-0 d-flex align-items-center">
                                     <label for="drawing_no" class="form-label col-sm-4 col-form-label">Drawing No</label>
-                                    <input type="text" class="form-with-autofill form-control form-control-sm" id="drawing_no" name="drawing_no" value="{{ old('drawing_no') }}">
+                                    <input type="text" class="form-with-autofill form-control form-control-sm" id="drawing_no" name="drawing_no" value="{{ old('drawing_no', request('drawing_no')) }}">
                                 </div>
                             </div>
                         </div>
@@ -111,7 +111,7 @@
                             <div class="col-md-7">
                                 <div class="form-group mb-0 d-flex align-items-center">
                                     <label for="drawing_rev" class="form-label col-sm-4 col-form-label">Drawing Rev</label>
-                                    <input type="text" class="form-with-autofill form-control form-control-sm" id="drawing_rev" name="drawing_rev" value="{{ old('drawing_rev') }}">
+                                    <input type="text" class="form-with-autofill form-control form-control-sm" id="drawing_rev" name="drawing_rev" value="{{ old('drawing_rev', request('drawing_rev')) }}">
                                 </div>
                             </div>
                         </div>
@@ -120,21 +120,23 @@
                         <div class="row">
                             <div class="col-md-7">
                                 <div class="form-group mb-0 d-flex align-items-center">
-                                    <label for="effective_date" class="form-label col-sm-4">Effective Date</label>
-                                    <input type="date" class="form-with-autofill form-control form-control-sm" id="effective_date" name="effective_date" value="{{ old('effective_date') }}">
+                                    <label for="effective_date" class="form-label col-sm-4 col-form-label">Effective Date</label>
+                                    <input type="date" class="form-with-autofill form-control form-control-sm" id="effective_date" name="effective_date" value="{{ old('effective_date', date('Y-m-d')) }}">
                                 </div>
                             </div>
                         </div>
 
-                        {{-- CUSTOMER SELECT (Kunci pointer dihampus agar Sales bisa memilih jika kosong) --}}
+                        {{-- CUSTOMER / BUYER --}}
                         <div class="row">
                             <div class="col-md-7">
                                 <div class="form-group mb-0 d-flex align-items-center">
-                                    <label for="customer_id" class="col-sm-4 col-form-label">Customer</label>
-                                    <select class="form-with-autofill form-select form-select-sm" id="customer_id" name="customer_id">
-                                        <option value="">-- Select Customer --</option>
-                                        @foreach($customers as $customer)
-                                            <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                                    <label for="customer_id" class="form-label col-sm-4 col-form-label">Customer / Buyer</label>
+                                    <select class="form-select form-select-sm" id="customer_id" name="customer_id">
+                                        <option value="">-- Pilih Customer --</option>
+                                        @foreach($customers as $cust)
+                                            <option value="{{ $cust->id }}" {{ old('customer_id', request('customer_id')) == $cust->id ? 'selected' : '' }}>
+                                                {{ $cust->name }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -144,15 +146,14 @@
                         {{-- LOKASI PENGERJAAN --}}
                         <div class="row">
                             <div class="col-md-7">
-                                <div class="form-group mb-0 d-flex align-items-start">
+                                <div class="form-group mb-0 d-flex align-items-center">
                                     <label for="lokasi_pengerjaan" class="form-label col-sm-4 col-form-label">Lokasi Pengerjaan</label>
-                                    <input type="number" class="form-with-autofill form-control form-control-sm" id="lokasi_pengerjaan" name="lokasi_pengerjaan" value="{{ old('lokasi_pengerjaan') }}" style="width:40px;">            
-                                    <div class="d-flex flex-wrap text-start small text-muted ms-2 mt-1">    
-                                        <span class="me-2">1. PT. Metinca (JKT)</span>
-                                        <span class="me-2">2. PT. Metal Castindo</span>
-                                        <span class="me-2">3. PT. Metinca S3</span>
-                                        <span>4. Valve</span>
-                                    </div>       
+                                    <select class="form-select form-select-sm" id="lokasi_pengerjaan" name="lokasi_pengerjaan">
+                                        <option value="1" {{ old('lokasi_pengerjaan', 1) == 1 ? 'selected' : '' }}>PT. Metinca (Jakarta)</option>
+                                        <option value="2" {{ old('lokasi_pengerjaan') == 2 ? 'selected' : '' }}>PT. Metal Castindo</option>
+                                        <option value="3" {{ old('lokasi_pengerjaan') == 3 ? 'selected' : '' }}>PT. Metinca S3</option>
+                                        <option value="4" {{ old('lokasi_pengerjaan') == 4 ? 'selected' : '' }}>Valve</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -160,24 +161,22 @@
                         {{-- REMARK --}}
                         <div class="row">
                             <div class="col-md-7">
-                                <div class="form-group mb-0 d-flex align-items-center">
-                                    <label for="remark" class="col-sm-4 form-label">Remark</label>
-                                    <textarea class="form-with-autofill form-control form-control-sm" id="remark" name="remark" rows="1">{{ old('remark') }}</textarea>
+                                <div class="form-group mb-0 d-flex align-items-start">
+                                    <label for="remark" class="form-label col-sm-4 col-form-label">Remark</label>
+                                    <textarea class="form-with-autofill form-control form-control-sm" id="remark" name="remark" rows="2" placeholder="Catatan tambahan...">{{ old('remark', request('remark')) }}</textarea>
                                 </div>
                             </div>
                         </div>
 
-                        <hr class="my-3">
-
-                        {{-- GAMBAR PRODUK (Tambahkan di sini) --}}
-                        <div class="row mt-2">
+                        {{-- ATTACHMENT DRAWING / SPEC (FILE UPLOAD) --}}
+                        <div class="row">
                             <div class="col-md-7">
-                                <div class="form-group mb-0 d-flex align-items-start">
-                                    <label for="image" class="form-label col-sm-4 col-form-label">Gambar (Opsional)</label>
-                                    <div class="w-100">
-                                        <input type="file" class="form-control form-control-sm" id="image" name="image" accept="image/*">
-                                        <div class="small text-muted mt-1">Format: JPG, JPEG, PNG (Maks. 2MB)</div>
-                                    </div>
+                                <div class="form-group mb-0 d-flex align-items-center">
+                                    <label for="attachment" class="form-label col-sm-4 col-form-label">Upload Drawing/Spec</label>
+                                    <input type="file" class="form-control form-control-sm" id="attachment" name="attachment" accept=".pdf,.png,.jpg,.jpeg">
+                                </div>
+                                <div class="offset-sm-4 col-sm-8 pl-1">
+                                    <small class="text-muted" style="font-size: 11px;">* Format diperbolehkan: PDF, JPG, PNG (Maks 2MB)</small>
                                 </div>
                             </div>
                         </div>
@@ -185,11 +184,16 @@
                         <hr class="my-3">
 
                         {{-- INPUT PRICES --}}
+                        @php
+                            $defaultPrice = (float) old('price', request('price', request('unit_price', 0)));
+                            $defaultCasting = (float) old('casting_price', $defaultPrice);
+                            $defaultMachining = (float) old('machining_price', 0);
+                        @endphp
                         <div class="row">
                             <div class="col-md-7">
                                 <div class="form-group mb-1 d-flex align-items-center">
                                     <label for="casting_price" class="form-label col-sm-4 col-form-label">Price Casting <span class="text-danger">*</span></label>
-                                    <input type="number" id="casting_price" name="casting_price" class="form-control form-control-sm font-weight-bold" value="{{ old('casting_price', 0) }}" required>
+                                    <input type="number" id="casting_price" name="casting_price" class="form-control form-control-sm font-weight-bold" value="{{ $defaultCasting }}" required>
                                 </div>  
                             </div>
                         </div>
@@ -197,7 +201,7 @@
                             <div class="col-md-7">
                                 <div class="form-group mb-1 d-flex align-items-center">
                                     <label for="machining_price" class="form-label col-sm-4 col-form-label">Price Machining <span class="text-danger">*</span></label>
-                                    <input type="number" id="machining_price" name="machining_price" class="form-control form-control-sm font-weight-bold" value="{{ old('machining_price', 0) }}" required>
+                                    <input type="number" id="machining_price" name="machining_price" class="form-control form-control-sm font-weight-bold" value="{{ $defaultMachining }}" required>
                                 </div>  
                             </div>
                         </div>
@@ -205,7 +209,7 @@
                             <div class="col-md-7">
                                 <div class="form-group mb-2 d-flex align-items-center">
                                     <label for="total_price" class="form-label col-sm-4 col-form-label font-weight-bold text-success">Total Price (Auto)</label>
-                                    <input type="number" id="total_price" name="price" class="form-control form-control-sm bg-light font-weight-bold text-success border-success" value="{{ old('price', 0) }}" readonly>
+                                    <input type="number" id="total_price" name="price" class="form-control form-control-sm bg-light font-weight-bold text-success border-success" value="{{ $defaultPrice }}" readonly>
                                 </div>  
                             </div>
                         </div>

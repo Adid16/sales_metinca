@@ -103,7 +103,7 @@
                 Menampilkan {{ $customers->firstItem() ?? 0 }}–{{ $customers->lastItem() ?? 0 }}
                 dari {{ $customers->total() }} data
             </small>
-            {{ $customers->links() }}
+            {{ $customers->appends(request()->query())->links('pagination::bootstrap-5') }}
         </div>
 
     </div>

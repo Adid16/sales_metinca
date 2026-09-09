@@ -235,6 +235,28 @@
                                 </a>
                             </li>
 
+                            {{-- MENU NEGOSIASI KHUSUS MANAGER SALES & ADMIN --}}
+                            @if(auth()->user()->isAdmin() || (auth()->user()->isManager() && auth()->user()->divisi === 'sales'))
+                            <li class="sidebar-item {{ Route::is('negotiations*') ? 'active' : '' }}">
+                                <a href="{{ route('negotiations.index') }}" class='sidebar-link d-flex justify-content-between align-items-center'>
+                                    <div>
+                                        <i class="bi bi-chat-square-quote-fill"></i>
+                                        <span>Negosiasi</span>
+                                    </div>
+                                    @php
+                                        $sidebarPendingNego = \App\Models\Negotiate::where('requires_manager_approval', true)
+                                            ->where('manager_approval_status', 'pending')
+                                            ->count();
+                                    @endphp
+                                    @if($sidebarPendingNego > 0)
+                                        <span class="badge bg-danger rounded-pill" style="font-size: 0.65rem; padding: 2px 6px;" title="{{ $sidebarPendingNego }} butuh approval harga">
+                                            {{ $sidebarPendingNego }}
+                                        </span>
+                                    @endif
+                                </a>
+                            </li>
+                            @endif
+
                             @if (auth()->user()->isCustomer())
                             <li class="sidebar-item {{ Route::is('purchase-orders*') ? 'active' : '' }}">
                                 <a href="{{ route('purchase-orders.index') }}" class='sidebar-link'>
@@ -266,7 +288,8 @@
                                             <a href="{{ route('purchase-orders.approval-amandement') }}" class='submenu-link d-flex justify-content-between align-items-center'>
                                                 <span>PO Amandemen</span>
                                                 @php
-                                                    $pendingAmandement = \App\Models\PurchaseOrder::where('status', 'amandement')->count();
+                                                    $pendingAmandement = \App\Models\Contract::where('status', 'amandement_pending')->count()
+                                                        + \App\Models\PurchaseOrder::where('status', 'amandement_pending')->whereDoesntHave('contracts')->count();
                                                 @endphp
                                                 @if($pendingAmandement > 0)
                                                     <span class="badge bg-danger" style="font-size: 0.65rem; padding: 2px 6px;">{{ $pendingAmandement }}</span>
@@ -417,9 +440,9 @@
         <script src="{{ asset('assets/static/js/components/dark.js') }}"></script>
         <script src="{{ asset('assets/extensions/perfect-scrollbar/perfect-scrollbar.min.js') }}"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <script src="{{ asset('assets/compiled/js/app.js') }}"></script>
+        <script src="{{ asset('assets/compiled/js/app.js') }}?v={{ @filemtime(public_path('assets/compiled/js/app.js')) ?: '2.0.1' }}"></script>
         <!-- App JS -->
-        <script src="{{ asset('js/app.js') }}"></script>
+        <script src="{{ asset('js/app.js') }}?v={{ @filemtime(public_path('js/app.js')) ?: '2.0.1' }}"></script>
         <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
         <script>
             // document.getElementById('formLogout').addEventListener('submit', function(e){
