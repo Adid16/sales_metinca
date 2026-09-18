@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Notifications\ContractApprovedNotification;
 use App\Notifications\ContractNotification;
+use App\Notifications\GenericSystemNotification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\Contract;
@@ -579,6 +580,19 @@ class ContractController extends Controller
                     'activity'      => 'Update dan pengajuan ulang spesifikasi kontrak ' . ($contract->contract_no ?? $contract->order_no),
                     'activity_time' => now()->format('Y-m-d H:i:s')
                 ]);
+
+                // Notifikasi ke 4 Manager bahwa kontrak hasil revisi telah diperbaiki dan siap di-review ulang
+                $contractNo = $contract->contract_no ?? $contract->order_no;
+                $managers = User::where('role', 'manager')->get();
+                foreach ($managers as $usr) {
+                    if (Auth::id() === $usr->id) continue;
+                    $usr->notify(new GenericSystemNotification([
+                        'message'  => 'Contract #' . $contractNo . ' telah diperbaiki oleh Sales PIC dan siap di-review ulang.',
+                        'url'      => route('contracts.show', $contract->id),
+                        'order_no' => $contract->order_no,
+                        'category' => 'contract',
+                    ]));
+                }
             });
 
             return redirect()
@@ -599,6 +613,77 @@ class ContractController extends Controller
         $user = Auth::user();
         $divisi = strtolower(trim($user->divisi ?? ''));
 
+        // Jika user adalah Super-Admin, baca target_divisi dari form atau default ke pending
+        if ($user->isAdmin()) {
+            if ($request->filled('target_divisi')) {
+                $divisi = strtolower(trim($request->input('target_divisi')));
+            }
+        }
+
+        // ====================================================================
+        // SUPER-ADMIN: Approve Semua 4 Divisi Sekaligus
+        // ====================================================================
+        if ($user->isAdmin() && ($divisi === 'all' || $request->input('approve_all') == '1')) {
+            $sig = $request->filled('signature') ? $request->input('signature') : null;
+            $now = now();
+
+            $contract->update([
+                'sales_approver'              => $contract->sales_approver ?? $user->id,
+                'sales_approved_at'           => $contract->sales_approved_at ?? $now,
+                'manager_sales_signature'     => $contract->manager_sales_signature ?? $sig,
+                'sales_reject_reason'         => null,
+                'sales_rejected_at'           => null,
+
+                'quality_approver'            => $contract->quality_approver ?? $user->id,
+                'quality_approved_at'         => $contract->quality_approved_at ?? $now,
+                'manager_quality_signature'   => $contract->manager_quality_signature ?? $sig,
+                'quality_reject_reason'       => null,
+                'quality_rejected_at'         => null,
+
+                'ppc_approver'                => $contract->ppc_approver ?? $user->id,
+                'ppc_approved_at'             => $contract->ppc_approved_at ?? $now,
+                'manager_ppc_signature'       => $contract->manager_ppc_signature ?? $sig,
+                'ppc_reject_reason'           => null,
+                'ppc_rejected_at'             => null,
+
+                'dev_engineering_approver'    => $contract->dev_engineering_approver ?? $user->id,
+                'dev_engineering_approved_at' => $contract->dev_engineering_approved_at ?? $now,
+                'manager_de_signature'        => $contract->manager_de_signature ?? $sig,
+                'dev_engineering_reject_reason'=> null,
+                'dev_engineering_rejected_at' => null,
+
+                'status'                      => 'approved',
+            ]);
+
+            // Notifikasi ke Sales PIC bahwa kontrak telah disetujui penuh oleh 4 divisi
+            $salesPic = $contract->sales_pic;
+            if ($salesPic) {
+                $salesPic->notify(new GenericSystemNotification([
+                    'message'  => 'Contract #' . ($contract->contract_no ?? $contract->order_no) . ' telah disetujui penuh oleh 4 divisi. Siap difinalisasi ke Produksi.',
+                    'url'      => route('contracts.show', $contract->id),
+                    'order_no' => $contract->order_no,
+                    'category' => 'approved',
+                ]));
+            }
+
+            HistoryActivity::create([
+                'user_id'       => $user->id,
+                'activity'      => 'Super-Admin Approve Seluruh 4 Divisi untuk kontrak ' . ($contract->contract_no ?? $contract->order_no),
+                'activity_time' => now()->format('Y-m-d H:i:s')
+            ]);
+
+            return redirect()->back()->with('success', 'Super-Admin: Berhasil menyetujui seluruh 4 Divisi untuk kontrak ini.');
+        }
+
+        // Jika Admin tanpa target_divisi spesifik, cari divisi yang belum approve
+        if ($user->isAdmin() && empty($divisi)) {
+            if (!$contract->sales_approver) $divisi = 'sales';
+            elseif (!$contract->quality_approver) $divisi = 'quality';
+            elseif (!$contract->ppc_approver) $divisi = 'ppc';
+            elseif (!$contract->dev_engineering_approver) $divisi = 'design engineering';
+            else $divisi = 'sales';
+        }
+
         // ====================================================================
         // Non-sequential / Parallel Approval: Bebas siapa saja approve duluan
         // Sales, Quality, PPC / PPIC, Design Engineering
@@ -613,14 +698,14 @@ class ContractController extends Controller
         ];
 
         if (!isset($approvalMapping[$divisi])) {
-            return redirect()->back()->with('error', 'Divisi Anda (' . ($user->divisi ?? 'Unknown') . ') tidak memiliki hak approval pada kontrak ini.');
+            return redirect()->back()->with('error', 'Divisi (' . ($divisi ?: 'Unknown') . ') tidak memiliki hak approval pada kontrak ini.');
         }
 
         $config = $approvalMapping[$divisi];
 
         // Cek apakah sudah approve
         if ($contract->{$config['field']} != null) {
-            return redirect()->back()->with('error', 'Divisi Anda (' . $config['label'] . ') sudah melakukan approve sebelumnya.');
+            return redirect()->back()->with('error', 'Divisi ' . $config['label'] . ' sudah melakukan approve sebelumnya.');
         }
 
         $rejectField = match($divisi) {
@@ -632,8 +717,8 @@ class ContractController extends Controller
         };
 
         // Cek apakah sedang dalam status ditolak dan belum direvisi oleh Sales
-        if ($rejectField && !empty($contract->{$rejectField})) {
-            return redirect()->back()->with('error', 'Divisi Anda (' . $config['label'] . ') telah menolak kontrak ini. Menunggu tim Sales melakukan revisi data terlebih dahulu sebelum dapat di-approve.');
+        if (!$user->isAdmin() && $rejectField && !empty($contract->{$rejectField})) {
+            return redirect()->back()->with('error', 'Divisi ' . $config['label'] . ' telah menolak kontrak ini. Menunggu tim Sales melakukan revisi data terlebih dahulu sebelum dapat di-approve.');
         }
 
         // Simpan tanda tangan digital jika dikirim dari signature pad
@@ -675,11 +760,22 @@ class ContractController extends Controller
 
         if ($allApproved) {
             $contract->update(['status' => 'approved']);
+
+            // Notifikasi ke Sales PIC bahwa kontrak telah disetujui penuh oleh 4 divisi
+            $salesPic = $contract->sales_pic;
+            if ($salesPic) {
+                $salesPic->notify(new GenericSystemNotification([
+                    'message'  => 'Contract #' . ($contract->contract_no ?? $contract->order_no) . ' telah disetujui penuh oleh 4 divisi. Siap difinalisasi ke Produksi.',
+                    'url'      => route('contracts.show', $contract->id),
+                    'order_no' => $contract->order_no,
+                    'category' => 'approved',
+                ]));
+            }
         }
 
         HistoryActivity::create([
             'user_id'       => $user->id,
-            'activity'      => 'Approve kontrak ' . ($contract->contract_no ?? '') . ' oleh Divisi ' . $config['label'],
+            'activity'      => 'Approve kontrak ' . ($contract->contract_no ?? '') . ' oleh ' . ($user->isAdmin() ? 'Super-Admin (Divisi ' . $config['label'] . ')' : 'Divisi ' . $config['label']),
             'activity_time' => now()->format('Y-m-d H:i:s')
         ]);
 
@@ -698,6 +794,13 @@ class ContractController extends Controller
         $contract = Contract::findOrFail($contractId);
         $user = Auth::user();
         $divisi = strtolower(trim($user->divisi ?? ''));
+        
+        if ($user->isAdmin() && $request->filled('target_divisi')) {
+            $divisi = strtolower(trim($request->input('target_divisi')));
+        } elseif ($user->isAdmin() && empty($divisi)) {
+            $divisi = 'sales';
+        }
+
         $comment = trim($request->input('comment'));
 
         $deptLabel = match($divisi) {
@@ -713,14 +816,21 @@ class ContractController extends Controller
             'quality'            => 'quality_reject_reason',
             'ppc', 'ppic'        => 'ppc_reject_reason',
             'design engineering', 'de' => 'dev_engineering_reject_reason',
-            default              => null
+            default              => 'sales_reject_reason'
         };
 
-        if ($rejectField && !empty($contract->{$rejectField})) {
-            return redirect()->back()->with('error', 'Divisi Anda (' . $deptLabel . ') sudah menolak kontrak ini sebelumnya. Menunggu tim Sales melakukan revisi data.');
+        if ($rejectField) {
+            $contract->{$rejectField} = $comment;
+            $rejectedAtField = match($divisi) {
+                'sales'              => 'sales_rejected_at',
+                'quality'            => 'quality_rejected_at',
+                'ppc', 'ppic'        => 'ppc_rejected_at',
+                'design engineering', 'de' => 'dev_engineering_rejected_at',
+                default              => 'sales_rejected_at'
+            };
+            $contract->{$rejectedAtField} = now();
         }
 
-        // Reset approval & Catat penolakan pada divisi yang bersangkutan
         if ($divisi == 'sales') {
             $contract->sales_approver = null;
             $contract->sales_approved_at = null;
@@ -761,6 +871,17 @@ class ContractController extends Controller
             : $historyComment;
 
         $contract->save();
+
+        // Notifikasi ke Sales PIC bahwa Manager menolak kontrak
+        $salesPic = $contract->sales_pic;
+        if ($salesPic && Auth::id() !== $salesPic->id) {
+            $salesPic->notify(new GenericSystemNotification([
+                'message'  => 'Manager ' . $deptLabel . ' menolak Contract #' . ($contract->contract_no ?? $contract->order_no) . '. Catatan: ' . $comment,
+                'url'      => route('contracts.show', $contract->id),
+                'order_no' => $contract->order_no,
+                'category' => 'rejected',
+            ]));
+        }
 
         HistoryActivity::create([
             'user_id'       => $user->id,
@@ -826,7 +947,7 @@ class ContractController extends Controller
             return redirect()->back()->with('error', 'Gagal memfinalisasi. Kontrak belum disetujui sepenuhnya oleh 4 Divisi (Sales, Quality, PPC, Design Engineering).');
         }
 
-        // 4. Update status ke In Production
+        // 4. Update status kontrak & PO Internal item ini ke In Production
         $contract->status = 'production'; 
         $contract->save();
 
@@ -835,22 +956,78 @@ class ContractController extends Controller
                 ->update(['status' => 'production']);
         }
 
+        // Cari Master PO terkait
         $po = PurchaseOrder::where('po_no', $contract->order_no)->first();
+        if (!$po && $contract->purchase_order_internal_id) {
+            $internal = PurchaseOrderInternal::find($contract->purchase_order_internal_id);
+            if ($internal && $internal->purchaseOrder) {
+                $po = $internal->purchaseOrder;
+            }
+        }
+        if (!$po) {
+            $basePoNo = preg_replace('/-\d+$/', '', $contract->order_no);
+            $po = PurchaseOrder::where('po_no', $basePoNo)->first();
+        }
+
+        // Cek apakah SELURUH sub-item / PO Internal dalam Master PO ini sudah masuk produksi
         if ($po) {
-            $po->update([
-                'status' => 'production' 
-            ]);
+            $po->load(['internals', 'quotation.items']);
+            $totalInternals = $po->internals->count();
+            $productionInternals = $po->internals->filter(function($i) {
+                return in_array(strtolower($i->status ?? ''), ['production', 'done']);
+            })->count();
+
+            $totalExpected = max($totalInternals, $po->quotation?->items?->count() ?? 0, 1);
+
+            // Master PO HANYA menjadi 'production' jika SEMUA item sub-PO sudah difinalisasi
+            if ($totalInternals > 0) {
+                if ($productionInternals >= $totalExpected) {
+                    $po->update(['status' => 'production']);
+                }
+            } else {
+                // PO tunggal langsung (tanpa sub-PO internal terpisah)
+                $po->update(['status' => 'production']);
+            }
         }
 
         $picName = $salesPic ? $salesPic->name : $user->name;
+        $orderDocNo = $po?->po_no ?? $contract->order_no;
+        $itemName = $contract->part_name ?? ($contract->internalItem->item ?? ($contract->part_no ?? ''));
+
+        // 1. Notifikasi ke Customer bahwa item / pesanan resmi masuk proses produksi
+        $customer = $contract->customer ?: ($po?->customer);
+        if ($customer) {
+            $notifMsg = !empty($itemName) && $itemName !== '-'
+                ? 'Item (' . $itemName . ') pada Pesanan #' . $orderDocNo . ' telah selesai diverifikasi dan resmi masuk proses produksi.'
+                : 'Pesanan Anda #' . $orderDocNo . ' telah selesai diverifikasi dan resmi masuk proses produksi.';
+
+            $customer->notify(new GenericSystemNotification([
+                'message'  => $notifMsg,
+                'url'      => route('purchase-orders.index'),
+                'order_no' => $orderDocNo,
+                'category' => 'production',
+            ]));
+        }
+
+        // 2. Notifikasi ke Super-Admin (Ringkasan Kontrak Masuk Produksi)
+        $admins = User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            if (Auth::id() === $admin->id) continue;
+            $admin->notify(new GenericSystemNotification([
+                'message'  => 'Contract #' . ($contract->contract_no ?? $contract->order_no) . (!empty($itemName) && $itemName !== '-' ? ' (' . $itemName . ')' : '') . ' telah resmi berstatus In Production.',
+                'url'      => route('contracts.show', $contract->id),
+                'order_no' => $orderDocNo,
+                'category' => 'production',
+            ]));
+        }
 
         HistoryActivity::create([
             'user_id'       => $user->id,
-            'activity'      => 'Sales PIC (' . $picName . ') memfinalisasi Contract Review Sheet #' . ($contract->contract_no ?? $contract->order_no) . ' ke tahap In Production',
+            'activity'      => 'Sales PIC (' . $picName . ') memfinalisasi Contract Review Sheet #' . ($contract->contract_no ?? $contract->order_no) . (!empty($itemName) && $itemName !== '-' ? ' (' . $itemName . ')' : '') . ' ke tahap In Production',
             'activity_time' => now()->format('Y-m-d H:i:s')
         ]);
 
-        return redirect()->back()->with('success', 'Kontrak berhasil difinalisasi oleh Sales PIC (' . $picName . ')! Status pesanan kini resmi In Production (Dalam Produksi).');
+        return redirect()->back()->with('success', 'Kontrak ' . (!empty($itemName) && $itemName !== '-' ? 'untuk item ' . $itemName : '') . ' berhasil difinalisasi oleh Sales PIC (' . $picName . ')! Status item kini resmi In Production (Dalam Produksi).');
     }
 
     // DELETE /contracts/{contract}

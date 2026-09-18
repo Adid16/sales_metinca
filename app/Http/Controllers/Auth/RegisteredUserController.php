@@ -42,6 +42,17 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
+        // Notify Super-Admin about new customer registration
+        $admins = User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new \App\Notifications\GenericSystemNotification([
+                'message'  => 'Customer baru ' . $user->name . ' (' . ($user->company ?: 'Individu') . ') telah berhasil mendaftar ke sistem.',
+                'url'      => route('users.customer'),
+                'order_no' => 'USER-' . $user->id,
+                'category' => 'User',
+            ]));
+        }
+
         // Auth::login($user);
 
         return response()->noContent();

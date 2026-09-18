@@ -63,10 +63,15 @@
 
                 <div class="row">
                     <div class="col-md-12 ">
-                        <div class= "form-group mb-2 d-flex align-items-center">
+                        <div class="form-group mb-2 d-flex align-items-center">
                             <label for="password" class="form-label small mb-0" style="min-width: 80px;">Password</label>
-                            <input type="text" name="password" class="form-control form-control-sm @error('password') is-invalid @enderror" 
-                                id="password" placeholder="Enter your password" required>
+                            <div class="input-group input-group-sm flex-grow-1">
+                                <input type="password" name="password" class="form-control form-control-sm @error('password') is-invalid @enderror" 
+                                    id="password" placeholder="Enter your password" required minlength="6">
+                                <button class="btn btn-outline-secondary btn-sm" type="button" onclick="toggleRegisterPassword('password', this)" title="Lihat/Sembunyikan Password">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
                         </div>    
                     </div>
                 </div>
@@ -75,8 +80,13 @@
                     <div class="col-md-12">
                         <div class="form-group mb-2 d-flex align-items-center">
                             <label for="password_confirmation" class="form-label small mb-0" style="min-width: 80px;">Confirm</label>
-                            <input type="password" name="password_confirmation" class="form-control form-control-sm @error('password_confirmation') is-invalid @enderror" 
-                                id="password_confirmation" placeholder="Confirm your password" required>
+                            <div class="input-group input-group-sm flex-grow-1">
+                                <input type="password" name="password_confirmation" class="form-control form-control-sm @error('password_confirmation') is-invalid @enderror" 
+                                    id="password_confirmation" placeholder="Confirm your password" required minlength="6">
+                                <button class="btn btn-outline-secondary btn-sm" type="button" onclick="toggleRegisterPassword('password_confirmation', this)" title="Lihat/Sembunyikan Password">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
                         </div>
                         @error('password_confirmation')
                             <span class="text-danger" role="alert">
@@ -143,18 +153,22 @@
             alert.classList.remove('d-none');
         }
         
-        function togglePassword() {
-            const passwordInput = document.getElementById('password');
-            const toggleIcon = document.getElementById('toggleIcon');
-
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                toggleIcon.classList.remove('bi-eye');
-                toggleIcon.classList.add('bi-eye-slash');
+        function toggleRegisterPassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn ? btn.querySelector('i') : null;
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (icon) {
+                    icon.classList.remove('bi-eye');
+                    icon.classList.add('bi-eye-slash');
+                }
             } else {
-                passwordInput.type = 'password';
-                toggleIcon.classList.remove('bi-eye-slash');
-                toggleIcon.classList.add('bi-eye');
+                input.type = 'password';
+                if (icon) {
+                    icon.classList.remove('bi-eye-slash');
+                    icon.classList.add('bi-eye');
+                }
             }
         }
 

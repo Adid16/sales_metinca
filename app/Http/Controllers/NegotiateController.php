@@ -6,7 +6,9 @@ use App\Models\Negotiate;
 use App\Models\Quotation;
 use App\Models\Account;
 use App\Models\Article;
+use App\Models\User;
 use App\Models\HistoryActivity;
+use App\Notifications\GenericSystemNotification;
 use App\Services\SystemSettingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -391,6 +393,40 @@ class NegotiateController extends Controller
                 $activityMsg = 'Menerima & finalisasi negosiasi quotation ' . $quotation->quotation_no;
                 $msg        = 'Negosiasi diterima. Quotation telah difinalisasi dengan harga yang disepakati.';
 
+                // Notifikasi persetujuan negosiasi
+                if ($user->isCustomer()) {
+                    // Customer menyetujui -> Notifikasi Sales PIC & Manager Sales
+                    $salesPic = $quotation->request?->assignment?->sales;
+                    if ($salesPic && Auth::id() !== $salesPic->id) {
+                        $salesPic->notify(new GenericSystemNotification([
+                            'message'  => 'Customer telah menyetujui Quotation #' . $quotation->quotation_no . '.',
+                            'url'      => route('negotiate.show-nego', $quotation->id),
+                            'order_no' => $quotation->quotation_no,
+                            'category' => 'accepted',
+                        ]));
+                    }
+                    $managerSales = User::where('role', 'manager')->where('divisi', 'sales')->get();
+                    foreach ($managerSales as $mgr) {
+                        if (Auth::id() === $mgr->id) continue;
+                        $mgr->notify(new GenericSystemNotification([
+                            'message'  => 'Customer telah menyetujui Quotation #' . $quotation->quotation_no . '.',
+                            'url'      => route('negotiate.show-nego', $quotation->id),
+                            'order_no' => $quotation->quotation_no,
+                            'category' => 'accepted',
+                        ]));
+                    }
+                } else {
+                    // Tim Sales menyetujui -> Notifikasi Customer
+                    if ($quotation->customer && Auth::id() !== $quotation->customer->id) {
+                        $quotation->customer->notify(new GenericSystemNotification([
+                            'message'  => 'Sales PIC telah menyetujui penawaran harga pada Quotation #' . $quotation->quotation_no . '.',
+                            'url'      => route('quotations.show', $quotation->id),
+                            'order_no' => $quotation->quotation_no,
+                            'category' => 'accepted',
+                        ]));
+                    }
+                }
+
             // =============================================
             // ACTION: SUBMIT NEGOTIATE
             // =============================================
@@ -433,6 +469,58 @@ class NegotiateController extends Controller
                 $msg = $user->isCustomer()
                     ? 'Pengajuan negosiasi harga berhasil dikirim ke Tim Sales.'
                     : 'Balasan negosiasi berhasil dikirim ke Customer.';
+
+                // Notifikasi alur negosiasi
+                if ($user->isCustomer()) {
+                    // 1. Notifikasi ke Sales PIC
+                    $salesPic = $quotation->request?->assignment?->sales;
+                    if ($salesPic && Auth::id() !== $salesPic->id) {
+                        $salesPic->notify(new GenericSystemNotification([
+                            'message'  => 'Customer mengajukan negosiasi harga pada Quotation #' . $quotation->quotation_no . ' (Tawaran: Rp ' . number_format($negotiatedTotal, 0, ',', '.') . ').',
+                            'url'      => route('negotiate.show-nego', $quotation->id),
+                            'order_no' => $quotation->quotation_no,
+                            'category' => 'negotiation',
+                        ]));
+                    }
+
+                    // 2. Notifikasi ke Manager Sales
+                    $managerSales = User::where('role', 'manager')->where('divisi', 'sales')->get();
+                    foreach ($managerSales as $mgr) {
+                        if (Auth::id() === $mgr->id) continue;
+                        $mgr->notify(new GenericSystemNotification([
+                            'message'  => 'Customer mengajukan negosiasi harga pada Quotation #' . $quotation->quotation_no . ' (Tawaran: Rp ' . number_format($negotiatedTotal, 0, ',', '.') . ').',
+                            'url'      => route('negotiate.show-nego', $quotation->id),
+                            'order_no' => $quotation->quotation_no,
+                            'category' => 'negotiation',
+                        ]));
+                    }
+
+                    // 3. Peringatan Kuota & Eskalasi jika batas putaran negosiasi hampir / sudah habis
+                    if ($currentNegoCount + 1 >= $effectiveLimit) {
+                        $adminsAndManagers = User::where('role', 'admin')
+                            ->orWhere(fn($q) => $q->where('role', 'manager')->where('divisi', 'sales'))
+                            ->get();
+                        foreach ($adminsAndManagers as $recipient) {
+                            if (Auth::id() === $recipient->id) continue;
+                            $recipient->notify(new GenericSystemNotification([
+                                'message'  => 'Negosiasi Quotation #' . $quotation->quotation_no . ' telah mencapai batas putaran / butuh override kuota.',
+                                'url'      => route('negotiate.show-nego', $quotation->id),
+                                'order_no' => $quotation->quotation_no,
+                                'category' => 'warning',
+                            ]));
+                        }
+                    }
+                } else {
+                    // Respon Negosiasi Sales ke Customer
+                    if ($quotation->customer && Auth::id() !== $quotation->customer->id) {
+                        $quotation->customer->notify(new GenericSystemNotification([
+                            'message'  => 'Sales PIC telah membalas negosiasi untuk Quotation #' . $quotation->quotation_no . ' (Tawaran baru: Rp ' . number_format($negotiatedTotal, 0, ',', '.') . ').',
+                            'url'      => route('negotiate.show', $quotation->id),
+                            'order_no' => $quotation->quotation_no,
+                            'category' => 'negotiation',
+                        ]));
+                    }
+                }
             }
 
             HistoryActivity::create([
@@ -571,6 +659,40 @@ class NegotiateController extends Controller
                 'activity'      => ($isCustomer ? 'Customer' : ($user->isManager() ? 'Manager Sales' : 'Staff Sales')) . ' menutup & menyepakati negosiasi quotation ' . $quotation->quotation_no,
                 'activity_time' => now()->format('Y-m-d H:i:s')
             ]);
+
+            // Notifikasi penutupan/penyepakatan negosiasi
+            if ($isCustomer) {
+                // Customer menyetujui -> Notifikasi Sales PIC & Manager Sales
+                $salesPic = $quotation->request?->assignment?->sales;
+                if ($salesPic && Auth::id() !== $salesPic->id) {
+                    $salesPic->notify(new GenericSystemNotification([
+                        'message'  => 'Customer telah menyetujui negosiasi Quotation #' . $quotation->quotation_no . '.',
+                        'url'      => route('negotiate.show-nego', $quotation->id),
+                        'order_no' => $quotation->quotation_no,
+                        'category' => 'accepted',
+                    ]));
+                }
+                $managerSales = User::where('role', 'manager')->where('divisi', 'sales')->get();
+                foreach ($managerSales as $mgr) {
+                    if (Auth::id() === $mgr->id) continue;
+                    $mgr->notify(new GenericSystemNotification([
+                        'message'  => 'Customer telah menyetujui negosiasi Quotation #' . $quotation->quotation_no . '.',
+                        'url'      => route('negotiate.show-nego', $quotation->id),
+                        'order_no' => $quotation->quotation_no,
+                        'category' => 'accepted',
+                    ]));
+                }
+            } else {
+                // Sales menyetujui -> Notifikasi Customer
+                if ($quotation->customer && Auth::id() !== $quotation->customer->id) {
+                    $quotation->customer->notify(new GenericSystemNotification([
+                        'message'  => 'Tim Sales telah menyetujui negosiasi Quotation #' . $quotation->quotation_no . '.',
+                        'url'      => route('quotations.show', $quotation->id),
+                        'order_no' => $quotation->quotation_no,
+                        'category' => 'accepted',
+                    ]));
+                }
+            }
 
             return redirect()->route('quotations.show', $quotation->id)->with('success', 'Negosiasi berhasil disepakati dan ditutup dengan harga akhir.');
         } catch (\Exception $e) {

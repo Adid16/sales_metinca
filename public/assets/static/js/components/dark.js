@@ -15,12 +15,18 @@ function toggleDarkTheme() {
  * @param {boolean} persist 
  */
 function setTheme(theme, persist = false) {
+  document.body.classList.remove('dark', 'light')
   document.body.classList.add(theme)
   document.documentElement.setAttribute('data-bs-theme', theme)
   
   if (persist) {
     localStorage.setItem(THEME_KEY, theme)
   }
+
+  const togglers = document.querySelectorAll("#toggle-dark, .theme-toggle-input")
+  togglers.forEach(t => {
+    t.checked = theme === "dark"
+  })
 }
 
 /**
@@ -48,17 +54,15 @@ function initTheme() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  const toggler = document.getElementById("toggle-dark")
-  const theme = localStorage.getItem(THEME_KEY)
+  const togglers = document.querySelectorAll("#toggle-dark, .theme-toggle-input")
+  const currentTheme = localStorage.getItem(THEME_KEY) || (document.documentElement.getAttribute('data-bs-theme') || 'light')
 
-  if(toggler) {
-    toggler.checked = theme === "dark"
-    
-    toggler.addEventListener("input", (e) => {
+  togglers.forEach(toggler => {
+    toggler.checked = currentTheme === "dark"
+    toggler.addEventListener("change", (e) => {
       setTheme(e.target.checked ? "dark" : "light", true)
     })
-  }
-
+  })
 });
 
 initTheme()

@@ -68,9 +68,14 @@
                                         <input type="text" name="username" class="form-control form-control-sm" id="Username" placeholder="Username">
                                     </div> --}}
 
-                                    <div class="form-group">
-                                        <label for="password">Password</label>
-                                        <input type="password" name="password" class="form-control form-control-sm" id="password" placeholder="Password">
+                                    <div class="form-group mb-2">
+                                        <label for="passwordCustList">Password</label>
+                                        <div class="input-group input-group-sm">
+                                            <input type="password" name="password" class="form-control form-control-sm" id="passwordCustList" placeholder="Password">
+                                            <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordVisibility('passwordCustList', this)" title="Lihat/Sembunyikan Password">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                     {{-- <input type="text" name="role" value="customer"> --}}
                                     <div class="form-group">

@@ -59,11 +59,25 @@ h2.product-category-title{
     height: 100px;
     margin: 0 auto 20px;
     border-radius: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     font-size: 3rem;
     color: white;
+    text-align: center;
+    line-height: 1 !important;
+}
+
+.category-icon i {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
 }
 
 .category-1 .category-icon {

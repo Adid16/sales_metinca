@@ -72,7 +72,7 @@
                                 <a href="{{ route('requests-project.index') }}" class="btn btn-sm btn-danger">Clear</a>
                                 <button type="submit" formaction="{{ route('requests-project.export') }}" class="btn btn-success btn-sm btn-end text-end">Export</button>
                             @endif
-                            @if (auth()->user()->isCustomer())
+                            @if (auth()->user()->isCustomer() || auth()->user()->isAdmin())
                                 <a href="{{ route('requests-project.create') }}" class="btn btn-primary btn-sm"> New </a>
                             @endif
                         </div>
@@ -118,36 +118,103 @@
                                     @endif
                                 </center></td>
                                 <td><center>
-                                    <a href="{{ route('requests-project.show', $project->id) }}" class="btn btn-sm btn-info">         
+                                    <a href="{{ route('requests-project.show', $project->id) }}" class="btn btn-sm btn-info" title="Lihat Detail Request">         
                                         <i class="bi bi-eye-fill"></i>
                                     </a>
-                                    @if(auth()->user()->isAdmin() || (auth()->user()->role == 'staff' && auth()->user()->divisi == 'sales'))                                        @if (!$project->assignment)
-                                        {{-- KETIKA SUDAH DIAMBIL MAKA BUTTON TAMBAH DISABLE --}}
-                                            <form action="{{ route('requests-project.assign', $project->id) }}" method="POST" class="d-inline">                                        
-                                          @csrf
-                                        {{-- KETIKA BELUM DIAMBIL BUTTON PLUS BISA DIKLIK --}}
-                                                <button type="submit" class="btn btn-sm btn-primary"
-                                                    onclick="return confirm('Ambil request project ini?')">
-                                                    <i class="bi bi-plus-lg"></i>
-                                                </button>
-                                            </form>
-                                                @endif
+                                    @if(auth()->user()->isAdmin())
+                                        <button type="button" class="btn btn-sm btn-primary"
+                                            onclick="openAssignModal('{{ route('requests-project.assign', $project->id) }}', '{{ $project->id }}', '{{ $project->assignment->sales_id ?? '' }}', '{{ addslashes($project->subject ?? '') }}')"
+                                            title="{{ $project->assignment ? 'Ganti Sales PIC' : 'Tugaskan Sales PIC' }}">
+                                            <i class="bi {{ $project->assignment ? 'bi-person-gear' : 'bi-person-plus-fill' }}"></i>
+                                        </button>
+                                    @elseif(auth()->user()->role == 'staff' && auth()->user()->divisi == 'sales' && !$project->assignment)
+                                        <form action="{{ route('requests-project.assign', $project->id) }}" method="POST" class="d-inline">                                        
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-primary"
+                                                onclick="return confirm('Ambil request project ini?')"
+                                                title="Ambil / Klaim Request Project">
+                                                <i class="bi bi-plus-lg"></i>
+                                            </button>
+                                        </form>
                                     @endif 
-                                    
                                 </center></td>
                             </tr>
                         @empty
-    <tr>
-        <td colspan="9" class="text-center">No data available</td>
-    </tr>
-@endforelse
+                            <tr>
+                                <td colspan="9" class="text-center">No data available</td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
         {{-- </div> --}}
     </section>
+
+    @if(auth()->user()->isAdmin())
+        <!-- Modal Penugasan Sales PIC (Super-Admin) -->
+        <div class="modal fade" id="modalAssignSales" tabindex="-1" aria-labelledby="modalAssignSalesLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title fs-6" id="modalAssignSalesLabel">
+                            <i class="bi bi-person-check-fill me-1"></i> Penugasan Sales PIC
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="formAssignSalesModal" method="POST" action="">
+                        @csrf
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted small text-uppercase">Request Project</label>
+                                <input type="text" id="assignModalProjectInfo" class="form-control bg-light" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted small text-uppercase">Pilih Sales PIC</label>
+                                <select name="sales_id" id="assignModalSalesSelect" class="form-select" required>
+                                    <option value="" disabled selected>-- Pilih Karyawan Sales --</option>
+                                    @foreach($sales as $s)
+                                        <option value="{{ $s->id }}">{{ $s->name }} ({{ $s->email }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary btn-sm px-3 fw-semibold">
+                                <i class="bi bi-check-lg me-1"></i> Simpan Penugasan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
     @push('scripts')
         <script src="{{ asset('assets/extensions/simple-datatables/umd/simple-datatables.js') }}"></script>
         <script src="{{ asset('assets/static/js/pages/simple-datatables.js') }}"></script>
+        <script>
+            function openAssignModal(actionUrl, projectId, currentSalesId, subject) {
+                const form = document.getElementById('formAssignSalesModal');
+                const info = document.getElementById('assignModalProjectInfo');
+                const select = document.getElementById('assignModalSalesSelect');
+                
+                if (form) form.action = actionUrl;
+                if (info) info.value = '#' + projectId + ' - ' + subject;
+                if (select) {
+                    if (currentSalesId) {
+                        select.value = currentSalesId;
+                    } else {
+                        select.selectedIndex = 0;
+                    }
+                }
+                
+                const modalEl = document.getElementById('modalAssignSales');
+                if (modalEl) {
+                    const modal = new bootstrap.Modal(modalEl);
+                    modal.show();
+                }
+            }
+        </script>
     @endpush
 @endsection

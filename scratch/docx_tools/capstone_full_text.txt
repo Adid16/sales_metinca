@@ -1,0 +1,3429 @@
+LAPORAN CAPSTONE PROJECT
+PENGEMBANGAN SISTEM INFORMASI TERINTEGRASI
+DEPARTEMEN PURCHASING, SALES & MARKETING
+PADA PT. METINCA PRIMA INDUSTRIAL WORKS JAKARTA
+Diajukan Untuk Memenuhi Persyaratan Kelulusan
+Mata Kuliah Capstone Project
+Disusun Oleh:
+Mariatul Qibtiah(2022240048)
+Annisa Luthfiyyah(2023240001)
+M Alfiansyah Wijaya(2023240004)
+Adi Dwi Nugroho(2023240023)
+FAKULTAS TEKNIK
+UNIVERSITAS DARMA PERSADA
+2026
+LAPORAN CAPSTONE PROJECT
+PENGEMBANGAN APLIKASI SISTEM INFORMASI PELACAKAN STATUS PESANAN PELANGGAN PADA DIVISI PURCHASING SALES MARKETING DI PT. METINCA PRIMA INDUSTRIAL WORKS JAKARTA
+Diajukan untuk memenuhi persyaratan
+mata kuliah Capstone Project
+Disusun Oleh:
+Adi Dwi Nugroho2023240023
+Fakultas Teknik
+Universitas Darma Persada
+2026
+LEMBAR PERSETUJUAN
+LAPORAN CAPSTONE PROJECT PENGEMBANGAN APLIKASI SISTEM INFORMASI PELACAKAN STATUS PESANAN PELANGGAN PADA DIVISI PURCHASING SALES MARKETING DI PT. METINCA PRIMA INDUSTRIAL WORKS JAKARTA
+Disusun oleh:
+Adi Dwi Nugroho 2023240023
+Laporan ini disusun untuk memenuhi nilai pada Mata Kuliah Capstone Project pada Prodi Sistem Informasi.
+Jakarta, 23 Juli 2026
+Menyetujui,
+Pembimbing Lapangan
+Dosen Pembimbing
+Bella Ayu Ainingrum, S.Pd.
+NIP: 1222
+Endang Ayu Susilawati, S.T,  M.MSi
+NIDN : 0408047604
+Kaprodi Sistem Informasi
+Eka Yuni Astuty, S.Kom, MMSI.
+NIDN: 0301067502
+KATA PENGANTAR
+Puji dan syukur penulis panjatkan kehadirat Allah SWT, karena atas rahmat, hidayah, dan karunia-Nya, penulis dapat menyelesaikan laporan Capstone Project ini dengan baik. Laporan yang berjudul berjudul “Pengembangan Aplikasi Sistem Informasi Pelacakan Status Pesanan Pelanggan Pada Divisi Purchasing Sales  Marketing di Pt. Metinca Prima Industrial Works Jakarta”
+Laporan ini disusun guna memenuhi salah satu persyaratan akademik dalam menyelesaikan mata kuliah Capstone Project pada Jurusan Sistem Informasi, Fakultas Teknik, Universitas Darma Persada. Penulisan laporan ini didasarkan pada hasil analisis, perancangan, dan implementasi sistem yang dilakukan langsung di PT Metinca Industrial Works.
+Dalam proses pelaksanaan hingga penyusunan laporan ini, penulis mendapatkan banyak bimbingan, arahan, bantuan, serta dukungan dari berbagai pihak. Oleh karena itu, pada kesempatan ini penulis ingin menyampaikan ucapan terima kasih yang sebesar-besarnya kepada:
+Bapak Dr. Ade Supriatna, S.T., M.T., selaku Dekan Fakultas Teknik Universitas Darma Persada.
+Ibu Eka Yuni Astuty, S.Kom., MMSi., selaku Ketua Jurusan Sistem Informasi Fakultas Teknik Universitas Darma Persada.
+Ibu Endang Ayu Susilawati, S.T, M.MSI., selaku dosen pembimbing
+Capstone Project.
+Orang tua tercinta yang senantiasa memberikan dukungan moral dan spiritual.
+Staff / karyawan / dosen dilingkungan Fakultas Teknik Universitas Darma Persada.
+Ibu Bella Ayu Ainingrum selaku pembimbing kerja praktik di PT Metinca Prima Industrial Works.
+Seluruh staf dan karyawan di lingkungan PT Metinca Prima Industrial Works.
+Rekan-rekan mahasiswa Jurusan Sistem Informasi angkatan 2023 yang telah memberikan dukungan dan kerja sama selama proses penyusunan laporan ini.
+Penulis menyadari bahwa laporan Capstone Project ini masih jauh dari kesempurnaan, baik dari segi pemaparan, tata bahasa, maupun kedalaman teknisnya. Oleh karena itu, penulis sangat mengharapkan kritik dan saran yang membangun dari pembaca demi perbaikan di masa yang akan datang. Akhir kata, semoga laporan ini dapat memberikan manfaat yang nyata bagi PT Metinca Industrial Works, serta dapat menjadi referensi yang berguna bagi perkembangan ilmu pengetahuan, khususnya di bidang Sistem Informasi Manufaktur.
+Jakarta, 23 juli 2026
+Adi Dwi Nugroho
+Penulis
+ABSTRAKSI
+PT. Metinca Prima Industrial Works Jakarta merupakan perusahaan manufaktur yang bergerak di bidang pengecoran logam dan permesinan. Dalam ekosistem bisnisnya, kelancaran pemenuhan pesanan pelanggan (Purchase Order) menjadi faktor krusial dalam menjaga kepercayaan konsumen. Namun, sistem yang berjalan saat ini masih menghadapi kendala visibilitas, di mana pelanggan tidak dapat melacak status posisi pesanan mereka secara riil—apakah masih dalam tahap administrasi internal (contract review), proses produksi di lantai pabrik, atau sudah masuk dalam proses pengiriman. Masalah ini diperumit ketika terjadi pengajuan perubahan pesanan (amandemen) terkait jumlah barang (quantity) atau tanggal pengiriman (delivery request), yang pencatatan riwayat perubahannya belum terkelola dengan baik sehingga berisiko menimbulkan tumpang tindih data operasional pada divisi Sales.
+Guna mengatasi permasalahan tersebut, Capstone Project ini mengembangkan aplikasi sistem informasi pengendalian perubahan pesanan pelanggan yang berfokus pada transparansi pelacakan dan manajemen amandemen. Sistem ini mengintegrasikan fitur multi-stage tracking yang mencakup status sent, review, hold, production, ship, hingga completed. Proses pengembangan aplikasi ini dibangun berbasis web menggunakan framework Laravel 12 dengan arsitektur Model-View-Controller (MVC) dan didukung oleh MySQL sebagai sistem manajemen basis data.
+Metode pengembangan sistem yang diterapkan adalah metode Prototype, yang memungkinkan penyelarasan fitur secara adaptif berdasarkan kebutuhan pengguna di lapangan. Teknik pengumpulan data dilakukan melalui wawancara dengan pemangku kepentingan, observasi langsung alur kerja divisi Sales, serta studi dokumentasi terhadap berkas operasional perusahaan. Hasil akhir dari proyek ini adalah sebuah sistem informasi yang mampu meminimalisir risiko kesalahan input data transaksi, mengamankan riwayat amandemen secara kronologis, serta menyajikan visualisasi pelacakan status pesanan yang informatif untuk meningkatkan transparansi layanan kepada pelanggan.
+DAFTAR ISI
+TOC \o "1-3" \h \z \u LEMBAR PERSETUJUAN PAGEREF _Toc235540523 \h III
+KATA PENGANTAR PAGEREF _Toc235540524 \h IV
+ABSTRAKSI PAGEREF _Toc235540525 \h VI
+DAFTAR ISI PAGEREF _Toc235540526 \h VIII
+DAFTAR SIMBOL PAGEREF _Toc235540527 \h XIV
+DAFTAR GAMBAR PAGEREF _Toc235540528 \h XV
+DAFTAR TABEL PAGEREF _Toc235540529 \h XX
+LAMPIRAN PAGEREF _Toc235540530 \h XXII
+BAB I PENDAHULUAN PAGEREF _Toc235540531 \h 1
+1.1 Latar Belakang Masalah PAGEREF _Toc235540532 \h 1
+1.2 Rumusan Masalah PAGEREF _Toc235540533 \h 2
+1.3 Tujuan Capstone Project PAGEREF _Toc235540534 \h 2
+1.4 Batasan Masalah PAGEREF _Toc235540535 \h 3
+1.5 Manfaat Capstone Project PAGEREF _Toc235540536 \h 4
+BAB II LANDASAN TEORI PAGEREF _Toc235540537 \h 5
+2.1 Konsep Sistem Informasi PAGEREF _Toc235540538 \h 5
+2.2 Pengembangan Sistem Informasi (Metode Prototype) PAGEREF _Toc235540539 \h 6
+2.3 Sistem Informasi Berbasis Web dan Framework Laravel PAGEREF _Toc235540540 \h 7
+2.4 Basis Data dan MySQL PAGEREF _Toc235540541 \h 8
+2.5 Pemodelan Sistem menggunakan UML PAGEREF _Toc235540542 \h 9
+2.6 Pengujian Sistem PAGEREF _Toc235540543 \h 10
+BAB III METODE PENGEMBANGAN SISTEM PAGEREF _Toc235540544 \h 11
+3.1 Metode Penelitian PAGEREF _Toc235540545 \h 11
+3.2 Metode Pengembangan Sistem PAGEREF _Toc235540546 \h 11
+3.3 Teknik Pengumpulan Data PAGEREF _Toc235540547 \h 14
+3.3.1 Wawancara PAGEREF _Toc235540548 \h 14
+3.3.2 Observasi PAGEREF _Toc235540549 \h 14
+3.3.3 Studi Dokumentasi PAGEREF _Toc235540550 \h 14
+3.3.4 Studi Pustaka PAGEREF _Toc235540551 \h 15
+3.4 Alur Pengembangan Sistem PAGEREF _Toc235540552 \h 15
+BAB IV ANALISIS SISTEM PAGEREF _Toc235540553 \h 17
+4.1 Tinjauan Organisasi PAGEREF _Toc235540554 \h 17
+4.1.1 Sejarah Perusahaan PAGEREF _Toc235540555 \h 17
+4.2 Analisa Sistem PAGEREF _Toc235540556 \h 26
+4.2.1 Use Case Diagram PAGEREF _Toc235540557 \h 26
+4.2.2 Skenario PAGEREF _Toc235540558 \h 27
+4.2.3 Activity Diagram PAGEREF _Toc235540559 \h 32
+4.2.4 Spesifikasi Dokumen Masukan PAGEREF _Toc235540560 \h 38
+4.2.5 Spesifikasi Dokumen Keluaran PAGEREF _Toc235540561 \h 38
+4.2.6 Identifikasi Kebutuhan Sistem PAGEREF _Toc235540562 \h 38
+BAB V PERANCANGAN SISTEM PAGEREF _Toc235540563 \h 41
+5.2Perancangan Arsitektur Sistem PAGEREF _Toc235540564 \h 41
+5.3Perancangan Proses Sistem Usulan PAGEREF _Toc235540565 \h 42
+5.2.1 Use Case Diagram PAGEREF _Toc235540566 \h 42
+5.2.2Activity Diagram PAGEREF _Toc235540567 \h 44
+5.2.3 Activity Diagram Usulan PAGEREF _Toc235540568 \h 69
+5.3 Perancangan Basis Data PAGEREF _Toc235540569 \h 94
+5.3.1 Entity Relationship Diagram (ERD) PAGEREF _Toc235540570 \h 94
+5.3.2. Spesifikasi File PAGEREF _Toc235540571 \h 94
+5.4.  Perancangan Antarmuka Pengguna PAGEREF _Toc235540572 \h 102
+5.4.1. Antarmuka Hak Akses Sales Staff PAGEREF _Toc235540573 \h 102
+5.4.2 Antarmuka Hak Akses Manager Divisi PAGEREF _Toc235540574 \h 109
+5.4.3 Antarmuka Hak Akses Customer PAGEREF _Toc235540575 \h 113
+BAB VI IMPLEMENTASI SISTEM PAGEREF _Toc235540576 \h 120
+6.1 Lingkungan Pengembangan PAGEREF _Toc235540577 \h 120
+6.1.1 Alat Penelelitian PAGEREF _Toc235540578 \h 120
+6.1.2 Bahan Penelitian PAGEREF _Toc235540579 \h 121
+6.2.1 Pengajuan Permintaan Proyek (Sales Request) PAGEREF _Toc235540580 \h 122
+6.3Hasil Implementasi PAGEREF _Toc235540581 \h 133
+1.Halaman Register Customer PAGEREF _Toc235540582 \h 133
+2.Halaman Login Customer PAGEREF _Toc235540583 \h 134
+3.Halaman Dashboard Customer PAGEREF _Toc235540584 \h 135
+4.Halaman Request Customer PAGEREF _Toc235540585 \h 136
+5.Halaman Form Request Customer PAGEREF _Toc235540586 \h 136
+6.Halaman Quotation Customer PAGEREF _Toc235540587 \h 137
+7.Halaman Detail Quotation Customer PAGEREF _Toc235540588 \h 138
+8.Halaman Form Purchase Order Customer PAGEREF _Toc235540589 \h 139
+9.Halaman Purchase Order Customer PAGEREF _Toc235540590 \h 140
+10.Halaman Account Customer PAGEREF _Toc235540591 \h 141
+11.Halaman Login Staff Sales PAGEREF _Toc235540592 \h 142
+12.Halaman Dashboard Staff Sales PAGEREF _Toc235540593 \h 143
+13.Halaman Pricelist Product Staff Sales PAGEREF _Toc235540594 \h 144
+14.Halaman Detail Request PAGEREF _Toc235540595 \h 145
+15.Halaman Request Staff Sales PAGEREF _Toc235540596 \h 146
+16.Halaman Quotation Staff Sales PAGEREF _Toc235540597 \h 147
+17.Halaman Purchase Order Extenal Staff Sales PAGEREF _Toc235540598 \h 148
+18.Halaman Purchase Order Internal Staff Sales PAGEREF _Toc235540599 \h 149
+19.Halaman Purchase Order Schedule Staff Sales PAGEREF _Toc235540600 \h 150
+20.Halaman Tinjauan Kontrak Staff Sales PAGEREF _Toc235540601 \h 151
+21.Halaman Login Role Manager Divisi Sales, Quality, PPC, Development Engineering PAGEREF _Toc235540602 \h 152
+22.Halaman Dashboard Role Manager Divisi Sales, Quality, PPC, Development Engineering PAGEREF _Toc235540603 \h 153
+23.Halaman User Management Role Manager Divisi Sales, Quality, PPC, Development Engineering PAGEREF _Toc235540604 \h 154
+24.Halaman Pricelist Product Role Manager Divisi Sales, Quality, PPC, Development Engineering PAGEREF _Toc235540605 \h 155
+25.Halaman Request Role Manager Divisi Sales, Quality, PPC, Development Engineering PAGEREF _Toc235540606 \h 156
+26.Halaman Quotation Role Manager Divisi Sales, Quality, PPC, Development Engineering PAGEREF _Toc235540607 \h 157
+27.Halaman Purchase Order Role Manager Divisi Sales, Quality, PPC, Development Engineering PAGEREF _Toc235540608 \h 158
+28.Halaman Purchase Order Schedule Role Manager Divisi Sales, Quality, PPC, Development Engineering PAGEREF _Toc235540609 \h 159
+29.Halaman Tinjauan Kontrak Role Manager Divisi Sales, Quality, PPC, Development Engineering PAGEREF _Toc235540610 \h 160
+6.4 Pengujian Fungsional Sistem PAGEREF _Toc235540611 \h 160
+6.4.1 Uji coba structural PAGEREF _Toc235540612 \h 160
+6.4.1.Uji coba Fungsional PAGEREF _Toc235540613 \h 162
+6.5 User Acceptance Test (UAT) PAGEREF _Toc235540614 \h 165
+6.5.2Kesimpulan Hasil UAT PAGEREF _Toc235540615 \h 166
+6.5.2   Saran Hasil dari UAT PAGEREF _Toc235540616 \h 166
+BAB VII KESIMPULAN DAN SARAN PAGEREF _Toc235540617 \h 168
+7.1 Kesimpulan PAGEREF _Toc235540618 \h 168
+7.2 Saran PAGEREF _Toc235540619 \h 168
+DAFTAR PUSTAKA PAGEREF _Toc235540620 \h 169
+DAFTAR RIWAYAT HIDUP PAGEREF _Toc235540621 \h 170
+A.Biodata Mahasiswa PAGEREF _Toc235540622 \h 170
+B.Riwayat Pendidikan Formal PAGEREF _Toc235540623 \h 170
+C.Riwayat Pengalaman Berorganisasi/Pekerjaan PAGEREF _Toc235540624 \h 170
+Surat Keterangan Pelaksanaan  Capstone Project PAGEREF _Toc235540625 \h 173
+LAMPIRAN PAGEREF _Toc235540626 \h 174
+HASIL WAWANCARA PAGEREF _Toc235540627 \h 177
+DAFTAR SIMBOL
+NO
+GAMBAR
+NAMA
+KETERANGAN
+1
+2914658382000
+Actor
+Actor adalah pengguna sistem. Actor tidak terbatas hanya manusia saja, jika sebuah sistem berkomunikasi dengan aplikasi lain dan membutuhkan input atau memberikan output, maka aplikasi tersebut juga bisa dianggap sebagai actor.
+2
+2806701524000
+Dependency
+Hubungan dimana perubahan yang terjadi pada suatu elemen  mandiri (independent) akan mempengaruhi elemen yang bergantung padanya elemen yang tidak mandiri (independent).
+3
+2393953683000
+Association
+Asosiasi digunakan untuk menghubungkan actor dengan use case. Asosiasi digambarkan dengan sebuah garis yang menghubungkan antara Actor dengan Use Case.
+4
+2952752476500
+System Boundary
+Menspesifikasikan paket yang menampilkan sistem secara terbatas.
+5
+135890-1778000
+Use Case
+Deskripsi dari urutan aksi-aksi yang ditampilkan sistem yang menghasilkan suatu hasil yang terukur bagi suatu aktor
+6
+<<include>>
+Include
+Melakukan yang harus terpenuhi agar sebuah event dapat terjadi, dimana pada kondisi ini sebuah use case adalah bagian dari use case lainnya.
+7
+<<extend>>
+Extend
+Menspesifikasikan bahwa use case target memperluas perilaku dari use case sumber pada suatu titik yang diberikan.
+DAFTAR GAMBAR
+TOC \h \z \c "Gambar 4." Gambar 4. 1 Struktur Organisasi PAGEREF _Toc235413343 \h 18
+Gambar 4. 2 Use Case Sistem Berjalan Pesanan Pelanggan PAGEREF _Toc235413344 \h 26
+Gambar 4. 3 Activity Diagram Menerima Dokumen PO PAGEREF _Toc235413345 \h 32
+Gambar 4. 4 Activity Diagram Melakukan Sirkulasi Tinjauan Kontrak PAGEREF _Toc235413346 \h 34
+Gambar 4. 5 Activity Diagram Mengelola Perubahan Pesanan Manual PAGEREF _Toc235413347 \h 35
+Gambar 4. 6 Activity Diagram Memantau Progress Logistik PAGEREF _Toc235413348 \h 36
+Gambar 4. 7 Activity Diagram Menyusun Invoice dan Laporan Pesanan PAGEREF _Toc235413349 \h 37 TOC \h \z \c "Gambar 5."
+Gambar 5. 1 Arsitektur Sistem PAGEREF _Toc235413350 \h 42
+Gambar 5. 2 Use Case Diagram Staff Sales PAGEREF _Toc235413351 \h 42
+Gambar 5. 3 Use Case Diagram Manager PAGEREF _Toc235413352 \h 43
+Gambar 5. 4 Use Case Diagram Pelanggan PAGEREF _Toc235413353 \h 44
+Gambar 5. 5 Activity Diagram  Login Staff Sales PAGEREF _Toc235413354 \h 69
+Gambar 5. 6 Activity Diagram  Melihat Dashboard Staff Sales PAGEREF _Toc235413355 \h 70
+Gambar 5. 7 Activity Diagram  Mengelola Data Pricelist Products PAGEREF _Toc235413356 \h 71
+Gambar 5. 8 Activity Diagram  Memproses Request PAGEREF _Toc235413357 \h 72
+Gambar 5. 9 Activity Diagram  Menerbitkan Quotation PAGEREF _Toc235413358 \h 73
+Gambar 5. 10 Activity Diagram  Memproses Purchase Order PAGEREF _Toc235413359 \h 74
+Gambar 5. 11 Activity Diagram  Mengatur PO Schedule PAGEREF _Toc235413360 \h 75
+Gambar 5. 12 Activity Diagram  Mengajukan Tinjauan Kontrak PAGEREF _Toc235413361 \h 76
+Gambar 5. 13 Activity Diagram  Logout Staff Sales PAGEREF _Toc235413362 \h 77
+Gambar 5. 14 Activity Diagram  Login Manager PAGEREF _Toc235413363 \h 78
+Gambar 5. 15 Activity Diagram  Melihat Dashboard Manager PAGEREF _Toc235413364 \h 79
+Gambar 5. 16 Activity Diagram  Mengelola Data Pricelist Products PAGEREF _Toc235413365 \h 80
+Gambar 5. 17 Activity Diagram  Melihat Daftar & Detail Request PAGEREF _Toc235413366 \h 81
+Gambar 5. 18 Activity Diagram  Logout PAGEREF _Toc235413367 \h 82
+Gambar 5. 19 Activity Diagram  Mengelola Dokumen Quotation PAGEREF _Toc235413368 \h 83
+Gambar 5. 20 Activity Diagram  Mengelola Purchase Order PAGEREF _Toc235413369 \h 84
+Gambar 5. 21 Activity Diagram  Mengatur Prioritas PO Schedule PAGEREF _Toc235413370 \h 85
+Gambar 5. 22 Activity Diagram  Mengelola Tinjauan Kontrak PAGEREF _Toc235413371 \h 86
+Gambar 5. 23 Activity Diagram  Menyetujui Tinjauan Kontrak PAGEREF _Toc235413372 \h 87
+Gambar 5. 24 Activity Diagram  Login Pelanggan PAGEREF _Toc235413373 \h 88
+Gambar 5. 25 Activity Diagram  Dashboard Pelanggan PAGEREF _Toc235413374 \h 89
+Gambar 5. 26 Activity Diagram  Mengelola Request PAGEREF _Toc235413375 \h 90
+Gambar 5. 27 Activity Diagram  Mengelola Quotation PAGEREF _Toc235413376 \h 91
+Gambar 5. 28 Activity Diagram  Mengelola PO PAGEREF _Toc235413377 \h 92
+Gambar 5. 29 Activity Diagram  Logout Pelanggan PAGEREF _Toc235413378 \h 93
+Gambar 5. 30 Entity Relationship Diagram PAGEREF _Toc235413379 \h 94
+Gambar 5. 31 Tampilan Login Sales Staff PAGEREF _Toc235413380 \h 102
+Gambar 5. 32 Tampilan Dashboard Sales Staff PAGEREF _Toc235413381 \h 103
+Gambar 5. 33 Tampilan Dashboard Sales Staff PAGEREF _Toc235413382 \h 104
+Gambar 5. 34 Tampilan Pembuatan Surat Penawaran PAGEREF _Toc235413383 \h 105
+Gambar 5. 35 Tampilan Riwayat Log Negosiasi PAGEREF _Toc235413384 \h 106
+Gambar 5. 36 Tampilan Kelola Purchase Order (PO) PAGEREF _Toc235413385 \h 108
+Gambar 5. 37 Tampilan Login Manager Divisi PAGEREF _Toc235413386 \h 109
+Gambar 5. 38 Tampilan Dashboard Evaluasi Kontrak Produksi PAGEREF _Toc235413387 \h 110
+Gambar 5. 39 Tampilan Checksheet Verifikasi Persyaratan Kontrak PAGEREF _Toc235413388 \h 111
+Gambar 5. 40 Tampilan Persetujuan Kontrak Dan Digital Signature PAGEREF _Toc235413389 \h 112
+Gambar 5. 41 Tampilan Login Customer PAGEREF _Toc235413390 \h 113
+Gambar 5. 42 Tampilan Dashboard Customer PAGEREF _Toc235413391 \h 114
+Gambar 5. 43 Tampilan Form Input Request Project PAGEREF _Toc235413392 \h 115
+Gambar 5. 44 Tampilan Monitoring Quotation PAGEREF _Toc235413393 \h 116
+Gambar 5. 45 Tampilan Form Unggah Dokumen po PAGEREF _Toc235413394 \h 117
+Gambar 5. 46 Tampilan Tracking Status Siklus Transaksi PAGEREF _Toc235413395 \h 118 TOC \h \z \c "Gambar 6."
+Gambar 6. 1 Code Controller Pengajuan Sales Request PAGEREF _Toc235413396 \h 122
+Gambar 6. 2 Code Controller Perekaman Dokumen Quotation PAGEREF _Toc235413397 \h 124
+Gambar 6. 3 Code Controller Manajemen Alur Negosiasi PAGEREF _Toc235413398 \h 127
+Gambar 6. 4 Code Controller Pengolahan Data Item PO Internal PAGEREF _Toc235413399 \h 129
+Gambar 6. 5 Code Controller Alur Multi-Tahap Jajaran Manager PAGEREF _Toc235413400 \h 131
+Gambar 6. 6 Antarmuka Halaman Register Customer PAGEREF _Toc235413401 \h 133
+Gambar 6. 7 Antarmuka Halaman Login Customer PAGEREF _Toc235413402 \h 134
+Gambar 6. 8 Antarmuka Halaman Dashboard Customer PAGEREF _Toc235413403 \h 135
+Gambar 6. 9 Antarmuka Halaman Request Customer PAGEREF _Toc235413404 \h 136
+Gambar 6. 10 Antarmuka Halaman Form Request Customer PAGEREF _Toc235413405 \h 136
+Gambar 6. 11 Antarmuka Halaman Quotation Customer PAGEREF _Toc235413406 \h 137
+Gambar 6. 12 Antarmuka Halaman Detail Quotation Customer PAGEREF _Toc235413407 \h 138
+Gambar 6. 13 Antarmuka Halaman Form Purchase Order Customer PAGEREF _Toc235413408 \h 139
+Gambar 6. 14 Antarmuka Halaman Purchase Order Customer PAGEREF _Toc235413409 \h 140
+Gambar 6. 15 Antarmuka Halaman Account Customer PAGEREF _Toc235413410 \h 141
+Gambar 6. 16 Antarmuka Halaman Login Staff Sales PAGEREF _Toc235413411 \h 142
+Gambar 6. 17 Antarmuka Halaman Dashboard Staff Sales PAGEREF _Toc235413412 \h 143
+Gambar 6. 18 Antarmuka Halaman Pricelist Product Staff Sales PAGEREF _Toc235413413 \h 144
+Gambar 6. 19 Antarmuka Halaman Detail Request PAGEREF _Toc235413414 \h 145
+Gambar 6. 20 Antarmuka Halaman Request Staff Sales PAGEREF _Toc235413415 \h 146
+Gambar 6. 21 Antarmuka Halaman Quotation Staff Sales PAGEREF _Toc235413416 \h 147
+Gambar 6. 22 Antarmuka Halaman Purchase Order External Staff Sales PAGEREF _Toc235413417 \h 148
+Gambar 6. 23 Antarmuka Halaman Purchase Order Internal Staff Sales PAGEREF _Toc235413418 \h 149
+Gambar 6. 24 Antarmuka Halaman Purchase Order Schedule Staff Sales PAGEREF _Toc235413419 \h 150
+Gambar 6. 25 Antarmuka Halaman Tinjauan Kontrak Staff Sales PAGEREF _Toc235413420 \h 151
+Gambar 6. 26 Antarmuka Halaman Login Role Manager Divisi Sales, Quality, PPC, Development Engineering PAGEREF _Toc235413421 \h 152
+Gambar 6. 27 Antarmuka Halaman Dashboard Role Manager Divisi Sales, Quality, PPC, Development Engineering PAGEREF _Toc235413422 \h 153
+Gambar 6. 28 Antarmuka Halaman User Management Role Manager Divisi Sales, Quality, PPC, Development Engineering PAGEREF _Toc235413423 \h 154
+Gambar 6. 29 Antarmuka Halaman Pricelist Product Role Manager Divisi Sales, Quality, PPC, Development Engineering PAGEREF _Toc235413424 \h 155
+Gambar 6. 30 Antarmuka Halaman Request Role Manager Divisi Sales, Quality, PPC, Development Engineering PAGEREF _Toc235413425 \h 156
+Gambar 6. 31 Antarmuka Halaman Quotation Role Manager Divisi Sales, Quality, PPC, Development Engineering PAGEREF _Toc235413426 \h 157
+Gambar 6. 32 Antarmuka Halaman Purchase Order Role Manager Divisi Sales, Quality, PPC, Development Engineering PAGEREF _Toc235413427 \h 158
+Gambar 6. 33 Antarmuka Halaman Purchase Order Schedule Role Manager Divisi Sales, Quality, PPC, Development Engineering PAGEREF _Toc235413428 \h 159
+Gambar 6. 34 Antarmuka Halaman Tinjauan Kontrak Role Manager Divisi Sales, Quality, PPC, Development Engineering PAGEREF _Toc235413429 \h 160
+DAFTAR TABEL
+TOC \h \z \c "Tabel 4 ." Tabel 4 . 1 Skenario Permintaan Quotation PAGEREF _Toc235413430 \h 27
+Tabel 4 . 2 Skenario Menerima PO PAGEREF _Toc235413431 \h 28
+Tabel 4 . 3 Skenario Menyiapkan Pesanan PAGEREF _Toc235413432 \h 29
+Tabel 4 . 4  Skenario Mengirimkan Pesanan PAGEREF _Toc235413433 \h 30
+Tabel 4 . 5 Skenario Membuat Laporan Pesanan PAGEREF _Toc235413434 \h 31 TOC \h \z \c "Tabel 5."
+Tabel 5. 1  Skenario Use Case Login Sales PAGEREF _Toc235413435 \h 44
+Tabel 5. 2 Skenario Use Case Melihat Dashboard Sales PAGEREF _Toc235413436 \h 46
+Tabel 5. 3 Skenario Use Case Mengelola Data Pricelist Products PAGEREF _Toc235413437 \h 47
+Tabel 5. 4 Skenario Use Case Melihat Daftar & Detail Request PAGEREF _Toc235413438 \h 48
+Tabel 5. 5 Skenario Use Case Mengelola Dokumen Quotation PAGEREF _Toc235413439 \h 49
+Tabel 5. 6 Skenario Use Case Mengelola Purchase Order PAGEREF _Toc235413440 \h 50
+Tabel 5. 7 Skenario Use Case Mengatur Prioritas PO Schedule PAGEREF _Toc235413441 \h 51
+Tabel 5. 8 Skenario Use Case Mengelola Tinjauan Kontrak PAGEREF _Toc235413442 \h 52
+Tabel 5. 9 Skenario Use Case Logout PAGEREF _Toc235413443 \h 53
+Tabel 5. 10 Skenario Use Case Login Manager PAGEREF _Toc235413444 \h 54
+Tabel 5. 11 Skenario Use Case Melihat Dashboard Manager PAGEREF _Toc235413445 \h 55
+Tabel 5. 12 Skenario Use Case Mengelola Data Pricelist Products PAGEREF _Toc235413446 \h 56
+Tabel 5. 13 Skenario Use Case Melihat Daftar & Detail Request PAGEREF _Toc235413447 \h 57
+Tabel 5. 14 Skenario Use Case Logout PAGEREF _Toc235413448 \h 58
+Tabel 5. 15 Skenario Use Case Mengelola Dokumen Quotation PAGEREF _Toc235413449 \h 59
+Tabel 5. 16 Skenario Use Case Mengelola Purchase Order PAGEREF _Toc235413450 \h 60
+Tabel 5. 17 Skenario Use Case Mengatur Prioritas PO Schedule PAGEREF _Toc235413451 \h 61
+Tabel 5. 18 Skenario Use Case Mengelola Tinjauan Kontrak PAGEREF _Toc235413452 \h 62
+Tabel 5. 19 Skenario Use Case Menyetujui Tinjauan Kontrak PAGEREF _Toc235413453 \h 63
+Tabel 5. 20 Skenario Use Case Login PAGEREF _Toc235413454 \h 64
+Tabel 5. 21 Skenario Use Case Dashboard PAGEREF _Toc235413455 \h 65
+Tabel 5. 22 Skenario Use Case Mengelola Request PAGEREF _Toc235413456 \h 66
+Tabel 5. 23 Skenario Use Case Mengelola Quotation PAGEREF _Toc235413457 \h 67
+Tabel 5. 24 Skenario Use Case Mengelola PO PAGEREF _Toc235413458 \h 68
+Tabel 5. 25 Tabel User PAGEREF _Toc235413459 \h 94
+Tabel 5. 26 Tabel Request Attachment PAGEREF _Toc235413460 \h 95
+Tabel 5. 27 Tabel Request Project PAGEREF _Toc235413461 \h 95
+Tabel 5. 28 Tabel Quotation PAGEREF _Toc235413462 \h 96
+Tabel 5. 29 Tabel Quotation Item PAGEREF _Toc235413463 \h 97
+Tabel 5. 30 Tabel Negotiate PAGEREF _Toc235413464 \h 97
+Tabel 5. 31 Tabel Purchase Order PAGEREF _Toc235413465 \h 98
+Tabel 5. 32 Tabel Purchase Order Internal PAGEREF _Toc235413466 \h 99
+Tabel 5. 33 Tabel Contract PAGEREF _Toc235413467 \h 100
+Tabel 5. 34 Tabel Contract Requirement PAGEREF _Toc235413468 \h 101 TOC \h \z \c "Tabel 6."
+Tabel 6. 1 Uji coba structural PAGEREF _Toc235413469 \h 161
+Tabel 6. 2 Uji coba Fungsional PAGEREF _Toc235413470 \h 163
+Tabel 6. 3 Tabel UAT Staff Sales PAGEREF _Toc235413471 \h 165
+LAMPIRAN
+TOC \h \z \c "Lampiran A. " Lampiran A.  1 Purchase Order PAGEREF _Toc235413472 \h 175
+Lampiran A.  2 Tinjauan Kontrak PAGEREF _Toc235413473 \h 176
+BAB IPENDAHULUAN
+1.1 Latar Belakang Masalah
+PT. Metinca Prima Industrial Works Jakarta merupakan salah satu perusahaan manufaktur terkemuka yang bergerak di bidang pengecoran logam (metal casting) dan permesinan (machining). Sebagai perusahaan yang melayani produksi berbasis pesanan (make-to-order), kelangsungan operasional perusahaan sangat bergantung pada bagaimana intensitas data transaksi diproses secara tepat. Dalam ekosistem bisnis ini, Divisi Sales memegang peranan krusial sebagai gerbang utama yang menangani seluruh alur masuk dokumen Purchase Order (PO) dari pelanggan, melakukan penyusunan formulir tinjauan kontrak (contract review), hingga melakukan koordinasi sirkulasi persetujuan dengan manajer lintas divisi (Sales, Quality, PPC, dan DE) sebelum pesanan resmi diteruskan ke bagian produksi.
+Permasalahan saat ini pelanggan melakukan pesanan masih dilakukan melalui pengiriman purchase order  ke staff sales. Penyiapan pesanan dilakukan oleh sales melalui persetujuan manager. Pelanggan tidak mendapatkan status pesanan secara langsung dari sales tetapi harus bertanya terlebih dahulu. Hal ini menyebabkan pelanggan mengalami ketidakpastian dalam memperoleh status pesanan sehingga akan berakibat penurunan kepercayaan terhadap sales.
+Berdasarkan kompleksitas permasalahan tersebut, maka diperlukan sebuah langkah digitalisasi melalui analisis dan perancangan perangkat lunak yang andal. Penelitian Kerja Praktik ini ditujukan untuk membangun sebuah solusi sistem berbasis web berjudul "PENGEMBANGAN APLIKASI SISTEM INFORMASI PELACAKAN STATUS PESANAN PELANGGAN PADA DIVISI PURCHASING SALES MARKETING DI PT. METINCA PRIMA INDUSTRIAL WORKS JAKARTA". Dengan memanfaatkan framework Laravel, sistem ini dirancang untuk mengotomatisasi tata kelola administrasi Purchase Order serta secara khusus menyediakan visualisasi tahapan pelacakan sirkulasi dokumen tinjauan kontrak hingga status akhir pengiriman data ke bagian produksi guna mewujudkan transparansi layanan dan efisiensi koordinasi kerja yang optimal
+1.2 Rumusan Masalah
+Permasalahan saat ini pelanggan dalam melakukan pesanan masih dilakukan melalui pengiriman purchase order  ke staff sales. Penyiapan pesanan dilakukan oleh sales melalui persetujuan manager. Pelanggan tidak mendapatkan status pesanan secara langsung dari sales tetapi harus bertanya terlebih dahulu. Hal ini menyebabkan pelanggan mengalami ketidakpastian dalam memperoleh status pesanan sehingga akan berakibat penurunan kepercayaan terhadap sales.
+1.3 Tujuan Capstone Project
+Tujuan yang ingin dicapai dari pelaksanaan dan penyusunan Capstone Project ini adalah sebagai berikut:
+Merancang dan membangun aplikasi sistem informasi berbasis web yang dilengkapi fitur pelacakan multi-tahap (multi-stage tracking) secara real-time untuk memberikan transparansi penuh kepada pelanggan mengenai posisi riil pesanan mereka.
+Mengimplementasikan modul pengendalian perubahan pesanan (purchase order amendment) yang mampu merekam histori perubahan data (quantity dan delivery request) secara kronologis guna meminimalisir risiko tumpang tindih data operasional dan meningkatkan efisiensi koordinasi antar-divisi di PT. Metinca Prima Industrial Works Jakarta.
+1.4 Batasan Masalah
+Agar pembahasan dalam pengembangan Capstone Project ini tetap terfokus, terarah, dan sesuai dengan target yang telah ditentukan, maka batasan masalah ditetapkan sebagai berikut:
+Sistem ini hanya berfokus pada alur administrasi Purchase Order (PO) masuk, manajemen peninjauan dokumen, pengendalian perubahan pesanan (amandemen), serta pelacakan status operasional pesanan. Sistem ini tidak mencakup modul manajemen keuangan (accounting), proses penagihan (invoicing), maupun manajemen pengadaan bahan baku (procurement).
+Tahapan pelacakan status pesanan dalam aplikasi ini dibatasi pada tingkatan fungsional: Sent (PO baru masuk), Review (proses verifikasi administrasi), Hold (ditangguhkan karena kendala teknis/material), Production (proses manufaktur di pabrik).
+1.5 Manfaat Capstone Project
+Pelaksanaan Capstone Project ini diharapkan dapat memberikan manfaat yang signifikan bagi berbagai pihak yang terlibat.
+Bagi PT. Metinca Prima Industrial Works Jakarta, Keberadaan sistem ini membantu mempermudah proses pelacakan posisi pesanan pelanggan secara real-time, sehingga perusahaan mampu menekan frekuensi komplain dan meningkatkan transparansi layanan secara signifikan. Implementasi perangkat lunak ini juga bermanfaat untuk meminimalisir risiko terjadinya tumpang tindih ataupun kesalahan input data operasional akibat adanya pengajuan perubahan pesanan (amandemen) oleh pelanggan. Secara keseluruhan, sistem ini akan meningkatkan efisiensi, akurasi, dan kecepatan aliran informasi serta alur kerja koordinasi antar-divisi mulai dari Divisi Sales, PPIC, Produksi, hingga QC melalui dokumentasi digital yang terpusat.
+BAB IILANDASAN TEORI
+2.1 Konsep Sistem Informasi
+Sistem informasi merupakan suatu kesatuan terintegrasi yang terdiri atas berbagai komponen, seperti manusia, perangkat keras (hardware), perangkat lunak (software), jaringan komunikasi, data, dan prosedur, yang saling berinteraksi untuk mengumpulkan, mengolah, menyimpan, serta mendistribusikan informasi guna mendukung kegiatan organisasi. Dalam konteks organisasi atau perusahaan, sistem informasi tidak hanya berfungsi sebagai alat pemrosesan transaksi operasional, tetapi juga berperan sebagai sarana pendukung pengambilan keputusan, koordinasi antarbagian, pengendalian manajemen, serta perencanaan strategis organisasi. Menurut Kadir (2014), sistem informasi merupakan gabungan komponen yang bekerja bersama untuk menghasilkan informasi yang berguna bagi pemakai dalam menjalankan fungsi manajerial dan operasional organisasi.
+Secara umum, aktivitas dalam sistem informasi berlangsung melalui tiga tahapan utama, yaitu input, processing, dan output. Tahap input mencakup proses pengumpulan atau penangkapan data mentah, baik yang berasal dari lingkungan internal organisasi maupun dari sumber eksternal yang relevan. Data tersebut kemudian masuk ke tahap processing, yaitu proses pengolahan melalui penghitungan, pengurutan, pengelompokan, pengklasifikasian, atau manipulasi tertentu agar berubah menjadi informasi yang lebih bermakna. Menurut Kadir (2014), tahapan pemrosesan tersebut menempatkan pengolahan data sebagai inti utama untuk mengubah data mentah menjadi bentuk informasi yang bernilai guna bagi pengguna.
+Selain itu, kualitas keluaran dari sistem informasi sangat ditentukan oleh mutu informasi yang dihasilkan. Informasi yang baik setidaknya harus memenuhi tiga kriteria utama, yaitu relevan, tepat waktu, dan akurat. Informasi dikatakan relevan apabila sesuai dengan kebutuhan pengguna, tepat waktu apabila tersedia pada saat dibutuhkan, dan akurat apabila bebas dari kesalahan yang dapat menyesatkan pengambilan keputusan. Menurut Sutabri (2016), nilai guna dari sebuah informasi sangat bergantung pada pemenuhan ketiga kualitas tersebut agar tidak menghilangkan fungsi utamanya dalam mendukung keputusan manajemen.
+Secara lebih luas, sistem informasi juga dapat dipahami sebagai jembatan antara teknologi, proses bisnis, dan sumber daya manusia dalam organisasi. Sistem informasi memungkinkan organisasi bekerja lebih efisien, mempercepat aliran informasi, meningkatkan produktivitas, serta membantu manajemen dalam merespons perubahan lingkungan bisnis. Menurut Narulita et al. (2024), integrasi tata kelola sistem informasi yang tepat menjadi elemen krusial untuk meminimalkan kendala operasional serta meningkatkan transparansi layanan organisasi
+2.2 Pengembangan Sistem Informasi (Metode Prototype)
+Pengembangan sistem informasi adalah serangkaian aktivitas sistematis yang dilaksanakan untuk membangun suatu sistem baru guna menggantikan sistem yang lama secara keseluruhan atau memperbaiki kekurangan pada sistem yang sudah berjalan. Dalam rekayasa perangkat lunak, pemilihan metodologi pengembangan perangkat lunak harus disesuaikan dengan karakteristik masalah dan kebutuhan pengguna di lapangan. Untuk menjamin keterlibatan aktif pengguna secara berkesinambungan, proyek ini menerapkan metode Prototype.
+Metode Prototype merupakan model pengembangan sistem yang bersifat evolusioner dan iteratif, di mana rancangan awal aplikasi dibuat dalam bentuk purwarupa (prototype) kasar untuk dievaluasi secara langsung oleh pengguna akhir sebelum kode program final diimplementasikan secara menyeluruh. Alur kerja metode ini dimulai dari tahap pengumpulan kebutuhan, di mana pengembang dan pengguna mendefinisikan format umum perangkat lunak. Selanjutnya, dilakukan perancangan kilat (quick design) yang berfokus pada representasi aspek perangkat lunak yang akan terlihat oleh pengguna, diikuti dengan pembangunan purwarupa aplikasi. Purwarupa tersebut kemudian diserahkan kepada pengguna untuk dievaluasi dan diberikan umpan balik. Jika terdapat ketidaksesuaian, purwarupa akan dimodifikasi kembali hingga memenuhi kebutuhan riil pengguna. Metode ini sangat efektif untuk meminimalisir risiko salah komunikasi dan memastikan sistem pengendalian amandemen serta tracking pesanan bekerja sesuai prosedur administratif perusahaan.
+2.3 Sistem Informasi Berbasis Web dan Framework Laravel
+Sistem informasi berbasis web merupakan sebuah arsitektur perangkat lunak modern yang bersifat padat data (data-driven) dan dapat diakses oleh pengguna secara instan melalui peramban internet (web browser) tanpa memerlukan proses instalasi yang rumit di sisi klien. Aplikasi berbasis web memiliki keunggulan fleksibilitas yang tinggi karena dapat dijalankan lintas platform dan mempermudah proses pembaruan data secara tersentralisasi dan real-time.
+Dalam membangun aplikasi berbasis web yang terstruktur dan aman, penggunaan kerangka kerja (framework) menjadi sangat krusial. Laravel 12 merupakan framework pengembangan aplikasi web berbasis bahasa pemrograman PHP yang menerapkan pola arsitektur Model-View-Controller (MVC). Pola MVC ini memisahkan kodingan ke dalam tiga komponen utama yaitu Model yang bertugas mengelola logika data dan interaksi dengan basis data, View yang menangani tampilan antarmuka pengguna, serta Controller yang berfungsi sebagai penghubung dan pengatur aliran logika bisnis antara Model dan View. Laravel menyediakan berbagai fitur bawaan tingkat lanjut, seperti sistem perutean (routing) yang fleksibel, ORM Eloquent untuk mempermudah manipulasi data, serta fitur keamanan terintegrasi untuk mencegah celah keamanan, sehingga sangat andal untuk mengelola transaksi pesanan yang dinamis.
+2.4 Basis Data dan MySQL
+Basis data atau database merupakan sekumpulan data yang terorganisir secara logis dan saling berhubungan, yang dirancang sedemikian rupa untuk memenuhi kebutuhan informasi suatu organisasi serta dapat diakses, dikelola, dan diperbarui dengan efisien dan konsisten. Dalam sistem informasi manufaktur, basis data berfungsi sebagai repositori pusat untuk menyimpan seluruh data krusial secara persisten, mulai dari data akun pengguna, detail dokumen Purchase Order, hingga catatan kronologis dari setiap pengajuan amandemen.
+Untuk mengelola basis data tersebut, diperlukan sebuah Database Management System (DBMS) yang andal. MySQL merupakan sistem manajemen basis data relasional (Relational Database Management System) open-source yang menggunakan bahasa standar Structured Query Language (SQL). MySQL bekerja dengan menyimpan data ke dalam bentuk tabel-tabel terpisah yang saling memiliki relasi melalui kunci tamu (foreign key). Penggunaan MySQL dalam proyek ini menjamin integritas data transaksi pesanan pelanggan, kecepatan eksekusi kueri saat memanggil status pelacakan (tracking), serta keamanan penyimpanan data histori perubahan dokumen operasional.
+2.5 Pemodelan Sistem menggunakan UML
+Pemodelan sistem merupakan proses merepresentasikan sistem nyata ke dalam bentuk cetak biru (blueprint) abstrak yang terstruktur guna mempermudah pemahaman mengenai alur kerja perangkat lunak yang akan dibangun. Unified Modeling Language (UML) merupakan standar bahasa visual internasional yang digunakan untuk menspesifikasikan, memvisualisasikan, membangun, dan mendokumentasikan artefak dari sebuah sistem perangkat lunak berbasis objek. Dalam proyek ini, pemodelan sistem dibatasi pada dua diagram utama, yaitu Use Case Diagram dan Activity Diagram.
+Use Case Diagram digunakan untuk menggambarkan interaksi dinamis antara sistem informasi dengan aktor luar atau pengguna. Diagram ini memetakan fungsionalitas dan fitur sistem dari sudut pandang pengguna akhir, seperti bagaimana pelanggan mengakses fitur tracking dan amandemen, serta bagaimana admin divisi Sales mengelola status dokumen pesanan. Sementara itu, Activity Diagram digunakan untuk menggambarkan aliran kerja (workflow), urutan aktivitas prosedural, dan logika proses bisnis dari suatu sistem dari satu aktivitas ke aktivitas lainnya. Diagram ini sangat berguna untuk memvisualisasikan urutan langkah administrasi, mulai dari saat PO dikirimkan, divalidasi pada tahap review, hingga bagaimana sistem mengunci akses amandemen ketika pesanan sudah masuk ke tahap produksi.
+2.6 Pengujian Sistem
+Pengujian perangkat lunak merupakan sebuah proses eksekusi program perangkat lunak dengan niat sengaja untuk menemukan kesalahan, kegagalan, cacat (defect), atau celah galat (bug) yang tersembunyi, sehingga dapat dipastikan bahwa kualitas sistem yang dibangun telah memenuhi spesifikasi yang diinginkan. Proses pengujian dalam Capstone Project ini dilakukan melalui dua metode pendekatan formal yang meliputi Black-Box Testing dan User Acceptance Testing (UAT).
+Black-Box Testing merupakan metode pengujian yang berfokus pada pengujian fungsionalitas aplikasi tanpa harus memeriksa struktur kode program internal perangkat lunak. Pengujian dilakukan sepenuhnya dengan memberikan masukan (input) tertentu pada antarmuka halaman web, lalu memeriksa apakah keluaran (output) yang dihasilkan sudah sesuai dengan skenario bisnis operasional yang diharapkan, seperti memastikan rute halaman mengembalikan error 403 saat akses amandemen terblokir secara ilegal. Di sisi lain, User Acceptance Testing (UAT) merupakan tahap pengujian formal yang dilakukan secara langsung oleh pengguna akhir (end-user) atau pemangku kepentingan di lingkungan yang menyerupai kondisi operasional riil perusahaan. Pengujian ini bertujuan untuk menentukan apakah aplikasi sistem informasi pengendalian perubahan pesanan ini sudah ramah pengguna (user-friendly), berfungsi dengan benar sesuai alur kerja divisi Sales, serta siap diadopsi untuk mendukung efisiensi kerja harian perusahaan.
+BAB IIIMETODE PENGEMBANGAN SISTEM
+3.1 Metode Penelitian
+Metode penelitian yang digunakan dalam proyek ini adalah metode penelitian deskriptif. Metode ini diterapkan untuk menggambarkan, mencatat, dan menjelaskan secara sistematis kondisi aktual serta alur berjalan dari proses penanganan dokumen Purchase Order (PO), pelacakan posisi pesanan, hingga mekanisme pengajuan perubahan pesanan (amandemen) yang saat ini diterapkan pada Divisi Sales PT. Metinca Prima Industrial Works Jakarta. Melalui pendekatan deskriptif, penelitian difokuskan pada pengamatan langsung di lapangan untuk mengidentifikasi bagaimana data pesanan diverifikasi, bagaimana status operasional diperbarui, serta kendala-kendala administratif apa saja yang memicu terjadinya tumpang tindih data atau ketiadaan transparansi informasi bagi pelanggan. Seluruh data hasil analisis deskriptif ini kemudian dijadikan sebagai landasan utama dalam merumuskan kebutuhan fungsional maupun non-fungsional dari aplikasi sistem informasi yang akan dikembangkan.
+3.2 Metode Pengembangan Sistem
+Pengembangan aplikasi sistem informasi pengendalian perubahan pesanan pelanggan ini menggunakan metode Prototype. Metode ini dipilih karena memiliki karakteristik yang bersifat iteratif (berulang) dan evolusioner, sehingga sangat mendukung komunikasi secara intensif serta membangun kesamaan pemahaman yang tinggi antara penulis selaku pengembang dengan pihak internal perusahaan selaku pengguna akhir (end-user). Melalui pendekatan ini, fitur-fitur aplikasi dapat diselaraskan secara adaptif berdasarkan kebutuhan riil pengguna di lapangan sebelum program final diimplementasikan secara menyeluruh.
+Tahapan pengembangan sistem menggunakan metode Prototype dalam proyek ini dijabarkan melalui poin-poin berikut:
+Identifikasi dan Pengumpulan Kebutuhan Pengguna
+Tahapan awal dilakukan dengan mengidentifikasi batasan umum, kendala operasional, dan fungsionalitas utama sistem informasi yang diinginkan oleh Divisi Sales. Pada tahap ini, penulis memetakan kebutuhan untuk fitur pelacakan multi-tahap (multi-stage tracking) serta merancang mekanisme pengajuan amandemen, di mana pelanggan diberikan hak akses untuk mengirimkan pesan pengajuan perubahan (message request).
+Perancangan Cepat (Quick Design)
+Setelah kebutuhan awal terdefinisi, alur dilanjutkan ke tahap pembuatan rancangan konseptual dasar yang berfokus pada representasi aspek perangkat lunak yang akan dilihat langsung oleh pengguna. Tahap ini menghasilkan rancangan antarmuka (user interface) berupa wireframe atau mockup awal untuk halaman visualisasi pelacakan status pesanan (Sent, Review, Production, Ship, Completed) serta tata letak kolom input pesan (message box) bagi pelanggan untuk mengajukan permohonan revisi.
+Pembangunan Purwarupa (Build Prototype)
+Hasil dari perancangan cepat ditransformasikan ke dalam bentuk model program awal atau purwarupa (prototype) kasar aplikasi berbasis web. Penulis membangun program mentah menggunakan framework Laravel 12 untuk merepresentasikan struktur menu utama, hak akses login, dan alur simulasi perpindahan status pesanan pelanggan.
+Evaluasi Purwarupa oleh Pengguna
+Purwarupa aplikasi yang telah dibangun diserahkan langsung kepada pihak internal perusahaan untuk dievaluasi fungsi, kegunaan, dan alur navigasinya. Penulis mendemonstrasikan purwarupa ini di hadapan staf Divisi Sales untuk mendapatkan umpan balik (feedback) nyata mengenai kecocokan sistem dengan prosedur administrasi yang berjalan di PT. Metinca Prima Industrial Works Jakarta.
+Perbaikan dan Modifikasi Purwarupa
+Segala masukan, kritik, kekurangan, maupun penyesuaian aturan bisnis baru yang ditemukan pada tahap evaluasi dicatat sebagai acuan modifikasi perangkat lunak. Penulis melakukan perbaikan berulang pada purwarupa, seperti menambahkan logika penguncian otomatis pada fitur pengiriman pesan amandemen ketika status pesanan pelanggan sudah beralih ke tahap produksi (Production), guna mengamankan data manufaktur dari pengajuan revisi yang terlambat.
+Pengkodean Sistem secara Menyeluruh (Coding)
+Setelah purwarupa evaluasi kembali dan dinyatakan sesuai serta disetujui oleh pengguna, alur dilanjutkan ke tahap pengkodean sistem secara lengkap, masif, dan menyeluruh. Penulis mengoptimalkan arsitektur Model-View-Controller (MVC) framework Laravel 12 secara utuh, membangun fungsionalitas database relasional di MySQL, serta memastikan seluruh riwayat pesan dari pelanggan dan log perubahan data oleh sales tersimpan secara kronologis dan aman.
+3.3 Teknik Pengumpulan Data
+Teknik pengumpulan data dalam Capstone Project ini ditujukan untuk memperoleh data operasional, berkas transaksi, serta informasi kendala lapangan yang valid sebagai dasar analisis kebutuhan sistem informasi. Penulis menerapkan empat teknik pengumpulan data sebagai berikut:
+3.3.1 Wawancara
+Melakukan sesi tanya jawab secara langsung dan terstruktur dengan staf administrasi Divisi Sales serta pihak manajemen PT. Metinca Prima Industrial Works Jakarta. Aktivitas ini difokuskan untuk menggali prosedur verifikasi dokumen PO masuk, hambatan penanganan dokumen amandemen, serta mekanisme penyampaian pesan revisi dari pelanggan.
+3.3.2 Observasi
+Melakukan pengamatan langsung terhadap aktivitas harian staf Divisi Sales dalam mengelola pesanan pelanggan. Observasi difokuskan pada cara staf melakukan konfirmasi status kemajuan produksi ke lantai pabrik secara konvensional serta penanganan komplain pelanggan terkait ketidakpastian status pengiriman barang.
+3.3.3 Studi Dokumentasi
+Mengumpulkan dan menganalisis berkas-berkas operasional yang berkaitan dengan siklus penjualan. Berkas yang diteliti meliputi dokumen fisik Purchase Order (PO) pelanggan, berkas lampiran pendukung, catatan pesan amandemen, serta buku besar riwayat status pemesanan untuk menentukan struktur tabel dan relasi pada basis data.
+3.3.4 Studi Pustaka
+Melakukan penelaahan terhadap berbagai referensi ilmiah, jurnal penelitian terdahulu, buku teks akademis, dan dokumentasi teknis resmi. Referensi yang dikumpulkan berfokus pada konsep rekayasa perangkat lunak menggunakan metode Prototype, pemodelan diagram UML, arsitektur framework Laravel 12, dan optimasi basis data MySQL.
+3.4 Alur Pengembangan Sistem
+Alur pengembangan sistem dalam proyek ini disusun secara kronologis untuk memastikan setiap tahapan berjalan secara terarah melalui poin-poin berikut:
+Tahap Pengumpulan Data
+Alur dimulai dari perumusan masalah, studi pendahuluan, dan pengumpulan data lapangan melalui kombinasi teknik wawancara, observasi, serta studi dokumentasi berkas penjualan perusahaan.
+Tahap Analisis Kebutuhan
+Data mentah yang diperoleh kemudian dianalisis secara mendalam untuk menetapkan ruang lingkup fungsional aplikasi, kebutuhan antarmuka, serta pembagian hak akses pengguna antara pelanggan dan admin internal.
+Tahap Perancangan Sistem (System Design)
+Penulis menyusun model konseptual perangkat lunak menggunakan diagram UML yang meliputi Use Case Diagram untuk memetakan interaksi aktor dan Activity Diagram untuk memetakan aliran kerja bisnis, sekaligus merancang basis data relasional di MySQL menggunakan ERD serta membuat desain tampilan halaman web.
+Tahap Implementasi atau Pengkodean (Coding)
+Seluruh cetak biru rancangan desain diterjemahkan ke dalam kode program menggunakan bahasa pemrograman PHP di dalam lingkungan Framework Laravel 12 untuk membangun fitur multi-stage tracking dan kontrol amandemen.
+Tahap Pengujian Sistem
+Validasi fungsi aplikasi dilakukan menggunakan metode Black-Box Testing untuk memeriksa fungsionalitas tombol, rute keamanan, dan penanganan error, kemudian dilanjutkan dengan User Acceptance Testing (UAT) bersama pengguna akhir untuk memastikan kesiapan sistem sebelum dioperasikan pada Divisi Sales PT. Metinca Prima Industrial Works Jakarta.
+BAB IVANALISIS SISTEM
+4.1 Tinjauan Organisasi
+PT. Metinca Prima Industrial Works Jakarta adalah perusahaan foundry yang beralamat di Jalan Rawa Sumur Barat No. 6 Pulo Gadung Industrial Estate, Jakarta Timur. Berdiri sejak tahun 1986 dengan usaha utama bisnis pengecoran logam.
+4.1.1 Sejarah Perusahaan
+PT. Metinca Prima Industrial Works Jakarta adalah sebuah perusahaan foundry yaitu perusahaan yang bergerak dalam bidang pengecoran bahan logam sejak tahun 1986. PT. Metinca Prima Industrial Works Jakarta merupakan perusahaan dengan kepemilikan pribadi. Dalam kegiatan proses kerja PT.Metinca Prima Industrial Works Jakarta memiliki visi dan misi yaitu :
+Visi Untuk memproduksi produk pengecoran logam yang menambah nilai untuk industri dan aman untuk lingkungan
+Misi Mengutamakan pengembangan teknologi serta sumber daya manusia yang handal dan mampu bekerja sama dalam lingkungan kerja yang sehat dan baik dengan Customer maupun supplier, dengan tujuan untuk menciptakan produk yang inovatif dan bermutu tinggi.
+4.1.2 Struktur Organisasi dan Fungsi
+Gambar 4.  SEQ Gambar_4. \* ARABIC 1 Struktur Organisasi
+Keterangan :
+Garis warna biru adalah aktor yang berkaitan dalam menggunakan sistem ini.
+Tanggung jawab dari masing-masing divisi yang berkaitan dalam aktivitas pemesanan produk yang tergambar dalam struktur organisasi adalah sebagai berikut:
+Manager Purchasing, Sales, Maketing
+Tanggung jawab Manager Purchasing, Sales, Maketing :
+Melakukan perencanaan produk.
+Melakukan kunjungan dan mencari potensi Customer baru.
+Melakukan rekapitulasi hasil penjualan untuk dilaporkan kepada top manajemen dan dilaporkan pada rapat tinjauan manajemen.
+Melakukan penyusunan strategi penjualan dalam upaya pencapaian target.
+Melakukan survey kepuasan Customer dan melakukan evaluasi terhadap
+kepuasan Customer.
+Menyusun dan melaksanakan tindakan perbaikan secara berkelanjutan untuk di bagian Sales & Marketing Departement.
+Pelaksanaan prosedur serta atas semua permintaan harga, jumlah pesanan dan persyaratan lain yang diminta oleh Customer.
+Memastikan bahwa kegiatan ekspor dan impor berjalan sesuai dengan prosedur.
+Melaporkan penilaian dan kebutuhan pelatihan personil eksternal yang mereka pimpin, kepada direktur.
+Tindakan Perbaikan / Pencegahan yang berkaitan dengan departemen masing-masing.
+Melakukan tinjauan teknis dari segi kualitas atas order Customer (tinjauan kontrak)
+Menerima dan mereview surat permintaan barang dari seluruh bagian baik yang harian maupun yang bulanan.
+Melakukan pemeriksaan terhadap ketepatan pemeriksaan dengan anggaran dan atau kebutuhan.
+Melakukan pendataan terhadap supplier dari segi harga, kesiapan dan ketepatan pengiriman serta kualitas barang yang mereka tawarkan sebagai data untuk melakukan seleksi supplier.
+Melakukan proses pembelian dari mulai permohonan, penawaran harga, penyiapan kelengkapan administrasi sampai kepada pengontrolan ketepatan pembelian.
+Menyiapkan pembayaran melalui kas kecil lainnya dan pendataan pengeluaran tersebut.
+Melakukan review dan rekap pembelian per bulan dan analisa ketepatan berdasarkan anggaran
+Berkoordinasi dengan bagian lain untuk kesesuaian spesifikasi barang dan waktu pengiriman.
+Menjalankan tugas-tugas terkait lainnya dalam permasalahan administrasi kasir atau bagian Finance
+Manager Production Planning Controll (PPC)
+Tanggung jawab Manager Production Planning Controll (PPC) :
+Memastikan rencana kerja produksi dan rencana pengiriman untuk keberlangsungan kegiatan ekspor sesuai dengan prosedur.
+Melaporkan penilaian dan kebutuhan pelatihan personil eksternal yang mereka pimpin, kepada direktur.
+Tindakan Perbaikan / Pencegahan yang berkaitan dengan departemen masing-masing.
+Pelaksanaan persiapan dan pelaksanaan produksi.
+Kebutuhan produksi perusahaan.
+Melakukan tinjauan teknis dari segi kualitas atas order Customer (tinjauan kontrak)
+Manager Quality
+Tanggung jawab Manager Quality :
+Melakukan perencanaan, pelaksanaan, monitoring dan evaluasi proses kendali mutu (Quality control) dan penjaminan mutu (Quality assurance) untuk memastikan terpenuhinya parameter kualitas mulai dari bahan baku, proses produksi dan hasil produksi sampai diterima oleh Customer.
+Melakukan monitoring dan inspeksi terhadap bahan baku dan proses produksi sehingga dapat dipastikan produk sesuai dengan persyaratan Customer.
+Membantu QMR dalam menyusun program dan pengelolaan sistem Quality Management System (QMS) dan Human Safety & Environment (HSE).
+Melakukan monitoring terkait ketepatan release produk, ketepatan penanganan keluhan Customer dan pelaksanaan control produk non konformitas dan menyimpan rekaman data tersebut dengan baik.
+Memastikan kesesuaian dan akurasi alat ukur yang digunakan sudah sesuai dan terkalibrasi secara berkala.
+Melakukan tinjauan teknis dari segi kualitas atas order Customer (tinjauan kontrak)
+Melakukan evaluasi skill map atau matriks kompetensi secara berkala untuk semua bagian.
+Memastikan dokumen rekaman / pencatatan dari seluruh hasil pemeriksaan yang dilakukan oleh bagian QC tersedia dan tersimpan dengan baik.
+Melakukan rekapitulasi hasil pelaksanaan pemeriksaan kualitas untuk dilaporkan kepada top manajemen dan dilaporkan pada rapat tinjauan manajemen.
+Mengendalikan dokumen terkait dengan mutu produk, pemeriksaan / pengujian serta standar.
+Memastikan barang yang akan dikirim sesuai dengan standar yang telah ditentukan oleh pihak Customer.
+Kualitas barang yang dipasok oleh pemasok.
+Melaksanakan kegiatan audit keselamatan dan memastikan bahwa semua pekerja mematuhi peraturan kesehatan dan keselamatan di tempat kerja melalui Staff dan Supervisor HSE.
+Menyimpanan prosedur yang digunakan.
+Menilai kemampuan karyawan.
+Melaporkan penilaian dan kebutuhan pelatihan personil eksternal yang mereka pimpin, kepada direktur.
+Tindakan Perbaikan / Pencegahan yang berkaitan dengan departemen masing-masing.
+Penetapan dan pemeliharaan prosedur yang terdokumentasi untuk non- konformitas atas bahan / produk serta tindakan disposisinya.
+Pemilikan prosedur terdokumentasi untuk memberikan status pemeriksaan atas bahan / produk.
+Penetapan prosedur untuk pemeliharaan dan pengendalian alat pemeriksa, alat ukur dan alat uji untuk kepentingan kelancaran produksi dan pemastian mutu produk pada P.T. Metinca Prima Industrial Works - Foundry Division.
+Penetapan prosedur terdokumentasi untuk pemeriksaan / pengujian.
+Penetapan dan memelihara prosedur terdokumentasi sebagai acuan dalam penandaan bahan / produk serta penjaminan atas mampu telusur produk.
+Melakukan verifikasi produk.
+Pengendalian dokumen terkait dengan mutu produk, pemeriksaan / pengujian serta standar.
+Manager Produksi & Development Engineering (Plant 1-Jakarta)
+Tanggung jawab Manager  Produksi & Development Engineering :
+Memonitor dan mengevaluasi jenis dan bahan baku yang akan digunakan.
+Memonitor dan mengevaluasi jalannya seluruh proses produksi agar mencapai target produk secara kualitas dan kuantitasnya.
+Melaksanakan proses tinjauan teknis untuk setiap order dari Customer (tinjauan kontrak).
+Bertanggung jawab melaksanakan pembuatan produk baru atau pengembangan produk yang sudah ada dan melaporkan kepada Direktur.
+Melakukan tindakan perbaikan pada proses produksi berdasarkan temuan internal atau keluhan Customer agar keluhan Customer atas kualitas dan kuantitas bisa diatasi dan keluhan Customer tidak terulang kedepannya.
+Melakukan rekap analisa pencapaian hasil kegiatan produksi dan engineering untuk dilaporkan kepada Direktur dan dilaporkan pada rapat tinjauan manajemen.
+Mengevaluasi teknik untuk penetapan Harga Pokok Produksi.
+Bertanggung jawab atas prosedur kerja di area Cut-Off.
+Development Engineering bertanggung jawab untuk membuat prosedur kerja dan mencatat hasil kemajuan pekerjaan.
+Melaporkan penilaian dan kebutuhan pelatihan personil eksternal yang mereka pimpin, kepada direktur.
+Tindakan Perbaikan / Pencegahan yang berkaitan dengan departemen masing-masing.
+Tindakan Perbaikan / Pencegahan yang berkaitan dengan Sistem Produksi dan keluhan Customer atas sampel.
+Penetapan dan pemilikan prosedur terdokumentasi sebagai acuan dalam pengendalian proses produksi.
+Berkoordinasi / pembuatan pengembangan (development).
+Penetapan prosedur terdokumentasi sebagai acuan dalam penanganan bahan / produk yang dipasok Customer.
+Kebutuhan produksi perusahaan.
+Pengendalian dokumen terkait dengan produksi serta referensi proses produksi.
+Staff Administrasi Umum Divisi Sales, Marketing, dan Operasional
+Tanggung jawab Staff Administrasi Umum Divisi Sales, Marketing, dan Operasional :
+Bertanggung jawab langsung kepada Manager Sales and Marketing.
+Mengecek email Purchase Order dan pemberintahuan lainnya dari Customer dan mencetaknya setiap hari.
+Mencatat data PO, mengecek nomor part, material, dan jumlah order dan kemudian menyimpan copy PO tersebut dalam satu folder yang mudah ditelusuri.
+Mengisi form Tinjauan Kontrak untuk diperiksa oleh Manager Sales dan Marketing , Quality Manager, Development Engineer dan PPC Engineer dan kemudian menyimpan copy dalam satu folder yang mudah ditelusuri.
+Menyiapkan data terbaru dari stock product yang ada di warehouse dan berkoordinasi dengan bagian PPC dan Warehouse tentang kapan rencana pengiriman produk ke Customer.
+Mengirimkan form Customer Satisfaction Survey ke Customer-Customer yang sudah ditentukan dan menyimpan data tersebut dalam satu folder yang mudah ditelusuri.
+Membalas email-email dari Customer berdasarkan perintah dari Manager Sales dan Marketing.
+4.2 Analisa Sistem
+4.2.1 Use Case Diagram
+Gambar 4.  SEQ Gambar_4. \* ARABIC 2 Use Case Sistem Berjalan Pesanan Pelanggan
+4.2.2 Skenario
+SEQ Tabel_4. \* ARABIC 1. Skenario Permintaan Quotation
+Tabel 4 .  SEQ Tabel_4_. \* ARABIC 1 Skenario Permintaan Quotation
+Use Case Name
+:
+Permintaan Quotation
+Unique ID: 1
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Pelanggan, Staff Adm. Umum Divisi SMO
+Description
+:
+Proses penanganan penawaran harga awal untuk komoditas komponen pengecoran logam, termasuk alur negosiasi spesifikasi data (baik kuantitas, harga satuan, maupun jadwal target pengiriman) melalui media telepon atau email yang dicatat menggunakan media kertas nota manual pada fase draf quotation ini sebelum transaksi disepakati secara final.
+Triggering Event
+:
+Pelanggan mengajukan permintaan draf penawaran harga (Request for Quotation) melalui email atau telepon.
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Pelanggan mengajukan spesifikasi kebutuhan barang via email atau telepon.
+Catatan spesifikasi barang
+Staff Adm. Umum Divisi SMO menyusun draf dokumen penawaran harga (quotation) awal pada komputer
+Draf dokumen Quotation awal
+Pelanggan meninjau draf lalu mengajukan negosiasi kuantitas, harga, atau jadwal kirim via email/telepon
+Permintaan negosiasi
+Staff Adm. Umum Divisi SMO mencatat poin negosiasi secara manual pada kertas nota coretan
+Kertas nota coretan manual
+Staff Adm. Umum Divisi SMO menghitung ulang nilai total transaksi secara manual berdasarkan nota revisi
+Hitungan manual lembar revisi
+Staff Adm. Umum Divisi SMO mengirimkan kembali draf quotation hasil negosiasi via email hingga disepakati final
+Dokumen Quotation final disetujui
+Pre-condition
+:
+Pelanggan memiliki kebutuhan pengadaan komponen logam di PT. Metinca Prima.
+Post-condition
+:
+Lembar draf quotation hasil negosiasi berhasil disetujui bersama oleh kedua belah pihak.
+Assumptions
+:
+Saluran komunikasi email perusahaan aktif dan sambungan telepon operasional berfungsi baik.
+Requirement Met
+:
+Penanganan negosiasi awal komersial operasional divisi sales.
+Outstanding Issues
+:
+Pencatatan negosiasi pada kertas nota manual rawan hilang/terselip, serta ketiadaan log arsip terpusat memicu risiko salah hitung akumulasi subtotal.
+Priority
+:
+Tinggi
+Risk
+:
+Sedang
+Skenario Menerima PO
+Tabel 4 .  SEQ Tabel_4_. \* ARABIC 2 Skenario Menerima PO
+Use Case Name
+:
+Menerima PO
+Unique ID: 2
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Pelanggan, Staff Adm. Umum Divisi SMO
+Description
+:
+Penerimaan berkas pesanan resmi (PO) dari pelanggan berdasarkan Quotation final yang dikunci, untuk kemudian diunduh dan dicetak oleh Staff SMO menjadi dokumen fisik kertas sebagai pencatatan awal transaksi resmi.
+Triggering Event
+:
+Pelanggan mengirimkan dokumen Purchase Order (PO) setelah menyetujui penawaran harga final.
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Pelanggan membuat dokumen Purchase Order (PO) secara mandiri
+Berkas PO digital
+Pelanggan mengirim berkas PO melalui email resmi ke Divisi SMO
+Email masuk perusahaan
+Staff Adm. Umum Divisi SMO mengunduh lampiran berkas digital PO dari email
+Berkas digital PO
+Staff Adm. Umum Divisi SMO mencetak berkas PO menjadi dokumen fisik kertas
+Berkas Lembaran fisik kertas PObertanda tangan.
+Staff Adm. Umum Divisi SMO mencatat arsip awal pada lembar kendali penjualan
+Lembar kendali administrasi sales
+Pre-condition
+:
+Pelanggan telah menyepakati penawaran harga (quotation) final sebelumnya.
+Post-condition
+:
+Dokumen fisik PO berhasil dicetak dan diarsipkan di meja Divisi SMO.
+Assumptions
+:
+Email perusahaan dalam kondisi aktif dan file PO tidak rusak (corrupt).
+Requirement Met
+:
+Pencatatan dokumen pesanan masuk.
+Outstanding Issues
+:
+Pelanggan tidak menerima notifikasi otomatis apakah PO sudah dibaca atau diunduh oleh Staff SMO.
+Priority
+:
+Tinggi
+Risk
+:
+Sedang
+Skenario Menyiapkan Pesanan
+Tabel 4 .  SEQ Tabel_4_. \* ARABIC 3 Skenario Menyiapkan Pesanan
+Use Case Name
+:
+Menyiapkan Pesanan
+Unique ID: 3
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Staff Adm. Umum Divisi SMO, Manager Sales, Manager Quality, Manager PPC, Manager DE
+Description
+:
+Prosedur sirkulasi formulir Tinjauan Kontrak kertas secara estafet sekuensial ke meja Manager Sales, Manager Quality, Manager PPC, dan Manager DE untuk mendapatkan peninjauan teknis serta tanda tangan basah sebelum perintah produksi diturunkan.
+Triggering Event
+:
+Lembaran fisik dokumen PO pelanggan telah dicetak lengkap oleh Staff Adm. Umum Divisi SMO.
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Staff Adm. Umum Divisi SMO menyusun berkas formulir kertas Tinjauan Kontrak.
+Formulir Tinjauan Kontrak fisik
+Berkas dibawa secara fisik ke meja Manager Sales untuk dievaluasi aspek komersial dan harga.
+Berkas persetujuan komersial
+Berkas dipindahkan manual ke ruangan Manager Quality untuk diperiksa standar mutu pengecoran logam
+Berkas persetujuan standar kualitas
+Berkas diserahkan manual ke meja Manager PPC untuk analisis stok bahan baku dan jadwal mesin pabrik
+Draf jadwal produksi fisik
+Berkas terakhir dibawa ke meja Manager DE untuk verifikasi kesesuaian gambar teknik desain cetakan logam
+Dokumen gambar teknik cetakan
+Dokumen utuh yang telah ditandatangani lengkap oleh keempat manajer dikembalikan ke Staff SMO
+Lembar Tinjauan Kontrak lengkap terotorisasi
+Pre-condition
+:
+Dokumen cetak PO pelanggan sudah siap dan draf formulir Tinjauan Kontrak kosong telah disediakan.
+Post-condition
+:
+Formulir Tinjauan Kontrak fisik terisi lengkap dengan tanda tangan basah resmi dari keempat manajer divisi.
+Assumptions
+:
+Keempat manajer berada di tempat dan dokumen tidak terselip selama sirkulasi meja ke meja berlangsung.
+Requirement Met
+:
+Validasi kelayakan kontrak produksi internal perusahaan.
+Outstanding Issues
+:
+Sirkulasi berkas fisik antar-ruangan memakan waktu lama dan rentan terhenti total (bottleneck) jika manajer sedang inspeksi lapangan atau dinas luar pabrik.
+Priority
+:
+Tinggi
+Risk
+:
+Tinggi
+Skenario Mengirimkan Pesanan
+Tabel 4 .  SEQ Tabel_4_. \* ARABIC 4  Skenario Mengirimkan Pesanan
+Use Case Name
+:
+Mengirimkan Pesanan
+Unique ID: 4
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Staff Adm. Umum Divisi SMO
+Description
+:
+Aktivitas koordinasi administratif staf penjualan untuk memantau status produk jadi yang dipindahkan dari lantai pabrik ke gudang logistik, persiapan pengemasan (packing), hingga pembuatan dokumen Surat Jalan pengiriman fisik.
+Triggering Event
+:
+Proses manufaktur pengecoran produk di lantai produksi selesai dilaksanakan.
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Staff Adm. Umum Divisi SMO menerima laporan internal bahwa pengerjaan produk logam di pabrik telah selesai.
+Laporan produk selesai manufaktur
+Staff Adm. Umum Divisi SMO berkoordinasi dengan petugas gudang untuk memastikan produk masuk area logistik.
+Nota serah terima gudang internal
+Staff Adm. Umum Divisi SMO memantau penyiapan dokumen Surat Jalan fisik pengiriman.
+Berkas Surat Jalan fisik
+Staff Adm. Umum Divisi SMO memastikan barang dimuat aman ke armada truk ekspedisi distribusi.
+Mobilisasi armada truk ekspedisi
+Pre-condition
+:
+Komponen produk pengecoran logam milik customer dinyatakan lulus inspeksi akhir oleh tim mutu.
+Post-condition
+:
+Produk dimuat ke armada truk ekspedisi dan dikirimkan menuju alamat gudang pelanggan.
+Assumptions
+:
+Armada truk ekspedisi siap beroperasi dan rute mobilisasi pengiriman aman dari kendala eksternal.
+Requirement Met
+:
+Koordinasi aktivitas pergudangan produk jadi dan pengiriman barang ke pelanggan.
+Outstanding Issues
+:
+Pelacakan progres logistik bersifat tertutup bagi pelanggan (blind tracking), memaksa Staff SMO sering mengecek status fisik manual berjalan kaki ke area gudang logistik saat pelanggan bertanya via telepon.
+Priority
+:
+Sedang
+Risk
+:
+Sedang
+Skenario Membuat Laporan Pesanan
+Tabel 4 .  SEQ Tabel_4_. \* ARABIC 5 Skenario Membuat Laporan Pesanan
+Use Case Name
+:
+Membuat Laporan Pesanan
+Unique ID: 5
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Staff Adm. Umum Divisi SMO, Manager Sales
+Description
+:
+Aktivitas penutupan transaksi operasional penjualan dengan mengompilasi lembaran berkas kertas administrasi pasca-pengiriman barang untuk mengetik lembar invoice manual serta merekap buku besar penjualan divisi kepada Manager Sales.
+Triggering Event
+:
+Sopir truk ekspedisi kembali ke kantor dengan membawa lembar Surat Jalan yang telah ditandatangani oleh pelanggan.
+Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Staff Adm. Umum Divisi SMO menerima dokumen lembar Surat Jalan kembali dari kurir armada pengiriman
+Lembar Surat Jalan kembali terverifikasi
+Staff Adm. Umum Divisi SMO mengumpulkan lembaran berkas fisik transaksi (PO, Tinjauan Kontrak, nota gudang).
+Bundel berkas fisik transaksi.
+Staff Adm. Umum Divisi SMO mengetik dokumen invoice penagihan secara manual menggunakan komputer
+Berkas Invoice manual.
+Staff Adm. Umum Divisi SMO mencatatkan nominal akumulasi transaksi ke dalam buku besar bulanan divisi sales
+Buku besar penjualan divisi.
+Staff Adm. Umum Divisi SMO menyerahkan buku laporan fisik tersebut ke meja Manager Sales
+Buku laporan pesanan fisik.
+Pre-condition
+:
+Produk komponen pengecoran logam terkonfirmasi telah diterima dengan aman di lokasi milik pelanggan.
+Post-condition
+:
+Berkas invoice fisik dikirimkan ke customer dan dokumen pembukuan bulanan selesai direkap serta diserahkan sebagai arsip pertanggungjawaban kepada Manager Sales.
+Assumptions
+:
+Seluruh lembaran kertas berkas dari tahap awal transaksi terkumpul lengkap tanpa ada dokumen yang hilang.
+Requirement Met
+:
+Penutupan administrasi penjualan akhir dan pelaporan manajemen divisi.
+Outstanding Issues
+:
+Proses pencarian berkas kertas memakan waktu lama karena rawan terselip, serta ketiadaan log terpusat menyulitkan audit ulang terhadap histori penyesuaian/perubahan draf quotation lampau.
+Priority
+:
+Sedang
+Risk
+:
+Sedang
+4.2.3 Activity Diagram
+1. Activity Diagram Menerima Dokumen PO
+Gambar 4.  SEQ Gambar_4. \* ARABIC 3 Activity Diagram Menerima Dokumen PO
+2.  Activity Diagram Melakukan Sirkulasi Tinjauan Kontrak
+Gambar 4.  SEQ Gambar_4. \* ARABIC 4 Activity Diagram Melakukan Sirkulasi Tinjauan Kontrak
+Activity Diagram Mengelola Perubahan Pesanan Manual
+Gambar 4.  SEQ Gambar_4. \* ARABIC 5 Activity Diagram Mengelola Perubahan Pesanan Manual
+Activity Diagram Memantau Progress Logistik Konvensional
+Gambar 4.  SEQ Gambar_4. \* ARABIC 6 Activity Diagram Memantau Progress Logistik
+Activity Diagram Menyusun Invoice dan Laporan Pesanan
+Gambar 4.  SEQ Gambar_4. \* ARABIC 7 Activity Diagram Menyusun Invoice dan Laporan Pesanan
+4.2.4 Spesifikasi Dokumen Masukan
+1
+Nama Dokumen
+:
+PO (Purchase Order)
+Fungsi
+:
+Sebagai dasar permintaan produksi.
+Sumber
+:
+Sales
+Jumlah
+:
+1
+Kertas
+:
+Kertas
+4.2.5 Spesifikasi Dokumen Keluaran
+1.
+Nama Dokumen
+:
+Tinjauan Kontrak
+Fungsi
+:
+Sebagai dasar persetujuan permintaan produksi.
+Sumber
+:
+Sales
+Jumlah
+:
+1
+Kertas
+:
+Kertas
+4.2.6 Identifikasi Kebutuhan Sistem
+Berdasarkan hasil analisis mendalam terhadap rangkaian prosedur berjalan serta berbagai hambatan operasional yang ditemukan pada PT. Metinca Prima Industrial Works Jakarta, penulis merumuskan identifikasi kebutuhan sistem yang mutlak diperlukan untuk menyelesaikan permasalahan transparansi pelacakan sirkulasi dokumen dan pengendalian perubahan data pesanan. Keadaan sistem berjalan yang sepenuhnya masih bertumpu pada dokumen cetak fisik, sirkulasi Lembar Tinjauan Kontrak dari meja ke meja, serta ketiadaan saluran informasi terpusat membuktikan bahwa perusahaan membutuhkan sebuah transformasi digital melalui penyediaan platform informasi berbasis web yang mampu mengintegrasikan alur kerja antara pihak pelanggan (customer), staf administrasi sales (Staff SMO), hingga jajaran manajemen operasional dalam satu basis data yang terpadu.
+Untuk menjamin kelancaran sistem usulan, kebutuhan fungsional perangkat lunak harus memfasilitasi registrasi data Purchase Order (PO) secara digital guna merekam titik awal lini masa transaksi tanpa melibatkan berkas cetak kertas yang rentan terselip atau hilang. Selain itu, sistem wajib mengakomodasi modul sirkulasi tinjauan kontrak elektronik (digital approval) yang memungkinkan empat manajer lintas sektoral, yaitu Manager Sales, Manager Quality, Manager PPC, dan Manager Production DE, untuk memberikan persetujuan sekuensial secara terpusat melalui klik tombol pada dashboard akun masing-masing guna memangkas birokrasi manual yang lambat. Terkait fitur pelacakan multi-tahap (multi-stage tracking), staf sales dibekali fungsi pembaruan status berbasis menu dropdown terkendali yang secara otomatis terrefleksi secara real-time mulai dari fase Sent saat PO baru masuk, fase Review ketika proses evaluasi tinjauan kontrak berlangsung, fase Hold apabila terjadi penangguhan teknis, hingga fase Production saat dokumen selesai disetujui lengkap dan data resmi ditransmisikan ke lini produksi pabrik.
+Guna menanggulangi risiko tumpang tindih data operasional akibat permohonan amandemen dadakan, arsitektur backend sistem harus menerapkan fungsi penguncian otomatis (locking system) yang secara mandiri membekukan atau menonaktifkan kolom pengajuan amandemen milik pelanggan apabila status pesanan telah diperbarui menjadi tahap produksi. Terakhir, sistem diwajibkan mampu mencatat log aktivitas histori amandemen secara kronologis serta mengotomatisasi generasi laporan rekapitulasi pesanan bulanan digital demi mempermudah proses pemantauan dan audit oleh pihak manajemen Divisi Sales. Di samping kebutuhan fungsional tersebut, spesifikasi teknis non-fungsional dari perangkat lunak ini dirancang berbasis web dengan menerapkan pola arsitektur Model-View-Controller (MVC) menggunakan Framework Laravel 12 demi menjamin keamanan rute dan kecepatan performa. Seluruh penyimpanan data persisten diintegrasikan menggunakan MySQL sebagai sistem manajemen basis data relasional utama untuk mengamankan relasi tabel data PO, status pelacakan, log amandemen, dan hak akses pengguna secara konsisten, didukung oleh tampilan antarmuka visual responsif yang ringan dan informatif agar customer dapat memantau posisi riil dokumen mereka secara mandiri.
+BAB VPERANCANGAN SISTEM
+Perancangan Arsitektur Sistem
+Arsitektur sistem informasi usulan menerapkan model Client-Server berbasis Three-Tier Architecture yang memisahkan secara terstruktur antara lapisan antarmuka (Presentation/Client Layer), lapisan pemrosesan logika, dan lapisan penyimpanan data. Pada Presentation Layer, seluruh aktor pengguna meliputi Pelanggan, Staff SMO, dan 4 Manajer Divisi mengakses sistem secara responsif melalui Web Browser pada Client Device dengan menggunakan protokol komunikasi HTTP/HTTPS (Port 80 / 443). Permintaan (request) tersebut kemudian diteruskan menuju Application Layer untuk diproses oleh Web Server (Nginx/Apache) yang menjalankan lingkungan pemrograman PHP 8.x dan framework Laravel 12 guna mengeksekusi seluruh logika bisnis, seperti pengelolaan dokumen lembar peninjauan kontrak serta pelacakan status pesanan secara real-time. Selanjutnya, untuk memproses atau menyimpan data transaksi operasional tersebut, Application Layer akan berinteraksi langsung dengan Data Layer pada Database Server menggunakan MySQL Protocol (Port 3306) guna mengolah data secara tersentralisasi di dalam Relational Database Management System MySQL dengan nama basis data metinca_db
+Gambar 5.  SEQ Gambar_5. \* ARABIC 1 Arsitektur Sistem
+Perancangan Proses Sistem Usulan
+5.2.1 Use Case Diagram
+1. Use Case Diagram Staff Sales
+Gambar 5.  SEQ Gambar_5. \* ARABIC 2 Use Case Diagram Staff Sales
+2.  Use Case Diagram Manager
+Gambar 5.  SEQ Gambar_5. \* ARABIC 3 Use Case Diagram Manager
+Use Case Diagram Pelanggan
+Gambar 5.  SEQ Gambar_5. \* ARABIC 4 Use Case Diagram Pelanggan
+Activity Diagram
+Skenario Sistem Usulan Hak Akses Staff
+Skenario Use Case Login Sales
+Tabel 5.  SEQ Tabel_5. \* ARABIC 1  Skenario Use Case Login Sales
+Use Case Name
+:
+Login
+Unique ID:  UC-STF-01
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Staff Sales, Sistem
+Description
+:
+Staff Sales Login Pada Website Sistem Pelacakan Pesanan Dengan Memasukan Username dan Password
+Triggering Event
+:
+Staff Sales Login Pada Website Sistem Pelacakan Pesanan Dengan Memasukan Username dan Password
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Staff Sales mengakses situs web sistem pelacakan pesanan PT. Metinca Prima Industrial Works
+Membuka website.
+Sistem menampilkan halaman homepage
+Menampilkan halaman homepage.
+Staff Sales memilih menu profile
+Menampilkan halaman login.
+Sistem Menampilkan halaman login
+Berisi username dan password.
+Staff Sales mengisi username dan password
+Berisi username dan password.
+Sistem melakukan validasi Login
+Berisi username dan password.
+Jika username dan password salah maka sistem akan menampilkan Konfirmasi user salah
+Berupa pesan kesalahan username dan password.
+Jika username dan password benar maka akan menampilkan halaman dashboard
+Masuk ke halaman dashboard Staff Sales.
+Pre-condition
+:
+Login.
+Post-condition
+:
+Masuk kehalaman web Staff Sales
+Assumptions
+:
+Login berhasil.
+Requirement Met
+:
+Login berhasil.
+Outstanding Issues
+:
+Login gagal.
+Priority
+:
+Tinggi
+Risk
+:
+Tinggi
+Skenario Use Case Melihat Dashboard Sales
+Tabel 5.  SEQ Tabel_5. \* ARABIC 2 Skenario Use Case Melihat Dashboard Sales
+Use Case Name
+:
+Melihat Dashboard Sales
+Unique ID:  UC-STF-02
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Staff Sales, Sistem
+Description
+:
+Staff Sales Melihat Ringkasan Data Transaksi Dan Status Lini Masa Pesanan Berjalan Pada Dashboard
+Triggering Event
+:
+Staff Sales Mengakses Menu Dashboard Untuk Memantau Ringkasan Penjualan
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Staff Sales memilih menu Dashboard
+Mengklik menu dashboard.
+Sistem memproses pemanggilan data metrik dari database penjualan
+Melakukan kueri jumlah data dari table quotations dan table purchase_orders.
+Sistem menampilkan tiga card informasi metrik utama secara horizontal di layar
+Menyajikan jumlah total akumulasi dari Quotation, Purchase Order, dan PO Amandement.
+Sistem menarik data log rekapitulasi jejak aktivitas terbaru pengguna dari basis data
+Mengambil data riwayat log aktivitas secara kronologis terupdate.
+Sistem menyajikan data tersebut ke dalam tabel komponen Activity History
+Menampilkan kolom data User, Activity, dan Time (waktu eksekusi secara real-time).
+Pre-condition
+:
+Staff Sales telah berhasil melakukan login dan masuk ke dalam sesi aktif aplikasi.
+Post-condition
+:
+Halaman dashboard sukses menyajikan data statistik dokumen beserta tabel riwayat aktivitas penjualan secara aktual.
+Assumptions
+:
+Seluruh data angka pada card metrik dan baris tabel riwayat terhubung langsung ke basis data MySQL backend.
+Requirement Met
+:
+Monitoring transparansi data transaksi dan pengawasan log history aktivitas internal divisi penjualan.
+Outstanding Issues
+:
+Belum tersedia tombol filter cepat untuk mengelompokkan tabel riwayat aktivitas berdasarkan nama user tertentu.
+Priority
+:
+Sedang
+Risk
+:
+Rendah
+Skenario Use Case Mengelola Data Pricelist Products
+Tabel 5.  SEQ Tabel_5. \* ARABIC 3 Skenario Use Case Mengelola Data Pricelist Products
+Use Case Name
+:
+Mengelola Data Pricelist Products
+Unique ID:  UC-STF-03
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Staff Sales, Sistem
+Description
+:
+Staff Sales mengelola master data katalog harga produk logam standar berupa pencarian, penambahan, pemantauan , pengubahan , maupun penghapusan data komponen produk beserta file Drawing PDF.
+Triggering Event
+:
+Staff Sales mengakses menu Pricelist Products untuk memperbarui, menyaring, atau memeriksa spesifikasi teknis dan nominal harga jual barang manufaktur
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Staff Sales memilih menu Pricelist Products pada bilah menu samping (sidebar)
+Mengklik menu Pricelist Products.
+Sistem menampilkan halaman utama panel katalog beserta fitur input pencarian cepat
+Menampilkan kolom filter (Part Number, Article, Part Name) beserta tombol Filter dan Reset.
+Sistem memuat tabel daftar seluruh data produk pengecoran logam dari basis data
+Menyajikan baris data dengan kolom informasi lengkap (No, Part Number, Article, Part Name, Index, Berat (Kg), Material, Price, Drawing PDF, Created At, Actions).
+Staff Sales memasukkan kata kunci pada kolom pencarian dan mengklik tombol Filter
+Sistem melakukan kueri penyaringan data produk secara dinamis.
+Staff Sales mengklik tombol View PDF pada kolom Drawing PDF untuk memeriksa berkas gambar teknik komponen yang tersedia
+Menampilkan atau membuka berkas lampiran digital cetakan produk (.pdf).
+Staff Sales memilih tombol aksi pada kolom Actions seperti mengklik tombol Add Pricelist untuk menambah data baru, ikon Edit untuk mengubah data, atau ikon Delete untuk menghapus data
+Memicu perpindahan halaman formulir data atau memproses eksekusi manipulasi data pada database MySQL.
+Pre-condition
+:
+Staff Sales telah berhasil melakukan login dan masuk ke dalam sesi aktif sistem informasi penjualan.
+Post-condition
+:
+Data katalog master produk berhasil disaring, diperbarui, ditambahkan, atau dihapus dari pusat penyimpanan data.
+Assumptions
+:
+Penulisan struktur kode Part Number, kode Article, spesifikasi Material, serta Price wajib mengikuti standar baku inventaris PT. Metinca Prima.
+Requirement Met
+:
+Sentralisasi dan kontrol ketertiban data master katalog harga produk operasional perusahaan..
+Outstanding Issues
+:
+Belum tersedia fitur unggah massal (bulk import) data katalog produk langsung dari file spreadsheet Excel (.xlsx).
+Priority
+:
+Tinggi
+Risk
+:
+Sedang
+Skenario Use Case Melihat Daftar & Detail Request
+Tabel 5.  SEQ Tabel_5. \* ARABIC 4 Skenario Use Case Melihat Daftar & Detail Request
+Use Case Name
+:
+Melihat Daftar & Detail Request
+Unique ID:  UC-STF-04
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Staff Sales, Sistem
+Description
+:
+Staff Sales memantau daftar, menyaring rentang tanggal, mengekspor rekap, dan melihat rincian data permohonan proyek (Request Projects) dari customer.
+Triggering Event
+:
+Staff Sales membuka menu Request untuk memeriksa dokumen masuk dari customer eksternal.
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Staff Sales memilih menu Request pada bilah menu samping (sidebar).
+Mengklik menu Request.
+Sistem menampilkan halaman panel Request Projects beserta kontrol filter parameter di bagian atas.
+Menyajikan kolom input tanggal (From/To), dropdown All Sales, serta tombol Filter, Clear, dan Export.
+Sistem memuat komponen tabel rekapitulasi data permohonan secara dinamis.
+Menyajikan struktur kolom tabel utama (No, Req Id, Name, Company, Email, Subject, Request Date, Sales PIC, Action).
+Staff Sales menggunakan filter tanggal/PIC lalu mengklik tombol Filter atau mengklik tombol Export.
+Memicu pemrosesan kueri data database atau penyalinan rekap dokumen keluar.
+Staff Sales mengklik ikon tombol pada kolom Action.
+Sistem mengarahkan pengguna menuju halaman detail spesifikasi teknis dan gambar cetakan logam.
+Pre-condition
+:
+Staff Sales telah berhasil melakukan login dan masuk ke dalam sesi aktif aplikasi.
+Post-condition
+:
+Informasi detail berkas request proyek customer berhasil diperiksa secara transparan.
+Assumptions
+:
+Seluruh data transaksi permohonan dikirimkan secara real-time oleh customer melalui portal akun mereka.
+Requirement Met
+:
+Manajemen pengawasan, pelacakan, dan ketertiban administrasi dokumen permohonan proyek digital awal.
+Outstanding Issues
+:
+Tombol filter cetak data (Export) belum dikonfigurasi untuk memilih format file keluaran tertentu secara terpisah.
+Priority
+:
+Tinggi
+Risk
+:
+Rendah
+Skenario Use Case Mengelola Dokumen Quotation
+Tabel 5.  SEQ Tabel_5. \* ARABIC 5 Skenario Use Case Mengelola Dokumen Quotation
+Use Case Name
+:
+Mengelola Dokumen Quotation
+Unique ID:  UC-STF-05
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Staff Sales, Sistem
+Description
+:
+Staff Sales memantau daftar, menyaring status, mengekspor rekap, menambah draf penawaran (Add Quotation), serta memeriksa detail berkas Quotations milik customer.
+Triggering Event
+:
+Staff Sales membuka menu Quotation pada bilah samping untuk mengelola lembar data penawaran harga komersial proyek.
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Staff Sales memilih menu Quotation pada bilah menu samping (sidebar).
+Mengklik menu Quotation.
+Sistem menampilkan halaman panel Quotations yang dilengkapi dengan bilah kontrol filter parameter di bagian atas.
+Menyajikan opsi input rentang tanggal (From/To), dropdown All Status, serta tombol Filter, Export, dan Add Quotation.
+Sistem memuat tabel rekapitulasi data dokumen penawaran secara dinamis lengkap dengan kolom pencarian kata kunci.
+Menyajikan kolom utama (No, Req Id, No Quotation, Company, Quotation Date, Expired Date, Sales PIC, Action, Status).
+Staff Sales melakukan filter data, mencari kata kunci via kolom Search, mengekspor berkas, atau mengklik tombol Add Quotation untuk membuat data baru.
+Sistem memproses kueri data database atau mengarahkan pengguna menuju halaman formulir input penawaran harga
+Staff Sales mengklik ikon mata pada kolom Action untuk meninjau rincian lembar komersial serta melihat status akhir dokumen pada kolom Status (Sent, PO, Accepted).
+Sistem menampilkan halaman detail data rincian berkas quotation terpilih
+Pre-condition
+:
+Staff Sales telah berhasil melakukan proses login dan masuk ke dalam sesi aktif sistem.
+Post-condition
+:
+Dokumen penawaran harga terpantau, disaring, ditambahkan, atau dibuka berkas detailnya secara transparan.
+Assumptions
+:
+Kode penomoran otomatis pada kolom No Quotation tergenerasi secara sistematis oleh sistem backend.
+Requirement Met
+:
+Manajemen pengawasan, pelacakan, dan otomatisasi administrasi dokumen penawaran komersial (Quotation Management).
+Outstanding Issues
+:
+Sistem belum terintegrasi untuk mengirimkan salinan file PDF quotation secara otomatis ke email korporasi customer..
+Priority
+:
+Tinggi
+Risk
+:
+Sedang
+Skenario Use Case Mengelola Purchase Order
+Tabel 5.  SEQ Tabel_5. \* ARABIC 6 Skenario Use Case Mengelola Purchase Order
+Use Case Name
+:
+Mengelola Dokumen Quotation
+Unique ID:  UC-STF-06
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Staff Sales, Sistem
+Description
+:
+Mengelola Data PO External (pantau status, proses antrean) dan Data PO Internal (cek barang/QC, ekspansi detail item, buat kontrak).
+Triggering Event
+:
+Staff Sales membuka menu Purchase Order untuk memproses kelayakan berkas pesanan resmi customer.
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Staff Sales memilih submenu Data PO External atau Data PO Internal.
+Menampilkan halaman panel data antrean PO yang dipilih.
+Pada PO External, memeriksa status pelacakan berkas data.
+Menampilkan status Sent (Antrean), Review (4 Divisi), atau In Production.
+Mengklik tombol Proses Internal pada baris PO status Sent.
+Sistem memperbarui tahapan log antrean menjadi Review.
+Pada PO Internal, mencari nomor artikel pada form cek barang
+Menampilkan rincian item (Part No, Material, Qty, Subtotal).
+Mengklik ikon panah ekspansi pada baris data tabel PO Internal.
+Sistem menampilkan halaman detail data rincian berkas quotation terpilih
+Mengklik tombol Buat Kontrak pada baris sub-item yang valid.
+Mengarahkan ke halaman formulir draf Contract Review Sheet.
+Pre-condition
+:
+Login berhasil dan customer telah mengunggah berkas dokumen PO resmi.
+Post-condition
+:
+Berkas PO terverifikasi dan siap dialirkan ke tahap tinjauan kontrak lintas divisi.
+Assumptions
+:
+Relasi data nomor PO, nomor quotation, dan spesifikasi material terintegrasi presisi
+Requirement Met
+:
+Kontrol administrasi pesanan resmi dan otomatisasi validasi spesifikasi material produksi.
+Outstanding Issues
+:
+Belum ada fitur peringatan (alert) otomatis jika kuantitas pesanan melebihi kapasitas pabrik.
+Priority
+:
+Tinggi
+Risk
+:
+Sedang
+Skenario Use Case Mengatur Prioritas PO Schedule
+Tabel 5.  SEQ Tabel_5. \* ARABIC 7 Skenario Use Case Mengatur Prioritas PO Schedule
+Use Case Name
+:
+Mengatur Prioritas PO Schedule
+Unique ID:  UC-STF-07
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Staff Sales, Sistem
+Description
+:
+Memantau linimasa kirim barang, menghitung mundur hari tenggat (Delivery Date), dan mengatur urutan prioritas via Arrange Schedule.
+Triggering Event
+:
+Staff Sales membuka menu PO Schedule untuk mengevaluasi batas waktu pengiriman berkas PO.
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Staff Sales memilih menu PO Schedule pada bilah samping.
+Menampilkan halaman utama antrean jadwal PO.
+Sistem memuat komponen tabel lengkap beserta tombol aksional.
+Menyajikan tombol Arrange Schedule dan kolom data (No, Req Id, Delivery Date, Status, Status Order).
+Staff Sales meninjau sisa hari pada kolom Delivery Date (days from now).
+Menilai tingkat urgensi batas waktu pengiriman barang manufaktur.
+Staff Sales memeriksa tingkat kedaruratan pada kolom Status Order.
+Mengetahui indikasi tingkat prioritas awal pesanan customer.
+Staff Sales mengklik tombol Arrange Schedule.
+Mengarahkan ke halaman konfigurasi urutan prioritas jadwal produksi
+Pre-condition
+:
+Login berhasil dan dokumen PO customer telah masuk ke dalam database sistem
+Post-condition
+:
+Visualisasi linimasa jadwal terpantau transparan dan siap dikonfigurasi urutan antreannya.
+Assumptions
+:
+Perhitungan hitung mundur sisa hari diproses otomatis oleh server berdasarkan Delivery Date.
+Requirement Met
+:
+Penyelarasan komitmen waktu kirim penjualan dengan kapasitas lini produksi pabrik.
+Outstanding Issues
+:
+Belum dikonfigurasi pengiriman notifikasi otomatis jika sisa waktu pengerjaan kurang dari 3 hari.
+Priority
+:
+Sedang
+Risk
+:
+Sedang
+Skenario Use Case Mengelola Tinjauan Kontrak
+Tabel 5.  SEQ Tabel_5. \* ARABIC 8 Skenario Use Case Mengelola Tinjauan Kontrak
+Use Case Name
+:
+Mengelola Tinjauan Kontrak
+Unique ID:  UC-STF-08
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Staff Sales, Sistem
+Description
+:
+Memantau data, menyaring parameter, mengekspor berkas, serta mengontrol status persetujuan lembar evaluasi (Tinjauan Kontrak) lintas divisi.
+Triggering Event
+:
+Staff Sales membuka menu Contract Review Sheet untuk mengevaluasi progres sirkulasi persetujuan teknis pesanan
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Staff Sales memilih menu Contract Review Sheet pada bilah samping.
+Menampilkan halaman utama rekapitulasi lembar tinjauan kontrak.
+istem memuat tabel data beserta kontrol filter (From/To, Status, Departements) dan tombol pencarian Search.
+Menyajikan relasi nomor identitas (Req Id, Quotation No, PO No, Tinjauan Kontrak, Part No, Part Name).
+Staff Sales memantau indikator persetujuan pada kolom manajer internal pabrik.
+Melacak persetujuan dari Manager Sales, Manager Quality, Manager PPC, dan Manager DE (ikon centang hijau/seru kuning).
+Staff Sales memeriksa status akhir dokumen pada kolom Status.
+Mengetahui fase akhir lembar evaluasi (Created atau Production).
+Staff Sales mengeksekusi aksi operasional pada kolom Action.
+Menggunakan tombol Lihat detail (mata), Ubah (pensil), Hapus (tempat sampah), atau Cetak PDF (ikon dokumen merah).
+Pre-condition
+:
+Login berhasil dan draf lembar evaluasi teknik awal telah berhasil dibuat melalui menu PO Internal
+Post-condition
+:
+Jalur birokrasi evaluasi terpantau transparan dan dokumen kelayakan produksi berhasil dikelola
+Assumptions
+:
+Tombol Aksi untuk mengubah (Edit) dan menghapus (Delete) otomatis dikunci sistem saat status berubah menjadi Production
+Requirement Met
+:
+Digitalisasi sirkulasi persetujuan, transparansi validasi spesifikasi teknis, dan pengarsipan berkas Contract Review.
+Outstanding Issues
+:
+Belum tersedia fitur pengiriman notifikasi pengingat otomatis (ping/reminder) ke akun manajer yang belum melakukan klik approval.
+Priority
+:
+Tinggi
+Risk
+:
+Tinggi
+Skenario Use Case Logout
+Tabel 5.  SEQ Tabel_5. \* ARABIC 9 Skenario Use Case Logout
+Use Case Name
+:
+Logout
+Unique ID:  UC-STF-09
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Staff Sales, Sistem
+Description
+:
+Memutus sesi masuk (session login) aktif guna mengamankan hak akses modul internal aplikasi
+Triggering Event
+:
+Staff Sales memilih opsi untuk keluar dari aplikasi setelah menyelesaikan seluruh aktivitas.
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Staff Sales mengklik ikon foto profil atau nama user di pojok kanan atas.
+Menampilkan menu dropdown utilitas akun.
+Staff Sales memilih opsi tombol Logout.
+Mengirim instruksi terminasi hak akses aktif ke server.
+Sistem menghapus token otentikasi sesi aktif pengguna.
+Melakukan clear active session cookies
+Sistem mengarahkan browser kembali menuju form login utama.
+Memuat ulang halaman gerbang masuk awal web.
+Pre-condition
+:
+Pengguna berada dalam status log sesi masuk terotentikasi yang aktif di sistem.
+Post-condition
+:
+Sesi akses terputus total dan sistem mengunci kembali seluruh modul menu internal sales.
+Assumptions
+:
+Penekanan tombol navigasi back pada browser client tidak akan bisa membuka halaman data sales.
+Requirement Met
+:
+Pemeliharaan integritas dan standar keamanan privasi informasi data internal perusahaan..
+Outstanding Issues
+:
+Belum dikonfigurasi fungsi auto-logout berbasis durasi waktu diam (idle timeout) pengguna
+Priority
+:
+Tinggi
+Risk
+:
+Rendah
+Skenario Sistem Usulan Hak Akses Manager
+Skenario Use Case Login Manager
+Tabel 5.  SEQ Tabel_5. \* ARABIC 10 Skenario Use Case Login Manager
+Use Case Name
+:
+Login
+Unique ID: UC-MGR-01
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Manager , Sistem
+Description
+:
+Manager Login Pada Website Sistem Pelacakan Pesanan Dengan Memasukan Username dan Password
+Triggering Event
+:
+Manager Login Pada Website Sistem Pelacakan Pesanan Dengan Memasukan Username dan Password
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Manager mengakses situs web sistem pelacakan pesanan PT. Metinca Prima Industrial Works
+Membuka website.
+Sistem menampilkan halaman homepage
+Menampilkan halaman homepage.
+Manager memilih menu profile
+Menampilkan halaman login.
+Sistem Menampilkan halaman login
+Berisi username dan password.
+Manager mengisi username dan password
+Berisi username dan password.
+Sistem melakukan validasi Login
+Berisi username dan password.
+Jika username dan password salah maka sistem akan menampilkan Konfirmasi user salah
+Berupa pesan kesalahan username dan password.
+Jika username dan password benar maka akan menampilkan halaman dashboard
+Masuk ke halaman dashboard Staff Sales.
+Pre-condition
+:
+Login.
+Post-condition
+:
+Masuk kehalaman web  Manager
+Assumptions
+:
+Login berhasil.
+Requirement Met
+:
+Login berhasil.
+Outstanding Issues
+:
+Login gagal.
+Priority
+:
+Tinggi
+Risk
+:
+Tinggi
+Skenario Use Case Melihat Dashboard Manager
+Tabel 5.  SEQ Tabel_5. \* ARABIC 11 Skenario Use Case Melihat Dashboard Manager
+Use Case Name
+:
+Melihat Dashboard Manager
+Unique ID:  UC-MGR-02
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Manager , Sistem
+Description
+:
+Manager Melihat Ringkasan Data Transaksi Dan Status Lini Masa Pesanan Berjalan Pada Dashboard
+Triggering Event
+:
+Staff Sales Mengakses Menu Dashboard Untuk Memantau Ringkasan Penjualan
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Manager memilih menu Dashboard
+Mengklik menu dashboard.
+Sistem memproses pemanggilan data metrik dari database penjualan
+Melakukan kueri jumlah data dari table quotations dan table purchase_orders.
+Sistem menampilkan tiga card informasi metrik utama secara horizontal di layar
+Menyajikan jumlah total akumulasi dari Quotation, Purchase Order, dan PO Amandement.
+Sistem menarik data log rekapitulasi jejak aktivitas terbaru pengguna dari basis data
+Mengambil data riwayat log aktivitas secara kronologis terupdate.
+Sistem menyajikan data tersebut ke dalam tabel komponen Activity History
+Menampilkan kolom data User, Activity, dan Time (waktu eksekusi secara real-time).
+Pre-condition
+:
+Manager telah berhasil melakukan login dan masuk ke dalam sesi aktif aplikasi.
+Post-condition
+:
+Halaman dashboard sukses menyajikan data statistik dokumen beserta tabel riwayat aktivitas penjualan secara aktual.
+Assumptions
+:
+Seluruh data angka pada card metrik dan baris tabel riwayat terhubung langsung ke basis data MySQL backend.
+Requirement Met
+:
+Monitoring transparansi data transaksi dan pengawasan log history aktivitas internal divisi penjualan.
+Outstanding Issues
+:
+Belum tersedia tombol filter cepat untuk mengelompokkan tabel riwayat aktivitas berdasarkan nama user tertentu.
+Priority
+:
+Sedang
+Risk
+:
+Rendah
+Skenario Use Case Mengelola Data Pricelist Products
+Tabel 5.  SEQ Tabel_5. \* ARABIC 12 Skenario Use Case Mengelola Data Pricelist Products
+Use Case Name
+:
+Mengelola Data Pricelist Products
+Unique ID:  UC-MGR-03
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Manager , Sistem
+Description
+:
+Manager mengelola master data katalog harga produk logam standar berupa pencarian, penambahan, pemantauan , pengubahan , maupun penghapusan data komponen produk beserta file Drawing PDF.
+Triggering Event
+:
+Manager mengakses menu Pricelist Products untuk memperbarui, menyaring, atau memeriksa spesifikasi teknis dan nominal harga jual barang manufaktur
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Manager memilih menu Pricelist Products pada bilah menu samping (sidebar)
+Mengklik menu Pricelist Products.
+Sistem menampilkan halaman utama panel katalog beserta fitur input pencarian cepat
+Menampilkan kolom filter (Part Number, Article, Part Name) beserta tombol Filter dan Reset.
+Sistem memuat tabel daftar seluruh data produk pengecoran logam dari basis data
+Menyajikan baris data dengan kolom informasi lengkap (No, Part Number, Article, Part Name, Index, Berat (Kg), Material, Price, Drawing PDF, Created At, Actions).
+Manager memasukkan kata kunci pada kolom pencarian dan mengklik tombol Filter
+Sistem melakukan kueri penyaringan data produk secara dinamis.
+Manager mengklik tombol View PDF pada kolom Drawing PDF untuk memeriksa berkas gambar teknik komponen yang tersedia
+Menampilkan atau membuka berkas lampiran digital cetakan produk (.pdf).
+Manager memilih tombol aksi pada kolom Actions seperti mengklik tombol Add Pricelist untuk menambah data baru, ikon Edit untuk mengubah data, atau ikon Delete untuk menghapus data
+Memicu perpindahan halaman formulir data atau memproses eksekusi manipulasi data pada database MySQL.
+Pre-condition
+:
+Manager telah berhasil melakukan login dan masuk ke dalam sesi aktif sistem informasi penjualan.
+Post-condition
+:
+Data katalog master produk berhasil disaring, diperbarui, ditambahkan, atau dihapus dari pusat penyimpanan data.
+Assumptions
+:
+Penulisan struktur kode Part Number, kode Article, spesifikasi Material, serta Price wajib mengikuti standar baku inventaris PT. Metinca Prima.
+Requirement Met
+:
+Sentralisasi dan kontrol ketertiban data master katalog harga produk operasional perusahaan..
+Outstanding Issues
+:
+Belum tersedia fitur unggah massal (bulk import) data katalog produk langsung dari file spreadsheet Excel (.xlsx).
+Priority
+:
+Tinggi
+Risk
+:
+Sedang
+Skenario Use Case Melihat Daftar & Detail Request
+Tabel 5.  SEQ Tabel_5. \* ARABIC 13 Skenario Use Case Melihat Daftar & Detail Request
+Use Case Name
+:
+Melihat Daftar & Detail Request
+Unique ID:  UC-MGR-04
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Manager , Sistem
+Description
+:
+Manager memantau daftar, menyaring rentang tanggal, mengekspor rekap, dan melihat rincian data permohonan proyek (Request Projects) dari customer.
+Triggering Event
+:
+Manager membuka menu Request untuk memeriksa dokumen masuk dari customer eksternal.
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Manager memilih menu Request pada bilah menu samping (sidebar).
+Mengklik menu Request.
+Sistem menampilkan halaman panel Request Projects beserta kontrol filter parameter di bagian atas.
+Menyajikan kolom input tanggal (From/To), dropdown All Sales, serta tombol Filter, Clear, dan Export.
+Sistem memuat komponen tabel rekapitulasi data permohonan secara dinamis.
+Menyajikan struktur kolom tabel utama (No, Req Id, Name, Company, Email, Subject, Request Date, Sales PIC, Action).
+Manager menggunakan filter tanggal/PIC lalu mengklik tombol Filter atau mengklik tombol Export.
+Memicu pemrosesan kueri data database atau penyalinan rekap dokumen keluar.
+Manager mengklik ikon tombol pada kolom Action.
+Sistem mengarahkan pengguna menuju halaman detail spesifikasi teknis dan gambar cetakan logam.
+Pre-condition
+:
+Manager telah berhasil melakukan login dan masuk ke dalam sesi aktif aplikasi.
+Post-condition
+:
+Informasi detail berkas request proyek customer berhasil diperiksa secara transparan.
+Assumptions
+:
+Seluruh data transaksi permohonan dikirimkan secara real-time oleh customer melalui portal akun mereka.
+Requirement Met
+:
+Manajemen pengawasan, pelacakan, dan ketertiban administrasi dokumen permohonan proyek digital awal.
+Outstanding Issues
+:
+Tombol filter cetak data (Export) belum dikonfigurasi untuk memilih format file keluaran tertentu secara terpisah.
+Priority
+:
+Tinggi
+Risk
+:
+Rendah
+Skenario Use Case Logout
+Tabel 5.  SEQ Tabel_5. \* ARABIC 14 Skenario Use Case Logout
+Use Case Name
+:
+Logout
+Unique ID:  UC-MGR-05
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Manager , Sistem
+Description
+:
+Memutus sesi masuk (session login) aktif guna mengamankan hak akses modul internal aplikasi
+Triggering Event
+:
+Manager memilih opsi untuk keluar dari aplikasi setelah menyelesaikan seluruh aktivitas.
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Manager mengklik ikon foto profil atau nama user di pojok kanan atas.
+Menampilkan menu dropdown utilitas akun.
+Manager memilih opsi tombol Logout.
+Mengirim instruksi terminasi hak akses aktif ke server.
+Sistem menghapus token otentikasi sesi aktif pengguna.
+Melakukan clear active session cookies
+Sistem mengarahkan browser kembali menuju form login utama.
+Memuat ulang halaman gerbang masuk awal web.
+Pre-condition
+:
+Pengguna berada dalam status log sesi masuk terotentikasi yang aktif di sistem.
+Post-condition
+:
+Sesi akses terputus total dan sistem mengunci kembali seluruh modul menu internal sales.
+Assumptions
+:
+Penekanan tombol navigasi back pada browser client tidak akan bisa membuka halaman data sales.
+Requirement Met
+:
+Pemeliharaan integritas dan standar keamanan privasi informasi data internal perusahaan..
+Outstanding Issues
+:
+Belum dikonfigurasi fungsi auto-logout berbasis durasi waktu diam (idle timeout) pengguna
+Priority
+:
+Tinggi
+Risk
+:
+Rendah
+Skenario Use Case Mengelola Dokumen Quotation
+Tabel 5.  SEQ Tabel_5. \* ARABIC 15 Skenario Use Case Mengelola Dokumen Quotation
+Use Case Name
+:
+Mengelola Dokumen Quotation
+Unique ID:  UC- MGR-06
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Manager , Sistem
+Description
+:
+Memantau daftar, menyaring status negosiasi, mengekspor berkas rekap, dan membuka detail lembar penawaran komersial (Quotation).
+Triggering Event
+:
+Manager membuka menu Quotation untuk mengawasi status penawaran harga yang dikirim ke customer.
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Manager memilih menu Quotation pada bilah menu samping (sidebar).
+Menampilkan halaman utama panel Quotations dan filter kontrol.
+Sistem memuat tabel rekapitulasi berkas lengkap dengan kolom pencarian.
+Menyajikan struktur kolom (No, Req Id, No Quotation, Sales PIC, Status).
+Manager memantau perkembangan nilai transaksi komersial dan menyaring status penawaran.
+Memeriksa kolom status dokumen
+Manager mengklik ikon mata pada kolom Action untuk memeriksa detail rincian.
+Sistem menyajikan halaman detail lembar komersial penawaran terpilih.
+Pre-condition
+:
+Manager telah berhasil melakukan proses login dan masuk ke dalam sesi aktif sistem.
+Post-condition
+:
+Progres nilai transaksi komersial terpantau transparan untuk monitoring keputusan bisnis.
+Assumptions
+:
+Seluruh perubahan status log quotation diperbarui secara real-time berdasarkan respons portal customer.
+Requirement Met
+:
+Pengawasan menyeluruh terhadap manajemen penawaran harga (Quotation Management) perusahaan
+Outstanding Issues
+:
+Sistem belum memfasilitasi filter ringkasan berdasarkan total nominal rupiah transaksi penawaran.
+Priority
+:
+Tinggi
+Risk
+:
+Sedang
+Skenario Use Case Mengelola Purchase Order
+Tabel 5.  SEQ Tabel_5. \* ARABIC 16 Skenario Use Case Mengelola Purchase Order
+Use Case Name
+:
+Mengelola Dokumen Quotation
+Unique ID:  UC-MGR-07
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Manager, Sistem
+Description
+:
+Memantau data berkas pesanan resmi masuk pada submenu Data PO External (pantau status antrean) dan Data PO Internal (cek barang/QC, ekspansi detail sub-item).
+Triggering Event
+:
+Manager membuka dropdown menu Purchase Order untuk mengawasi kelayakan berkas pesanan dari customer
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Manager memilih submenu Data PO External atau Data PO Internal pada dropdown menu samping.
+Menampilkan halaman panel antrean data dokumen PO yang dipilih.
+Pada PO External, meninjau status alur pemrosesan pesanan berjalan.
+Memantau status pelacakan (Sent (Antrean), Review (4 Divisi), In Production).
+Pada PO Internal, meninjau ketersediaan data barang via nomor artikel pada form pencarian.
+Sistem memuat pencocokan spesifikasi teknis kartu master QC.
+Manager mengklik ikon panah ekspansi pada tabel baris PO Internal
+Menampilkan sub-item breakdown (Part No, Material, Qty, Subtotal, tag Sudah di Pricelist).
+Pre-condition
+:
+Login berhasil dan dokumen PO resmi customer telah diproses ke tahap internal oleh staf sales.
+Post-condition
+:
+Progres keabsahan administrasi pesanan dan rincian sub-item teknis terpantau transparan.
+Assumptions
+:
+Relasi data antara nomor PO, quotation acuan, dan spesifikasi material terintegrasi akurat.
+Requirement Met
+:
+Pengawasan kontrol administrasi transaksi resmi dan peninjauan spesifikasi material pesanan logam.
+Outstanding Issues
+:
+Belum tersedia indikator visual khusus penanda barang dengan bahan baku impor pada baris detail.
+Priority
+:
+Tinggi
+Risk
+:
+Sedang
+Skenario Use Case Mengatur Prioritas PO Schedule
+Tabel 5.  SEQ Tabel_5. \* ARABIC 17 Skenario Use Case Mengatur Prioritas PO Schedule
+Use Case Name
+:
+Mengatur Prioritas PO Schedule
+Unique ID:  UC-MGR-08
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Manager, Sistem
+Description
+:
+Memantau linimasa pengiriman pesanan aktif, sisa target hari kirim (Delivery Date countdown), dan status tingkat kedaruratan antrean produksi.
+Triggering Event
+:
+Manager membuka menu PO Schedule untuk mengevaluasi komitmen ketepatan waktu penyerahan produk ke customer.
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Manager memilih menu PO Schedule pada bilah menu samping
+Menampilkan halaman utama linimasa antrean jadwal PO.
+Sistem memuat tabel antrean beserta parameter hitung mundur hari pengiriman.
+Menyajikan kolom utama (No, PO No, Customer, Delivery Date, Status, Status Order).
+Manager mengevaluasi sisa hari batas kirim barang pada kolom Delivery Date (days from now).
+Menilai efisiensi komitmen waktu untuk menghindari penalti keterlambatan.
+Manager mengawasi tingkat kedaruratan antrean pengerjaan pabrik pada kolom Status Order (Urgent).
+Memantau ketepatan alokasi prioritas yang diatur oleh divisi sales.
+Pre-condition
+:
+Login berhasil dan data penjadwalan komersial PO telah tergenerasi di dalam sistem.
+Post-condition
+:
+Linimasa jadwal penyerahan barang terpantau secara eksekutif untuk mitigasi keterlambatan.
+Assumptions
+:
+Penghitungan sisa hari berjalan sinkron dengan penanggalan riil pada server database.
+Requirement Met
+:
+Monitoring komitmen ketepatan waktu pengiriman penjualan terhadap kapasitas operasional pabrik.
+Outstanding Issues
+:
+Belum tersedia tombol eksport khusus grafik linimasa (Gantt Chart) jadwal pengiriman terintegrasi
+Priority
+:
+Sedang
+Risk
+:
+Sedang
+Skenario Use Case Mengelola Tinjauan Kontrak
+Tabel 5.  SEQ Tabel_5. \* ARABIC 18 Skenario Use Case Mengelola Tinjauan Kontrak
+Use Case Name
+:
+Mengelola Tinjauan Kontrak
+Unique ID:  UC-MGR -09
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Manager, Sistem
+Description
+:
+Memantau rekapitulasi berkas, menyaring parameter, serta mengawasi matriks status persetujuan (approval) 4 divisi pada tabel Contract Review Sheet.
+Triggering Event
+:
+Manager membuka menu Contract Review Sheet untuk memantau status kelayakan teknis pesanan.
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Manager memilih menu Contract Review Sheet pada bilah samping.
+Menampilkan halaman utama tabel review kontrak beserta filter parameter (From, To, Status, Departements).
+Sistem memuat tabel data berkas secara terstruktur.
+Menyajikan kolom: No, Req Id, Quotation No, PO No, Tinjauan Kontrak, Part No, Part Name, kolom indikator Manager, Status, dan Action.
+Manager mengawasi matriks sirkulasi persetujuan internal pabrik pada kolom masing-masing divisi.
+Melacak status via ikon visual (tanda seru kuning untuk Pending atau centang hijau untuk Approved).
+Manager memeriksa status akhir kelayakan dokumen pada kolom Status
+Mengetahui dokumen yang masih dalam tahap draf awal atau sudah lolos validasi penuh untuk diproduksi.
+Pre-condition
+:
+Login berhasil dan berkas draf lembar tinjauan kontrak telah diterbitkan di dalam sistem.
+Post-condition
+:
+Matriks alur sirkulasi pengujian kelayakan produksi terpantau secara transparan melalui tabel utama.
+Assumptions
+:
+Data spesifikasi komponen dan nomor dokumen sinkron dengan input dari staf sales.
+Requirement Met
+:
+Pengawasan transparansi validasi spesifikasi teknis dan pengarsipan berkas sirkulasi Contract Review
+Outstanding Issues
+:
+Belum dikonfigurasi indikator persentase akumulasi kecepatan waktu respons klik approval per divisi
+Priority
+:
+Tinggi
+Risk
+:
+Tinggi
+Skenario Use Case Menyetujui Tinjauan Kontrak
+Tabel 5.  SEQ Tabel_5. \* ARABIC 19 Skenario Use Case Menyetujui Tinjauan Kontrak
+Use Case Name
+:
+Menyetujui Tinjauan Kontrak
+Unique ID:  UC-MGR -10
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Manager, Sistem
+Description
+:
+Proses eksekusi persetujuan (Approval) lembar evaluasi kelayakan produksi dengan mengakses formulir persetujuan melalui kolom Action.
+Triggering Event
+:
+Adanya indikator pada kolom divisi manajer yang membutuhkan tindakan validasi.
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Manager mengidentifikasi baris data dokumen berstatus Created yang memerlukan tindakan approval dari divisinya.
+Meninjau antrean berkas aktif pada tabel Contract Review Sheet.
+Manager mengklik tombol aksi detail/view (ikon mata) di kolom Action pada baris data terpilih.
+Sistem mengarahkan pengguna ke halaman formulir detail persetujuan teknis lembar kontrak.
+Manager meninjau data teknis item dan mengklik opsi tombol Approve (Setuju) atau memberikan catatan penolakan
+Memicu pemrosesan keputusan otorisasi manajerial tingkat divisi ke server.
+Sistem mengembalikan pengguna ke halaman utama dan memperbarui ikon indikator divisi menjadi centang hijau.
+Menampilkan visualisasi persetujuan terbarui secara real-time.
+Sistem mengubah status kolom Status dari Created menjadi Production secara otomatis.
+Perubahan status otomatis tereksekusi apabila ke-4 manajer divisi telah memberikan centang hijau.
+Pre-condition
+:
+Login berhasil dan lembar dokumen tinjauan kontrak telah diajukan serta diisi lengkap oleh staf sales.
+Post-condition
+:
+Hak validasi kelayakan terpenuhi, status otorisasi divisi berubah menjadi centang hijau, dan status berkas terbarui.
+Assumptions
+:
+Tombol aksi di kolom Action hanya mengizinkan modifikasi approval sesuai dengan role akun manajer yang login
+Requirement Met
+:
+Digitalisasi alur birokrasi approval kelayakan produksi komitmen pesanan penjualan resmi perusahaan.
+Outstanding Issues
+:
+Sistem belum memfasilitasi integrasi lampiran tanda tangan digital (e-signature) resmi di berkas PDF keluaran
+Priority
+:
+Tinggi
+Risk
+:
+Tinggi
+Skenario Sistem Usulan Hak Akses Pelanggan
+Skenario Use Case Login
+Tabel 5.  SEQ Tabel_5. \* ARABIC 20 Skenario Use Case Login
+Use Case Name
+:
+Login
+Unique ID:  UC-PLG-01
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Pelanggan, Sistem
+Description
+:
+Proses otentikasi akun pelanggan menggunakan email dan password untuk masuk ke portal pelanggan eksternal
+Triggering Event
+:
+Pelanggan mengakses domain web portal untuk memantau pesanan komponen logam
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Pelanggan mengakses halaman login portal client.
+Sistem menampilkan form input kredensial pelanggan.
+Pelanggan memasukkan email dan password perusahaan yang terdaftar
+Mengisi kolom otentikasi akun eksternal
+Pelanggan mengklik tombol Login
+Sistem melakukan validasi data ke database MySQL.
+Sistem mengarahkan pengguna ke halaman utama khusus pelanggan.
+Menampilkan menu pemantauan transaksi komersial client.
+Pre-condition
+:
+Akun perusahaan pelanggan telah diaktivasi oleh pihak manajemen internal atau pelanggan telah membuat akun
+Post-condition
+:
+Sesi aktif terbuat dan pelanggan berhasil masuk ke panel pemantauan mandiri.
+Assumptions
+:
+Kredensial pelanggan diamankan dengan enkripsi standar Laravel 12.
+Requirement Met
+:
+Penyediaan gerbang akses aman khusus untuk entitas eksternal/mitra bisnis.
+Outstanding Issues
+:
+Belum tersedia opsi pemulihan kata sandi mandiri (Forgot Password) via email otomatis.
+Priority
+:
+Tinggi
+Risk
+:
+Tinggi
+Skenario Use Case Dashboard
+Tabel 5.  SEQ Tabel_5. \* ARABIC 21 Skenario Use Case Dashboard
+Use Case Name
+:
+Login
+Unique ID:  UC-PLG-02
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Pelanggan, Sistem
+Description
+:
+Pelanggan memantau akumulasi data ringkasan pesanan serta linimasa jejak aktivitas operasional (Activity History).
+Triggering Event
+:
+Pelanggan berhasil melakukan login dan diarahkan ke halaman utama portal.
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Pelanggan memilih menu Dashboard pada bilah menu samping.
+Sistem memuat antarmuka panel informasi ringkasan pelanggan.
+Sistem menyajikan tiga kartu widget hitung akumulasi berkas.
+Menampilkan kuantitas Quotation, Purchase Order, dan PO Amandement.
+Pelanggan membaca daftar rekap tabel Activity History.
+Menyajikan log riwayat dinamis berkolom (User, Activity, Time).
+Pelanggan meninjau ketepatan waktu transaksi operasionalnya.
+Menampilkan log riwayat cetak penanda waktu riil seperti "Membuat PO".
+Pre-condition
+:
+Sesi masuk tervalidasi aktif dan telah terdapat rekaman transaksi operasional customer.
+Post-condition
+:
+Transparansi rangkuman data progres administrasi komersial tersaji utuh kepada client.
+Assumptions
+:
+Data log riwayat aktivitas tersortir otomatis dari waktu yang paling terbaru
+Requirement Met
+:
+Penyediaan ringkasan pengawasan eksekutif eksternal (Executive Customer Summary).
+Outstanding Issues
+:
+Belum tersedia tombol filter pencarian instan khusus untuk tabel Activity History.
+Priority
+:
+Sedang
+Risk
+:
+Rendah
+Skenario Use Case Mengelola Request
+Tabel 5.  SEQ Tabel_5. \* ARABIC 22 Skenario Use Case Mengelola Request
+Use Case Name
+:
+Mengelola Request
+Unique ID:  UC-PLG-03
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Pelanggan, Sistem
+Description
+:
+Membuat draf pengajuan proyek baru (Request Projects), menyaring data, serta memantau delegasi Sales PIC.
+Triggering Event
+:
+Pelanggan berkeinginan memesan produk komponen logam baru dengan spesifikasi tertentu.
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Pelanggan memilih menu Request pada bilah menu samping.
+Sistem memuat tabel data utama panel halaman Request Projects.
+Pelanggan mengklik tombol New biru di bagian kanan atas filter.
+Sistem menampilkan pop-up formulir pengajuan berkas permohonan baru.
+Pelanggan menginput identitas subjek data dan mengunggah dokumen teknis.
+Mengisi data detail penawaran serta berkas gambar teknik komponen logam.
+Pelanggan menekan opsi Submit untuk mengirim data ke internal.
+Sistem menyimpan berkas dan memuat baris baru pada grid utama.
+Pelanggan meninjau delegasi penanggung jawab pada kolom tabel.
+Memeriksa kolom (No, Req Id, Name, Company, Email, Subject, Request Date, Sales PIC, Action).
+Pre-condition
+:
+Pengguna masuk sesi aktif dan file rancangan teknik manufaktur berformat digital siap diunggah.
+Post-condition
+:
+Dokumen pengajuan proyek masuk antrean validasi internal dan memicu penomoran otomatis Req ID.
+Assumptions
+:
+Kontrol filter tanggal (From/To) dan opsi All Sales berfungsi membatasi pencarian baris.
+Requirement Met
+:
+Digitalisasi pengarsipan dan pelacakan penugasan berkas permintaan harga (Request Management).
+Outstanding Issues
+:
+Belum dikonfigurasi fitur notifikasi pengingat otomatis jika berkas belum direspons oleh Sales PIC.
+Priority
+:
+Tinggi
+Risk
+:
+Sedang
+Skenario Use Case Mengelola Quotation
+Tabel 5.  SEQ Tabel_5. \* ARABIC 23 Skenario Use Case Mengelola Quotation
+Use Case Name
+:
+Mengelola Quotation
+Unique ID:  UC-PLG-04
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Pelanggan, Sistem
+Description
+:
+Meninjau daftar surat penawaran harga (Quotations), memantau batas kedaluwarsa, dan melihat rincian kalkulasi harga.
+Triggering Event
+:
+Pelanggan ingin memeriksa keabsahan nilai komersial harga produk yang diajukan pabrik
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Pelanggan memilih menu Quotation pada bilah menu samping.
+Halaman memuat grid tabel rekapitulasi data lembar Quotations.
+Sistem menyajikan informasi tanggal penting dan pelaksana staf pabrik.
+Menyajikan kolom: Quotation Date, Expired Date, dan Sales PIC.
+Pelanggan memantau status keabsahan dokumen via indikator warna.
+Meninjau label kolom Status (seperti status warna biru Sent atau hijau Accepted).
+Pelanggan mengklik ikon tombol mata biru di bawah kolom Action.
+Sistem membuka jendela tampilan detail rincian breakdown harga komponen per unit.
+Pre-condition
+:
+Berkas dokumen penawaran harga resmi telah selesai dikalkulasi dan dikirim oleh staf sales.
+Post-condition
+:
+Rincian kesepakatan nilai niaga tervalidasi jelas oleh client sebagai acuan penerbitan PO resmi.
+Assumptions
+:
+Tombol ekspor (Export) di bagian atas tabel berfungsi menyalin berkas rekap dalam bentuk cetak spreadsheet.
+Requirement Met
+:
+: Transparansi audit kontrol penawaran nilai komersial transaksi manufaktur eksternal.
+Outstanding Issues
+:
+Belum tersedia kolom tanggapan balik penawaran diskon secara langsung pada baris menu detail.
+Priority
+:
+Tinggi
+Risk
+:
+Sedang
+Skenario Use Case Mengelola PO
+Tabel 5.  SEQ Tabel_5. \* ARABIC 24 Skenario Use Case Mengelola PO
+Use Case Name
+:
+Mengelola PO
+Unique ID:  UC-PLG-05
+Area
+:
+PT. Metinca Prima Industrial Works Jakarta
+Actor(s)
+:
+Pelanggan, Sistem
+Description
+:
+Mengawasi alur peninjauan kontrak internal, membuka rincian berkas, serta mengeksekusi pengajuan perubahan (Amandemen).
+Triggering Event
+:
+Pelanggan memantau tahapan pengantaran pesanan resmi atau membutuhkan koreksi data kontrak pengerjaan.
+1018540152400021913853556000Trigger Type :        External                  Temporal
+Step Performed
+Information for Step
+Pelanggan memilih menu Purchase Order pada bilah menu samping.
+Memuat lembar halaman grid status utama pelacakan dokumen Purchase Order.
+Pelanggan memantau tahapan realisasi alur pabrik pada kolom Status.
+Memeriksa label pelacakan (Sent (Antrean), Review (4 Divisi), In Production (Pabrik)).
+Pelanggan mengklik tombol Detail biru di kolom Action.
+Sistem memuat visualisasi rincian data kesesuaian komitmen tanggal kirim (Delivery Date).
+Pelanggan mengklik tombol Amandemen kuning (jika status dokumen masih terbuka).
+Sistem membuka akses formulir perbaikan data kontrak pesanan resmi.
+Sistem mengunci opsi aksi dengan menampilkan tombol Locked abu-abu.
+Aksi modifikasi otomatis ditutup sistem jika status pengerjaan sudah masuk lini manufaktur.
+Pre-condition
+:
+Berkas dokumen nomor PO resmi telah terunggah dan terelasi dengan data Quotation No referensi.
+Post-condition
+:
+Riwayat revisi amandemen terekam di dashboard utama dan status pelacakan terpantau transparan.
+Assumptions
+:
+Tombol amandemen hanya aktif pada baris data dokumen yang memiliki status operasional tertentu.
+Requirement Met
+:
+Manajemen kendali siklus hidup kontrak pesanan (Purchase Order Life-Cycle Management).
+Outstanding Issues
+:
+Belum dikonfigurasi indikator persentase ketepatan sisa waktu pengerjaan produksi riil mesin.
+Priority
+:
+Tinggi
+Risk
+:
+Tinggi
+5.2.3 Activity Diagram Usulan
+Activity diagram menggambarakan sistem usulan interaksi aktor dalam sistem pemesanan produk secara detail.
+Activity Diagram Usulan Hak Akses Staff
+Activity Diagram  Login Staff Sales
+Gambar 5.  SEQ Gambar_5. \* ARABIC 5 Activity Diagram  Login Staff Sales
+Activity Diagram  Melihat Dashboard Staff Sales
+Gambar 5.  SEQ Gambar_5. \* ARABIC 6 Activity Diagram  Melihat Dashboard Staff Sales
+Activity Diagram  Mengelola Data Pricelist Products
+Gambar 5.  SEQ Gambar_5. \* ARABIC 7 Activity Diagram  Mengelola Data Pricelist Products
+Activity Diagram  Memproses Request
+Gambar 5.  SEQ Gambar_5. \* ARABIC 8 Activity Diagram  Memproses Request
+Activity Diagram  Menerbitkan Quotation
+Gambar 5.  SEQ Gambar_5. \* ARABIC 9 Activity Diagram  Menerbitkan Quotation
+Activity Diagram  Memproses Purchase Order
+Gambar 5.  SEQ Gambar_5. \* ARABIC 10 Activity Diagram  Memproses Purchase Order
+Activity Diagram  Mengatur PO Schedule
+Gambar 5.  SEQ Gambar_5. \* ARABIC 11 Activity Diagram  Mengatur PO Schedule
+Activity Diagram  Mengajukan Tinjauan Kontrak
+Gambar 5.  SEQ Gambar_5. \* ARABIC 12 Activity Diagram  Mengajukan Tinjauan Kontrak
+Activity Diagram  Logout Staff Sales
+Gambar 5.  SEQ Gambar_5. \* ARABIC 13 Activity Diagram  Logout Staff Sales
+Activity Diagram Usulan Manager
+Activity Diagram  Login Manager
+Gambar 5.  SEQ Gambar_5. \* ARABIC 14 Activity Diagram  Login Manager
+Activity Diagram  Melihat Dashboard Manager
+Gambar 5.  SEQ Gambar_5. \* ARABIC 15 Activity Diagram  Melihat Dashboard Manager
+Activity Diagram  Mengelola Data Pricelist Products
+Gambar 5.  SEQ Gambar_5. \* ARABIC 16 Activity Diagram  Mengelola Data Pricelist Products
+Activity Diagram  Melihat Daftar & Detail Request
+Gambar 5.  SEQ Gambar_5. \* ARABIC 17 Activity Diagram  Melihat Daftar & Detail Request
+Activity Diagram  Logout
+Gambar 5.  SEQ Gambar_5. \* ARABIC 18 Activity Diagram  Logout
+Activity Diagram  Mengelola Dokumen Quotation
+Gambar 5.  SEQ Gambar_5. \* ARABIC 19 Activity Diagram  Mengelola Dokumen Quotation
+Activity Diagram  Mengelola Purchase Order
+Gambar 5.  SEQ Gambar_5. \* ARABIC 20 Activity Diagram  Mengelola Purchase Order
+Activity Diagram  Mengatur Prioritas PO Schedule
+Gambar 5.  SEQ Gambar_5. \* ARABIC 21 Activity Diagram  Mengatur Prioritas PO Schedule
+Activity Diagram  Mengelola Tinjauan Kontrak
+Gambar 5.  SEQ Gambar_5. \* ARABIC 22 Activity Diagram  Mengelola Tinjauan Kontrak
+Activity Diagram  Menyetujui Tinjauan Kontrak
+Gambar 5.  SEQ Gambar_5. \* ARABIC 23 Activity Diagram  Menyetujui Tinjauan Kontrak
+Activity Diagram Usulan Pelanggan
+Activity Diagram  Login Pelanggan
+Gambar 5.  SEQ Gambar_5. \* ARABIC 24 Activity Diagram  Login Pelanggan
+Activity Diagram  Dashboard Pelanggan
+Gambar 5.  SEQ Gambar_5. \* ARABIC 25 Activity Diagram  Dashboard Pelanggan
+Activity Diagram  Mengelola Request
+Gambar 5.  SEQ Gambar_5. \* ARABIC 26 Activity Diagram  Mengelola Request
+Activity Diagram  Mengelola Quotation
+Gambar 5.  SEQ Gambar_5. \* ARABIC 27 Activity Diagram  Mengelola Quotation
+Activity Diagram  Mengelola PO
+Gambar 5.  SEQ Gambar_5. \* ARABIC 28 Activity Diagram  Mengelola PO
+Activity Diagram  Logout Pelanggan
+Gambar 5.  SEQ Gambar_5. \* ARABIC 29 Activity Diagram  Logout Pelanggan
+5.3 Perancangan Basis Data
+5.3.1 Entity Relationship Diagram (ERD)
+Gambar 5.  SEQ Gambar_5. \* ARABIC 30 Entity Relationship Diagram
+5.3.2. Spesifikasi File
+1. Tabel User
+Tabel 5.  SEQ Tabel_5. \* ARABIC 25 Tabel User
+No
+Nama Field
+Type
+Size
+Keterangan
+1
+id
+bigint
+Primary Key
+2
+name
+varchar
+255
+3
+email
+varchar
+255
+Unique
+4
+email_verified_at
+timestamp
+5
+password
+varchar
+255
+6
+company
+varchar
+255
+7
+remember_token
+varchar
+100
+8
+created_at
+timestamp
+9
+updated_at
+timestamp
+10
+role
+enum
+staff, admin, customer, manager
+11
+divisi
+enum
+sales, design engineering, quality, ppc
+Tabel Request Attachment
+Tabel 5.  SEQ Tabel_5. \* ARABIC 26 Tabel Request Attachment
+No
+Nama Field
+Type
+Size
+Keterangan
+1
+id
+bigint
+Primary Key
+2
+request_id
+bigint
+Foreign Key ke tabel request_projects
+3
+document_name
+text
+4
+prefix_path
+varchar
+255
+5
+file_path
+text
+6
+deleted_at
+timestamp
+7
+created_at
+timestamp
+8
+updated_at
+timestamp
+Tabel Request Project
+Tabel 5.  SEQ Tabel_5. \* ARABIC 27 Tabel Request Project
+No
+Nama Field
+Type
+Size
+Keterangan
+1
+id
+bigint
+Primary Key
+2
+customer_id
+bigint
+Foreign Key ke tabel users
+3
+name
+varchar
+255
+4
+email
+varchar
+255
+5
+subject
+enum
+quotation, other project, meet and greet
+6
+message
+text
+7
+phone
+varchar
+255
+8
+company
+varchar
+255
+9
+deleted_at
+timestamp
+10
+created_at
+timestamp
+11
+updated_at
+timestamp
+4. Tabel Quotation
+Tabel 5.  SEQ Tabel_5. \* ARABIC 28 Tabel Quotation
+No
+Nama Field
+Type
+Size
+Keterangan
+1
+id
+bigint
+Primary Key
+2
+quotation_no
+varchar
+255
+Unique
+3
+date_expired
+date
+4
+customer_id
+bigint
+Foreign Key ke tabel users
+5
+request_id
+bigint
+Foreign Key ke tabel request_projects
+6
+description
+varchar
+255
+7
+status
+enum
+created, sent, accepted, po, negotiating
+8
+notes
+text
+9
+payment_terms
+varchar
+255
+10
+target_delivery_date
+date
+11
+item
+json
+12
+qty
+json
+13
+attachments
+json
+14
+created_at
+timestamp
+15
+updated_at
+timestamp
+16
+sent_date
+date
+17
+accepted_date
+date
+18
+po_date
+date
+19
+price
+decimal
+8,2
+5. Tabel Quotation Item
+Tabel 5.  SEQ Tabel_5. \* ARABIC 29 Tabel Quotation Item
+No
+Nama Field
+Type
+Size
+Keterangan
+1
+id
+bigint
+Primary Key
+2
+quotation_id
+bigint
+Foreign Key ke tabel quotations
+3
+item
+varchar
+255
+4
+qty
+int
+5
+price
+decimal
+15,2
+6
+created_at
+timestamp
+7
+updated_at
+timestamp
+6. Tabel Negotiate
+Tabel 5.  SEQ Tabel_5. \* ARABIC 30 Tabel Negotiate
+No
+Nama Field
+Type
+Size
+Keterangan
+1
+id
+bigint
+Primary Key
+2
+quotation_id
+bigint
+Foreign Key ke tabel quotations
+3
+user_id
+bigint
+Foreign Key ke tabel users
+4
+from_customer
+tinyint
+1
+Penanda asal negosiasi pelanggan
+5
+message
+text
+6
+negotiated_total
+decimal
+15,2
+7
+payment_terms
+varchar
+255
+8
+target_delivery_date
+date
+9
+support_document
+varchar
+255
+10
+action
+varchar
+255
+11
+negotiated_items
+json
+12
+created_at
+timestamp
+13
+updated_at
+timestamp
+7. Tabel Purchase Order
+Tabel 5.  SEQ Tabel_5. \* ARABIC 31 Tabel Purchase Order
+No
+Nama Field
+Type
+Size
+Keterangan
+1
+id
+bigint
+Primary Key
+2
+customer_id
+bigint
+Foreign Key ke tabel users
+3
+quotation_id
+bigint
+Foreign Key ke tabel quotations
+4
+po_no
+varchar
+255
+Unique
+5
+attachment
+varchar
+255
+Path berkas PDF PO pembeli
+6
+delivery_request
+date
+7
+status
+enum
+sent, review, contract, amandement, production, ship
+8
+created_at
+timestamp
+9
+updated_at
+timestamp
+8. Tabel Purchase Order Internal
+Tabel 5.  SEQ Tabel_5. \* ARABIC 32 Tabel Purchase Order Internal
+No
+Nama Field
+Type
+Size
+Keterangan
+1
+id
+bigint
+Primary Key
+2
+purchase_order_id
+bigint
+Foreign Key ke tabel purchase_orders
+3
+item
+varchar
+255
+4
+material
+varchar
+255
+5
+spesifikasi
+varchar
+255
+6
+article
+varchar
+255
+7
+qty
+int
+8
+unit_price
+decimal
+15,2
+9
+subtotal
+decimal
+15,2
+10
+delivery_date
+date
+11
+supplier
+varchar
+255
+12
+po_no
+varchar
+255
+13
+pic_buyer
+varchar
+255
+14
+company_buyer
+varchar
+255
+15
+notes
+text
+16
+created_at
+timestamp
+17
+updated_at
+timestamp
+9. Tabel Contract
+Tabel 5.  SEQ Tabel_5. \* ARABIC 33 Tabel Contract
+No
+Nama Field
+Type
+Size
+Keterangan
+1
+id
+bigint
+Primary Key
+2
+customer_id
+bigint
+Foreign Key ke tabel users
+3
+quotation_id
+bigint
+Foreign Key ke tabel quotations
+4
+order_no
+varchar
+255
+5
+contract_no
+varchar
+255
+6
+amandement_no
+int
+7
+alasan_amandemen
+text
+8
+others_comment
+text
+9
+part_no
+varchar
+255
+10
+part_name
+varchar
+255
+11
+article_id
+bigint
+Foreign Key ke tabel articles
+12
+status
+enum
+created, revision, amandement, production, shipment, done
+13
+po_pdf
+varchar
+255
+14
+sales_approver
+bigint
+Foreign Key ke tabel users
+15
+sales_approved_at
+timestamp
+16
+quality_approver
+bigint
+Foreign Key ke tabel users
+17
+quality_approved_at
+timestamp
+18
+ppc_approver
+bigint
+Foreign Key ke tabel users
+19
+ppc_approved_at
+timestamp
+20
+dev_engineering_approver
+bigint
+Foreign Key ke tabel users
+21
+dev_engineering_approved_at
+timestamp
+22
+created_at
+timestamp
+23
+updated_at
+timestamp
+24
+manager_sales_signature
+longtext
+Digital signature berkas tinjauan
+25
+manager_quality_signature
+longtext
+Digital signature berkas tinjauan
+26
+manager_ppc_signature
+longtext
+Digital signature berkas tinjauan
+27
+manager_de_signature
+longtext
+Digital signature berkas tinjauan
+10. Tabel Contract Requirement
+Tabel 5.  SEQ Tabel_5. \* ARABIC 34 Tabel Contract Requirement
+No
+Nama Field
+Type
+Size
+Keterangan
+1
+id
+bigint
+Primary Key
+2
+contract_id
+bigint
+Foreign Key ke tabel contracts
+3
+requirement_from
+enum
+sales, quality, ppc, design engineering
+4
+requirement
+varchar
+255
+5
+requirement_value
+varchar
+255
+6
+created_at
+timestamp
+7
+updated_at
+timestamp
+5.4.  Perancangan Antarmuka Pengguna
+5.4.1. Antarmuka Hak Akses Sales Staff
+Tampilan Login Sales Staff
+Gambar 5.  SEQ Gambar_5. \* ARABIC 31 Tampilan Login Sales Staff
+Nama Tampilan
+:
+Form Login
+Sumber
+:
+Aplikasi
+Fungsi
+:
+Sebagai pintu masuk (autentikasi) ke dalam sistem
+Media
+:
+Halaman Web
+Keterangan
+:
+Sales Staff melakukan login ke dalam sistem Metinca Starter App dengan menginputkan username atau email beserta password.
+Tampilan Dashboard Sales Staff
+Gambar 5.  SEQ Gambar_5. \* ARABIC 32 Tampilan Dashboard Sales Staff
+Nama Tampilan
+:
+Halaman Dashboard
+Sumber
+:
+Aplikasi / Database (quotations, purchase_orders)
+Fungsi
+:
+Menampilkan rangkuman statistik data transaksi dan riwayat log aktivitas pengguna.
+Media
+:
+Halaman Web
+Keterangan
+:
+Tampilan utama hak akses Sales Staff setelah login yang berisi menu panel navigasi samping (sidebar menu), informasi jumlah akumulasi dokumen Quotation, Purchase Order resmi, dan PO Amandement, serta bagan daftar log Activity History internal perusahaan.
+Tampilan Kelola Request Project Dan Attachment
+Gambar 5.  SEQ Gambar_5. \* ARABIC 33 Tampilan Dashboard Sales Staff
+Nama Tampilan
+:
+Halaman Kelola Request Project
+Sumber
+:
+Aplikasi / Database (request_projects, request_attachments)
+Fungsi
+:
+Menampilkan tabulasi ringkasan berkas pengajuan proyek dari pelanggan serta menyediakan kendali pemfilteran dokumen.
+Media
+:
+Halaman Web
+Keterangan
+:
+Tampilan antarmuka yang digunakan oleh Sales Staff untuk memantau data masuk terkait permintaan proyek pelanggan. Komponen halaman memuat filter rentang tanggal pengajuan (From/To), dropdown kategori Sales PIC, kolom entri pencarian instan global, serta tabel visualisasi status kelengkapan data dokumen beserta lampirannya (attachment).
+Tampilan Pembuatan Surat Penawaran (Quotation)
+Gambar 5.  SEQ Gambar_5. \* ARABIC 34 Tampilan Pembuatan Surat Penawaran
+Nama Tampilan
+:
+Form Tambah Dokumen Penawaran (Add New Quotation)
+Sumber
+:
+Aplikasi / Database (request_projects, quotations, quotation_items) / Database (request_projects, request_attachments)
+Fungsi
+:
+Menyediakan media masukan data penawaran harga baru (quotation) berdasarkan referensi kebutuhan proyek dari pelanggan.
+Media
+:
+Halaman Web
+Keterangan
+:
+Halaman entri data ini memuat relasi berkas pengajuan pelanggan berupa Request ID, Customer Name, serta panel embedded viewer dokumen PDF sebagai referensi teknis. Di bawahnya terdapat baris barisan input dinamis untuk rincian data deskripsi Item, komponen Quantity (Qty), Price, penentuan tenggat waktu pengiriman (Delivery Date), batas kedaluwarsa dokumen, termin pembayaran (Payment Terms), dan kolom catatan khusus (Notes).
+Tampilan Riwayat Log Negosiasi
+Gambar 5.  SEQ Gambar_5. \* ARABIC 35 Tampilan Riwayat Log Negosiasi
+Nama Tampilan
+:
+Halaman Riwayat Log Negosiasi Harga (Quotation Negotiation Log)
+Sumber
+:
+Aplikasi / Database (quotations, negotiation_logs, quotation_items)
+Fungsi
+:
+Menampilkan riwayat tawaran harga balik (counter-offer) dari pelanggan serta menyediakan antarmuka bagi staf untuk memproses kalkulasi ulang nilai transaksi.
+Media
+:
+Halaman Web
+Keterangan
+:
+Tampilan antarmuka ini terbagi atas dua kolom workspace. Kolom utama memuat data identitas dokumen Quotation Information, tabel penyesuaian Pricelist Item Negotiation tempat melakukan override nilai Negotiated Price, serta parameter pendukung transaksi (Delivery Date, Payment Terms, Message). Kolom pendukung di sisi kanan memuat ringkasan profil PIC, blok matriks komparasi nominal (Negotiation Summary), bagan kronologis tahapan penawaran (Negotiation History Log), dan deretan tombol instruksi pemroses status dokumen (Submit, Close, Accept).
+Tampilan Kelola Purchase Order (PO)
+Gambar 5.  SEQ Gambar_5. \* ARABIC 36 Tampilan Kelola Purchase Order (PO)
+Nama Tampilan
+:
+Form Input PO Internal
+Sumber
+:
+Aplikasi / Database (`purchase_orders`, `purchase_order_items`, `products`)
+Fungsi
+:
+Media ekstraksi entri data komponen manufaktur dari berkas fisik PO customer menjadi PO internal perusahaan
+Media
+:
+Halaman Web
+Keterangan
+:
+Halaman untuk melacak berkas PO masuk. Memuat filter tanggal, status antrean, kolom pencarian, dan tombol aksi "Proses Internal" untuk tahap ekstraksi data.
+5.4.2 Antarmuka Hak Akses Manager Divisi
+Tampilan Login Manager Divisi
+Gambar 5.  SEQ Gambar_5. \* ARABIC 37 Tampilan Login Manager Divisi
+Nama Tampilan
+:
+Form Login
+Sumber
+:
+Aplikasi
+Fungsi
+:
+Sebagai pintu masuk (autentikasi) ke dalam sistem
+Media
+:
+Halaman Web
+Keterangan
+:
+Manager melakukan login ke dalam sistem Metinca Manager dengan menginputkan username atau email beserta password.
+Tampilan Dashboard Evaluasi Kontrak Produksi
+Gambar 5.  SEQ Gambar_5. \* ARABIC 38 Tampilan Dashboard Evaluasi Kontrak Produksi
+Nama Tampilan
+:
+Halaman Evaluasi Kontrak Produksi (Contract Review Sheet)
+Sumber
+:
+Aplikasi / Database (contract_reviews, approvals, purchase_orders)
+Fungsi
+:
+Menampilkan matriks status peninjauan dan persetujuan draf kontrak produksi oleh lintas departemen manajer.
+Media
+:
+Halaman Web
+Keterangan
+:
+Halaman level Manager untuk memvalidasi kelayakan order. Memuat filter data, kolom pencarian, dan tabel rekam jejak persetujuan lintas divisi (Sales, Quality, PPC, DE) menggunakan indikator status verifikasi.
+Tampilan Checksheet Verifikasi Persyaratan Kontrak
+Gambar 5.  SEQ Gambar_5. \* ARABIC 39 Tampilan Checksheet Verifikasi Persyaratan Kontrak
+Nama Tampilan
+:
+Halaman Detail Lembar Tinjauan Kontrak (Contract Review Form Detail)
+Sumber
+:
+Aplikasi / Database (contract_reviews, department_requirements, purchase_orders)
+Fungsi
+:
+Media pengisian lembar verifikasi parameter kelayakan teknis produksi oleh masing-masing departemen penanggung jawab.
+Media
+:
+Halaman Web
+Keterangan
+:
+Halaman detail checksheet parameter pesanan pelanggan. Memuat grid identitas kontrak utama, diikuti blok matriks tabel pengisian syarat pemenuhan serta catatan rekomendasi per divisi (Sales, Quality, PPC, Development Engineering), serta diakhiri modul entri umpan balik (Others/Comment).
+Tampilan Persetujuan Kontrak Dan Digital Signature
+Gambar 5.  SEQ Gambar_5. \* ARABIC 40 Tampilan Persetujuan Kontrak Dan Digital Signature
+Nama Tampilan
+:
+Pop-up Dialog Lembar Persetujuan Kontrak (Digital Signature Modal)
+Sumber
+:
+Aplikasi / Input Pengguna (contract_approvals, signatures)
+Fungsi
+:
+Menyediakan modul penandatanganan secara digital bagi manajer untuk mengesahkan draf lembar tinjauan kontrak produksi.
+Media
+:
+Halaman Web
+Keterangan
+:
+Jendela verifikasi konfirmasi akhir persetujuan kontrak. Memuat komponen area gambar signature pad interaktif, opsi perintah pembersihan goresan (Bersihkan Area), serta tombol aksi "Batal" dan "Approve Sekarang" guna memproses status kelayakan menuju tahap pra-produksi.
+5.4.3 Antarmuka Hak Akses Customer
+Tampilan Login Customer
+Gambar 5.  SEQ Gambar_5. \* ARABIC 41 Tampilan Login Customer
+Nama Tampilan
+:
+Form Login
+Sumber
+:
+Aplikasi
+Fungsi
+:
+Sebagai pintu masuk (autentikasi) ke dalam sistem
+Media
+:
+Halaman Web
+Keterangan
+:
+Pelanggan melakukan login ke dalam sistem Metinca Starter App dengan menginputkan username atau email beserta password.
+Tampilan Dashboard Customer
+Gambar 5.  SEQ Gambar_5. \* ARABIC 42 Tampilan Dashboard Customer
+Nama Tampilan
+:
+Halaman Dashboard Customer
+Sumber
+:
+Aplikasi / Database (quotations, purchase_orders, activity_logs)
+Fungsi
+:
+Menampilkan ringkasan informasi transaksi operasional dan riwayat log aktivitas khusus akun pelanggan.
+Media
+:
+Halaman Web
+Keterangan
+:
+Halaman utama bagi Customer setelah login. Memuat menu panel navigasi samping terbatas (Dashboard, Request, Quotation, PO), tiga komponen kartu informasi akumulasi dokumen transaksi, serta tabel rekam jejak riwayat aktivitas berkas mandiri.
+Tampilan Form Input Request Project Dan Unggah Attachment
+Gambar 5.  SEQ Gambar_5. \* ARABIC 43 Tampilan Form Input Request Project
+Nama Tampilan
+:
+Halaman Form Permintaan Proyek Baru (New Request Project Form)Login
+Sumber
+:
+Input Pengguna / Form Kontrol (project_requests, attachments)
+Fungsi
+:
+Media bagi pelanggan (customer) untuk menginput draf pengajuan proyek baru beserta dokumen lampiran teknis pendukungnya.
+Media
+:
+Halaman Web
+Keterangan
+:
+Antarmuka formulir input pesanan pelanggan. Struktur terbagi menjadi dua kolom utama, yaitu blok isian data di sisi kiri (Sales Person assignment, PIC Requester Information, Request Details, Drag & Drop Attachment) dan panel informasi panduan operasional di sisi kanan.
+Tampilan Monitoring Quotation Dan Ruang Negosiasi Harga
+Gambar 5.  SEQ Gambar_5. \* ARABIC 44 Tampilan Monitoring Quotation
+Nama Tampilan
+:
+Halaman Monitoring Detail Penawaran & Ruang Negosiasi (Quotation Negotiation Room View)
+Sumber
+:
+Halaman Web / Database (quotations, quotation_items, negotiation_logs)
+Fungsi
+:
+Media interaktif bagi pelanggan (customer) untuk memantau detail lembar penawaran harga serta mengajukan negosiasi nilai usulan.
+Media
+:
+Halaman Web
+Keterangan
+:
+Antarmuka peninjauan harga penawaran. Terdiri atas ringkasan status berkas, tabel entri perubahan Negotiated Price per item barang, kolom berkas pendukung, widget rekapitulasi kalkulasi selisih finansial, serta jejak log riwayat linimasa obrolan negosiasi.
+Tampilan Form Unggah Dokumen Purchase Order (PO) Resmi
+Gambar 5.  SEQ Gambar_5. \* ARABIC 45 Tampilan Form Unggah Dokumen po
+Nama Tampilan
+:
+Halaman Form Unggah Dokumen Purchase Order (PO) Resmi (Create Purchase Order Form)
+Sumber
+:
+Aplikasi
+Fungsi
+:
+Media bagi pelanggan (customer) untuk menerbitkan dan mengunggah berkas Purchase Order resmi berdasarkan penawaran harga yang telah disetujui.
+Media
+:
+Halaman Web
+Keterangan
+:
+Antarmuka pembuatan data PO baru oleh sisi pelanggan. Memuat ringkasan data referensi penawaran (Quotation, PIC, Email) yang terisi secara otomatis, kolom entri data nomor PO mandiri dan tanggal batas kirim, area komponen Drag & Drop file uploader, serta tombol eksekusi transaksi.
+Tampilan Tracking Status Siklus Transaksi Dan Kontrak Kerja
+Gambar 5.  SEQ Gambar_5. \* ARABIC 46 Tampilan Tracking Status Siklus Transaksi
+Nama Tampilan
+:
+Jendela Detail Pelacakan Berkas Purchase Order (Purchase Order Detail & Tracking Modal)
+Sumber
+:
+Aplikasi
+Fungsi
+:
+Menyediakan pop-up modal rincian informasi dan real-time status bar tracking logistik/produksi dari item pesanan pelanggan.
+Media
+:
+Halaman Web
+Keterangan
+:
+Antarmuka jendela detail transaksi berbasis monokrom murni (hitam dan putih). Memuat nama Header dinamis, komponen horizontal progress fill bar penanda status sirkulasi berkas, kotak pemberitahuan dinamis log dari sistem, serta susunan grid tabel parameter identitas dokumen (Nomor PO, Quotation Asal, Customer, Urgensi, Delivery Request, PIC, Lampiran).
+BAB VIIMPLEMENTASI SISTEM
+6.1 Lingkungan Pengembangan
+Lingkungan pengembangan sistem mengacu pada seluruh konfigurasi perangkat keras (hardware), perangkat lunak (software), serta alat bantu (tools) yang digunakan secara terintegrasi selama proses penelitian dan pembangunan sistem informasi. Konfigurasi lingkungan ini dirancang secara sistematis untuk mendukung efektivitas dan stabilitas kerja pada setiap tahapan pengembangan, mulai dari tahapan analisis kebutuhan, perancangan arsitektur, implementasi kode program, hingga pengujian sistem secara lokal.
+6.1.1 Alat Penelelitian
+Adapun spesifikasi perangkat keras yang digunakan adalah sebagai berikut:
+Prosesor : Intel Core i7-13620H
+Memori : 32 GB RAM
+Penyimpanan : SSD 512 GB
+Perangkat Lunak (Software)
+Sistem Operasi Windows 11
+Visual Studio Code
+Laravel
+Microsoft Edge
+Laragon
+Enterprise Architect
+6.1.2 Bahan Penelitian
+Bahan analisa dan penelitian berupa kumpulan data. Untuk bahan pendukung seperti hasil dari kumpulan teori yang berhubungan dengan penelitian yang didapat dari buku, jurnal, dan wawancara. Data yang dimaksud merupakan :
+Dokumen Purchase order
+Dokumen Tinjauan Kontrak
+6.2 Implementasi Sistem
+Sistem yang diimplementasikan pada aplikasi pelacakan pesanan (sales order tracking) berbasis web pada PT. Metinca Prima Industrial Works mencakup manajemen alur pengajuan permintaan proyek (sales request), otentikasi keamanan dan pembatasan hak akses pengguna (multi-role), pengelolaan dokumen penawaran harga beserta mekanisme negosiasi komersial multi-item, pemrosesan berkas purchase order dan linimasa penjadwalan internal, serta kolaborasi verifikasi tinjauan kontrak lintas divisi secara berkala.
+6.2.1 Pengajuan Permintaan Proyek (Sales Request)
+Gambar 6.  SEQ Gambar_6. \* ARABIC 1 Code Controller Pengajuan Sales Request
+Fungsi store() didalam RequestProjectController bertanggung jawab penuh untuk mengamankan dan mendaftarkan dokumen spesifikasi kebutuhan material yang diunggah oleh pelanggan eksternal ke database. Langkah-langkah logis pemrosesan data berjalan sebagai berikut:
+Validasi Array Dokumen Sistem menerapkan validasi ketat terhadap parameter input, khususnya mewajibkan berkas lampiran berbentuk array (attachment => required|array|min:1) dengan ekstensi wajib berupa PDF dan ukuran maksimal berkas sebesar 5 MB (attachment.* => file|mimes:pdf|max:5048).
+Identifikasi Autentikasi Pelanggan Menggunakan pemeriksaan Auth::check(), sistem mendeteksi identitas pengguna yang sedang aktif dan memasukkan nilai Auth::id() ke dalam kolom customer_id untuk memastikan relasi data kepemilikan dokumen tercatat secara akurat.
+Persistensi Data Entitas Permintaan Nilai array berkas dikeluarkan sementara menggunakan perintah unset(), kemudian data teks primer (email, subject, message, phone, company) disimpan ke dalam tabel transaksi melalui metode RequestProject::create().
+Manajemen Penyimpanan Berkas (Multi-Upload Loops) Melalui blok perulangan foreach, sistem membaca setiap komponen file PDF, mengekstrak nama berkas asli, menyisipkan penanda waktu unik berbasis timestamp (time() . '_' . $originalName), dan memindahkannya ke dalam direktori penyimpanan publik lokal (project-requests/attachment). Path file unik tersebut disimpan ke dalam tabel relasi komponen lampiran memakai fungsi attachments()->create() sebelum akhirnya mengembalikan respons pengalihan halaman dengan status sukses.
+6.2.2 Pembuatan Penawaran Harga (Quotation)
+Gambar 6.  SEQ Gambar_6. \* ARABIC 2 Code Controller Perekaman Dokumen Quotation
+Fungsi store() di dalam QuotationController bertindak sebagai penanggung jawab alur bisnis komersial dari sisi internal perusahaan (Staff Sales) guna menerbitkan lembar estimasi biaya atas permintaan pelanggan yang masuk. Alur logika fungsi ini meliputi:
+Unggah Berkas Penawaran Sistem melacak keberadaan berkas administrasi pendukung yang diunggah oleh Staff Sales lewat fungsi hasFile('attachments'). File dikonversi secara unik menggunakan kombinasi penanda waktu dan disimpan secara permanen di dalam folder publik uploads.
+Sinkronisasi Otomatis Pengguna Melalui pencarian RequestProject::find(), fungsi mendeteksi dan mengunci relasi ID pelanggan agar dokumen penawaran harga ini tepat sasaran ditujukan kepada entitas email pemohon awal.
+Perekaman Parameter Komersial Tambahan Record penawaran harga dibentuk melalui perintah Quotation::create(). Pada modul ini, sistem turut merekam parameter kritis tenggat waktu pemenuhan produk (target_delivery_date) serta klausul tata cara penyelesaian pembayaran bisnis (payment_terms) secara eksplisit dari formulir pembuatan.
+Penyimpanan Item Transaksi Massal (Dynamic Bulk Insertion) Melalui penyeleksian array dinamis request->has('item'), sistem melakukan iterasi massal terhadap seluruh item material, kuantitas volume order (qty), beserta nilai harga satuan produk (price) ke dalam tabel anak via relasi items()->create(). Logika diakhiri dengan pencatatan rekam jejak digital ke dalam tabel HistoryActivity demi kebutuhan audit perusahaan.
+6.2.3 Mekanisme Negosiasi Multi-Item Penawaran
+Gambar 6.  SEQ Gambar_6. \* ARABIC 3 Code Controller Manajemen Alur Negosiasi
+Fungsi store() pada NegotiateController mengendalikan fitur tawar-menawar harga penawaran produk secara transparan antara pelanggan dengan pihak Staff Sales perusahaan. Mekanisme penanganan backend ini bekerja secara bercabang berdasarkan keputusan parameter aksi (action):
+Penghitungan Nilai Snapshot Awal Ketika form dikirimkan, program memuat relasi objek items dan menguji kecocokan ID item yang dinegosiasikan. Melalui blok perulangan, sistem menghitung perkalian subtotal baru antara kuantitas tetap dengan harga tawaran baru ($itemData['negotiated_price'] * $item->qty) untuk dirangkum menjadi nilai akumulasi negosiasi (negotiated_total).
+Kondisi Pengajuan Tawar-Menawar (Submit Negotiate) Jika nilai parameter action bernilai selain accept, sistem akan membaca dokumen justifikasi teknis pendukung, kemudian membentuk record baru pada tabel Negotiate. Fungsi ini menyimpan objek rekam item mentah yang dinegosiasikan ke dalam bentuk kolom data JSON string (negotiated_items). Status dokumen Quotation induk dimutasi secara otomatis menjadi 'negotiating' agar dasbor kedua pihak menampilkan indikator diskusi aktif.
+Kondisi Penyepakatan Akhir Transaksi (Accept & Finalize) Jika parameter menangkap instruksi persetujuan (action === 'accept'), sistem akan memanggil rekam data negosiasi terakhir. Server secara otomatis melakukan pembaruan massal (bulk update) langsung menimpa data harga asli di tabel quotation_items berdasarkan angka harga yang disepakati. Status penawaran harga ditingkatkan menjadi 'accepted' dan tanggal persetujuan diset ke waktu aktual (now()) guna mengunci nilai transaksi bisnis agar siap berlanjut ke tahap Purchase Order.
+6.2.4 Pemrosesan Dokumen Kerja Internal (PO Internal)
+Gambar 6.  SEQ Gambar_6. \* ARABIC 4 Code Controller Pengolahan Data Item PO Internal
+Fungsi store() dalam PurchaseOrderInternalController mengelola konversi berkas Purchase Order (PO) resmi dari pelanggan menjadi lembar instruksi penugasan kerja bagi jajaran divisi internal pabrik. Logika pemrosesannya adalah sebagai berikut:
+Proteksi Akses Otoritas Khusus mengeksekusi metode internal authorizeAccess(), memanfaatkan pemeriksaan status otentikasi Auth::user() guna memastikan hanya pengguna internal berkategori administrator atau staff operasional resmi yang diizinkan memanipulasi data internal produksi ini.
+Pembersihan Record Usang (Data Refreshing) Sebelum merekam pembaruan item terbaru, controller menjalankan fungsi purchaseOrder->internals()->delete(). Hal ini bertujuan untuk mencegah terjadinya redundansi data atau penumpukan duplikat rekaman item apabila staff melakukan proses pengeditan ulang berkas di kemudian hari.
+Iterasi Penjadwalan Fabrikasi Komprehensif Melalui perulangan data array masukan formulir, sistem mendata seluruh elemen spesifikasi material, kode nomor komponen internal (article), identitas pemasok bahan baku (supplier), tanggal alokasi target pengiriman pabrik (delivery_date), hingga penanggung jawab pembeli (buyer). Data disimpan via relasi internals()->create() dengan perhitungan otomatis subtotal biaya operasional per item.
+Otomasi Pemicu Alur Kontrak Amandemen Terdapat logika otomasi kritis pada bagian akhir fungsi. Apabila sistem mendeteksi dokumen Purchase Order induk berstatus sedang dalam masa perubahan (status == 'amandement'), maka server secara otomatis memulihkan kembali status PO tersebut menjadi antrean normal ('sent'). Langkah otomatisasi ini krusial agar tombol peninjauan lembar kontrak amandemen dapat muncul kembali secara dinamis pada antarmuka aplikasi divisi eksternal.
+6.2.5 Kolaborasi Verifikasi Tinjauan Kontrak (Contract Review)
+Gambar 6.  SEQ Gambar_6. \* ARABIC 5 Code Controller Alur Multi-Tahap Jajaran Manager
+Fungsi approveManager() di dalam ContractController memegang peranan krusial sebagai sistem kendali mutu (quality control) digital. Fungsi ini mewajibkan empat pimpinan manajer divisi perusahaan memberikan persetujuan kolektif sebelum proses manufaktur dapat dieksekusi. Alur logika validasinya berjalan sebagai berikut:
+Penyaringan Divisi Berbasis Kondisional Cabang Menggunakan struktur pengondisian bertingkat if-elseif, server mendeteksi parameter kolom Auth::user()->divisi dari aktor yang sedang login untuk membagi beban tugas approval secara otomatis:
+Jika aktor berasal dari divisi 'ppc', sistem memeriksa kolom ppc_approver. Jika masih kosong, sistem mencatat ID manajer tersebut beserta waktu persetujuan aktual pada kolom ppc_approved_at.
+Pola validasi identik diterapkan secara konsisten untuk menyaring otentikasi dari manajer divisi 'sales', divisi teknis 'design engineering', serta divisi penjamin mutu 'quality'.
+Proteksi Double-Approval Di setiap blok percabangan divisi, sistem menyisipkan fungsi baris cek validasi awal (contoh: if($contract->ppc_approver != null)). Jika terbukti manajer bersangkutan telah melakukan klik persetujuan sebelumnya, server langsung memotong proses (early return) dan melempar respons peringatan error kembali ke halaman depan untuk menghindari manipulasi data.
+Pemicu Notifikasi Real-time & Cek Final Setelah fungsi save() dijalankan, sistem melakukan perulangan objek pengguna Staff Sales untuk mengirimkan pemberitahuan kemajuan approval melalui kelas ContractApprovedNotification. Selanjutnya, metode pembantu isDone() dipanggil untuk memeriksa apakah keempat kolom manajer telah terisi penuh.
+Otomasi Pemulihan Status Berkas Review Kode otomatisasi disematkan pada baris akhir kueri. Jika dokumen lembar kontrak yang disetujui terdeteksi terikat dengan Purchase Order berstatus amandemen ($po->status == 'amandement'), maka sistem secara otomatis menaikkan status PO tersebut menjadi 'review' kembali. Hal ini memastikan alur koordinasi teknis antar departemen terintegrasi penuh tanpa intervensi manual staff.
+Hasil Implementasi
+Halaman Register Customer
+Gambar 6.  SEQ Gambar_6. \* ARABIC 6 Antarmuka Halaman Register Customer
+Halaman ini berfungsi sebagai fasilitas bagi pelanggan (customer) baru untuk mendaftarkan akun mereka ke dalam sistem Sales Order Tracking PT. Metinca Prima Industrial Works. Antarmuka ini memuat formulir input data penting yang terdiri dari nama pengguna (Name), nama instansi atau mitra (Company), alamat email (Email), kata sandi (Password), serta konfirmasi ulang kata sandi (Confirm). Tampilan dirancang secara terpusat dengan penambahan latar belakang visual area operasional perusahaan guna memperkuat identitas korporat serta memberikan impresi navigasi pendaftaran yang intuitif bagi pengguna eksternal.
+Halaman Login Customer
+Gambar 6.  SEQ Gambar_6. \* ARABIC 7 Antarmuka Halaman Login Customer
+Halaman ini berfungsi sebagai gerbang autentikasi awal bagi pengguna dengan peran pelanggan (customer) untuk dapat masuk dan mengakses dasbor sistem Sales Order Tracking PT. Metinca Prima Industrial Works. Antarmuka formulir ini dirancang minimalis dan terpusat di dalam kartu akses, memuat dua parameter input utama berupa alamat email (Email) dan kata sandi (Password). Tampilan login ini juga dilengkapi dengan ikon visibilitas kata sandi (password visibility toggle), tombol aksi masuk (Login), serta opsi tautan navigasi di bagian bawah untuk berpindah ke halaman pendaftaran akun (Sign up!) maupun kembali ke halaman beranda utama (Homepage). Konsistensi visual latar belakang area operasional perusahaan tetap dipertahankan guna menyelaraskan tema estetik pada seluruh modul gerbang keamanan aplikasi.
+Halaman Dashboard Customer
+Gambar 6.  SEQ Gambar_6. \* ARABIC 8 Antarmuka Halaman Dashboard Customer
+Halaman ini merupakan pusat kendali utama yang menyajikan ringkasan informasi operasional secara real-time kepada customer. Antarmuka menyediakan sidebar navigasi di sisi kiri untuk mengakses menu Dashboard, Request, Quotation, dan Purchase Order. Pada area utama, terdapat tiga kartu informasi (summary cards) yang merangkum akumulasi status dokumen pelanggan (Quotation, Purchase Order, dan PO Amandement), serta tabel Activity History untuk menampilkan rekam jejak digital aktivitas sistem secara transparan dan kronologis.
+Halaman Request Customer
+Gambar 6.  SEQ Gambar_6. \* ARABIC 9 Antarmuka Halaman Request Customer
+Halaman ini berfungsi untuk menampilkan dan mengelola daftar pengajuan permintaan proyek (sales request) oleh customer. Antarmuka menyediakan panel filtrasi berdasarkan rentang tanggal dan Sales PIC, serta opsi tombol operasional seperti Filter, Clear, Export, dan New untuk membuat draf pengajuan baru. Seluruh riwayat pengajuan disajikan secara terstruktur melalui tabel dinamis yang memuat informasi detail mulai dari Req Id, subjek proyek, tanggal pengajuan, hingga nama Sales PIC yang ditugaskan.
+Halaman Form Request Customer
+Gambar 6.  SEQ Gambar_6. \* ARABIC 10 Antarmuka Halaman Form Request Customer
+Halaman ini berfungsi sebagai formulir bagi customer untuk membuat dan mengajukan permintaan proyek baru (sales request). Antarmuka menyediakan kolom pengisian data pemohon (PIC Requester Information) seperti nama, email, nomor telepon, dan nama perusahaan, serta opsi penugasan Sales Person. Di sisi kanan, terdapat panel Information yang memuat panduan jenis subjek proyek (Subject Types) serta tips pengisian formulir agar data yang dikirimkan valid.
+Halaman Quotation Customer
+Gambar 6.  SEQ Gambar_6. \* ARABIC 11 Antarmuka Halaman Quotation Customer
+Halaman ini berfungsi untuk menampilkan daftar dokumen penawaran harga (quotation) yang diajukan kepada customer. Antarmuka menyediakan bilah penyaringan berdasarkan rentang tanggal dan status, serta tombol Export untuk mengunduh data. Seluruh berkas penawaran disajikan dalam bentuk tabel dinamis yang memuat rincian kode Req Id, nomor quotation, tanggal kedaluwarsa (expired date), identitas Sales PIC, tombol aksi detail, serta status pelacakan dokumen secara real-time.
+Halaman Detail Quotation Customer
+Gambar 6.  SEQ Gambar_6. \* ARABIC 12 Antarmuka Halaman Detail Quotation Customer
+Halaman ini berfungsi untuk menyajikan rincian lengkap dari dokumen penawaran harga (quotation) tertentu yang diterima oleh customer. Antarmuka ini memuat informasi komprehensif yang terbagi ke dalam panel Quotation Information (nomor dokumen dan batas masa berlaku), PIC Information, serta tabel Pricelist Item Quotation yang merinci jenis produk beserta kalkulasi otomatis harga satuan dan total biaya. Halaman ini juga dilengkapi dengan tombol aksi transisional krusial, yaitu Negotiate untuk memicu proses tawar-menawar harga, Create PO untuk melanjutkan alur ke tahap pembuatan purchase order, serta opsi unduh berkas dalam format PDF.
+Halaman Form Purchase Order Customer
+Gambar 6.  SEQ Gambar_6. \* ARABIC 13 Antarmuka Halaman Form Purchase Order Customer
+Halaman ini berfungsi sebagai formulir bagi customer untuk mengunggah dan mengirimkan dokumen berkas Purchase Order (PO) resmi berdasarkan quotation yang telah disetujui. Antarmuka menyediakan kolom informasi terkunci (read-only) seperti nomor quotation, nama PIC, dan email, serta kolom input manual untuk nomor PO eksternal dan tanggal permintaan pengiriman (Delivery Request). Halaman ini juga dilengkapi dengan area drag-and-drop untuk unggah dokumen lampiran fisik dengan batas maksimal 5MB sebelum dikirim melalui tombol Submit.
+Halaman Purchase Order Customer
+Gambar 6.  SEQ Gambar_6. \* ARABIC 14 Antarmuka Halaman Purchase Order Customer
+Halaman ini menampilkan tabel riwayat berkas Purchase Order yang telah dikirimkan oleh pelanggan ke dalam sistem. Informasi yang disajikan mencakup Req Id, nomor quotation, nomor PO, tanggal pengiriman yang diminta, identitas Sales PIC, serta label status pelacakan (Sent (Antrean)). Pengguna dapat melihat detail dokumen menggunakan tombol aksi yang tersedia, sementara data otomatis terkunci (Locked) jika alur berkas telah masuk fase pemrosesan internal perusahaan.
+Halaman Account Customer
+Gambar 6.  SEQ Gambar_6. \* ARABIC 15 Antarmuka Halaman Account Customer
+Halaman ini berfungsi sebagai media pengelolaan informasi profil mandiri bagi akun pelanggan. Antarmuka ini memuat notifikasi peringatan berwarna kuning jika pengisian data akun belum lengkap, panel rincian data personal (Detail Account seperti nama, email, dan jabatan), serta panel rincian badan usaha (Company Detail meliputi nama perusahaan, kota, alamat lengkap, nomor telepon, faks, dan kode pos) dengan opsi tombol Edit untuk memperbarui informasi berkala.
+Halaman Login Staff Sales
+Gambar 6.  SEQ Gambar_6. \* ARABIC 16 Antarmuka Halaman Login Staff Sales
+Halaman ini merupakan gerbang autentikasi khusus bagi pengguna internal dengan peran Staff Sales untuk dapat masuk dan mengoperasikan sistem. Struktur antarmukanya dirancang modular terpusat, memuat input email bisnis dan kata sandi yang dilengkapi fitur visibility toggle, serta tombol aksi masuk. Di bagian bawah kartu akses, disematkan informasi kontak bantuan instruksi penanganan dari pihak administrator apabila terjadi kendala teknis masuk log.
+Halaman Dashboard Staff Sales
+Gambar 6.  SEQ Gambar_6. \* ARABIC 17 Antarmuka Halaman Dashboard Staff Sales
+Halaman ini menyajikan dasbor utama bagi Staff Sales untuk memantau ringkasan beban kerja operasional secara real-time. Antarmuka menampilkan tiga kartu metrik total kuantitas dokumen yang sedang dikelola (Quotation, Purchase Order, dan PO Amandement), serta tabel Activity History yang mencatat rekam jejak aktivitas operasional penjualan (seperti membuat dan mengirim penawaran harga) secara kronologis demi menjaga akuntabilitas kinerja.
+Halaman Pricelist Product Staff Sales
+Gambar 6.  SEQ Gambar_6. \* ARABIC 18 Antarmuka Halaman Pricelist Product Staff Sales
+Halaman ini menampilkan katalog daftar harga produk manufaktur resmi perusahaan (Pricelist Products) untuk referensi komersial Staff Sales. Data disajikan dalam tabel interaktif dengan filter pencarian berdasarkan Part Number, Article, dan Part Name. Tabel merinci kode produk, indeks revisi, berat material, spesifikasi teknis material, harga satuan, tautan dokumen gambar teknik (Drawing PDF), serta tombol aksi untuk memanipulasi data (view, edit, delete).
+Halaman Detail Request
+Gambar 6.  SEQ Gambar_6. \* ARABIC 19 Antarmuka Halaman Detail Request
+Halaman ini menyajikan rincian lengkap dari satu permintaan proyek (sales request) masuk yang dikirim oleh pelanggan untuk ditinjau oleh Staff Sales. Komponen data terbagi atas identitas pengirim (Sender Request), data detail permintaan (Request Information seperti subjek proyek, pesan, tanggal pembuatan, dan berkas lampiran), serta informasi Receiver Request (nama Sales Person). Halaman ini menyediakan tombol transisi penting Create Quotation untuk langsung memproses pembuatan dokumen penawaran harga dari draf tersebut.
+Halaman Request Staff Sales
+Gambar 6.  SEQ Gambar_6. \* ARABIC 20 Antarmuka Halaman Request Staff Sales
+Halaman ini memuat tabel manajemen seluruh berkas permintaan proyek (sales request) dari pelanggan yang ditugaskan kepada akun Staff Sales terkait. Antarmuka dilengkapi bilah penyaringan data berdasarkan rentang waktu, status penjualan, serta tombol ekspor. Tabel dinamis menyajikan informasi kode registrasi permintaan (Req Id), nama pengirim, nama instansi perusahaan, alamat email, subjek permintaan, tanggal masuk, nama Sales PIC, serta tombol aksi detail berlambang mata untuk memeriksa isi dokumen.
+Halaman Quotation Staff Sales
+Gambar 6.  SEQ Gambar_6. \* ARABIC 21 Antarmuka Halaman Quotation Staff Sales
+Halaman ini berfungsi sebagai pusat kendali dokumen penawaran harga dari sisi internal Staff Sales. Antarmuka menyajikan tabel komprehensif dari seluruh quotation yang telah diterbitkan perusahaan beserta status transisi terbarunya (seperti PO, Negotiating, Accepted, Sent). Halaman ini juga menyediakan tombol akselerasi Add Quotation untuk membuat draf penawaran komersial baru secara manual.
+Halaman Purchase Order Extenal Staff Sales
+Gambar 6.  SEQ Gambar_6. \* ARABIC 22 Antarmuka Halaman Purchase Order External Staff Sales
+Halaman ini memuat daftar pelacakan berkas Purchase Order (PO) masuk dari pihak pelanggan eksternal yang dikelola oleh Staff Sales. Tabel memuat nomor PO, tanggal pengiriman, identitas Sales PIC, dan status alur dokumen saat ini (Sent (Antrean), In Production, Review (4 Divisi)). Tersedia tombol aksi dinamis Proses Internal bagi sales untuk meneruskan PO baru ke alur manufaktur, atau label Sudah Diproses jika tahapan verifikasi telah berjalan.
+Halaman Purchase Order Internal Staff Sales
+Gambar 6.  SEQ Gambar_6. \* ARABIC 23 Antarmuka Halaman Purchase Order Internal Staff Sales
+Halaman ini merupakan area kerja internal Staff Sales untuk memproses kebutuhan manufaktur berdasarkan PO yang masuk. Antarmuka ini memuat fitur validasi di bagian atas berupa kolom Cek Ketersediaan Barang yang terhubung dengan Database Pricelist atau kartu master Quality Control (QC) berdasarkan pencarian kode artikel. Di bagian bawah, terdapat tabel daftar rincian item pesanan internal yang mencakup nama pelanggan, spesifikasi jenis material, dan kuantitas pesanan produk fisik.
+Halaman Purchase Order Schedule Staff Sales
+Gambar 6.  SEQ Gambar_6. \* ARABIC 24 Antarmuka Halaman Purchase Order Schedule Staff Sales
+Halaman ini berfungsi untuk memantau linimasa penjadwalan produksi pesanan barang secara terstruktur. Antarmuka menyajikan tabel berisi relasi nomor quotation, nomor PO, tautan berkas lampiran fisik, tenggat waktu pengiriman (Delivery Date), serta status pengerjaan manufaktur (production). Tersedia pula tombol aksi Arrange Schedule di atas tabel untuk melakukan konfigurasi ulang atau pengaturan jadwal pengiriman baru.
+Halaman Tinjauan Kontrak Staff Sales
+Gambar 6.  SEQ Gambar_6. \* ARABIC 25 Antarmuka Halaman Tinjauan Kontrak Staff Sales
+Halaman ini menyajikan formulir Detail Contract Review Sheet (Lembar Tinjauan Kontrak) dari perspektif Staff Sales untuk menganalisis kelayakan pemenuhan komersial pesanan. Antarmuka memuat parameter data rekam pesanan (Part Name, Article, Order No) serta kolom pengisian spesifikasi komersial pada tabel departemen Sales (meliputi validasi komponen Price dan Quantity beserta kolom catatan tindakan) sebelum diteruskan ke manajer divisi lain.
+Halaman Login Role Manager Divisi Sales, Quality, PPC, Development Engineering
+Gambar 6.  SEQ Gambar_6. \* ARABIC 26 Antarmuka Halaman Login Role Manager Divisi Sales, Quality, PPC, Development Engineering
+Halaman ini merupakan gerbang autentikasi masuk log terpadu yang disediakan khusus untuk level manajerial di empat divisi operasional (Sales, Quality, PPC, dan Development Engineering). Desain formulir memiliki tata letak kartu akses minimalis berlatar belakang visual area operasional pabrik, yang membedakan pembatasan hak akses (role-based control) melalui kredensial email manajer masing-masing divisi.
+Halaman Dashboard Role Manager Divisi Sales, Quality, PPC, Development Engineering
+Gambar 6.  SEQ Gambar_6. \* ARABIC 27 Antarmuka Halaman Dashboard Role Manager Divisi Sales, Quality, PPC, Development Engineering
+Halaman dasbor manajerial ini menyajikan rangkuman visual metrik dokumen berjalan serta tabel Activity History yang disesuaikan dengan peran divisi masing-masing manajer. Sebagai contoh, antarmuka pada divisi Development Engineering (DE) menampilkan metrik ringkasan kuantitas dokumen serta riwayat persetujuan atau peninjauan lembar kontrak (Approve kontrak) secara berurutan dan terperinci untuk keperluan pengawasan makro.
+Halaman User Management Role Manager Divisi Sales, Quality, PPC, Development Engineering
+Gambar 6.  SEQ Gambar_6. \* ARABIC 28 Antarmuka Halaman User Management Role Manager Divisi Sales, Quality, PPC, Development Engineering
+Halaman ini memuat antarmuka kontrol administrasi pengguna sistem untuk memantau akun pelanggan (Customer Account). Tabel menyajikan daftar nama perwakilan pelanggan, instansi perusahaan, alamat email resmi, serta peran hak akses (Role). Manajer berwenang menggunakan tombol Add User untuk mendaftarkan akun secara manual, melakukan penyesuaian melalui tombol Edit, menghapus akun, atau mengunduh basis data via tombol Export.
+Halaman Pricelist Product Role Manager Divisi Sales, Quality, PPC, Development Engineering
+Gambar 6.  SEQ Gambar_6. \* ARABIC 29 Antarmuka Halaman Pricelist Product Role Manager Divisi Sales, Quality, PPC, Development Engineering
+Halaman ini menyajikan modul tata kelola daftar harga produk resmi (Pricelist Products) dari sudut pandang otoritas manajerial. Antarmuka ini memberikan hak akses penuh kepada jajaran manajer untuk menyaring data teknis produk, meninjau berkas gambar teknik PDF (Drawing PDF), serta menambah master data harga baru (Add Pricelist), memperbarui indeks parameter revisi, maupun menghapus produk dari katalog perusahaan.
+Halaman Request Role Manager Divisi Sales, Quality, PPC, Development Engineering
+Gambar 6.  SEQ Gambar_6. \* ARABIC 30 Antarmuka Halaman Request Role Manager Divisi Sales, Quality, PPC, Development Engineering
+Halaman ini menampilkan tabel rekapitulasi pengajuan permintaan proyek (Request Projects) dari sisi pengawasan manajerial. Antarmuka ini memadukan fungsi pemantauan beban kerja tim dengan menyajikan informasi kode registrasi permintaan (Req Id), perusahaan pemohon, serta identitas Sales PIC yang ditugaskan menangani alur komunikasi awal, dilengkapi tombol aksi untuk melihat isi detail dokumen permohonan.
+Halaman Quotation Role Manager Divisi Sales, Quality, PPC, Development Engineering
+Gambar 6.  SEQ Gambar_6. \* ARABIC 31 Antarmuka Halaman Quotation Role Manager Divisi Sales, Quality, PPC, Development Engineering
+Halaman ini berfungsi sebagai dasbor pemantauan komersial bagi pihak manajemen guna mengawasi semua draf penawaran harga yang diajukan oleh Staff Sales. Tabel memuat status pelacakan secara transparan, memungkinkan para manajer melihat rincian kalkulasi margin, mendeteksi dokumen yang sedang dalam fase negosiasi (Negotiating), disetujui (Accepted), maupun yang telah sukses dikonversi menjadi pesanan (PO).
+Halaman Purchase Order Role Manager Divisi Sales, Quality, PPC, Development Engineering
+Gambar 6.  SEQ Gambar_6. \* ARABIC 32 Antarmuka Halaman Purchase Order Role Manager Divisi Sales, Quality, PPC, Development Engineering
+Halaman ini menyajikan tabel kontrol dari seluruh berkas Purchase Order (PO) yang masuk dari pelanggan eksternal untuk pengawasan pihak manajer. Pihak manajemen dapat memantau distribusi status antrean pesanan di pabrik, mengevaluasi berkas PO yang membutuhkan tindakan tinjauan khusus (Review 4 Divisi), serta melihat penugasan Sales PIC penanggung jawab pesanan secara terintegrasi.
+Halaman Purchase Order Schedule Role Manager Divisi Sales, Quality, PPC, Development Engineering
+Gambar 6.  SEQ Gambar_6. \* ARABIC 33 Antarmuka Halaman Purchase Order Schedule Role Manager Divisi Sales, Quality, PPC, Development Engineering
+Halaman ini menyajikan tabel visual linimasa jadwal produksi terpadu bagi pihak manajemen divisi (seperti PPC dan Sales) untuk memantau status manufaktur pesanan. Manajer dapat memverifikasi keterkaitan dokumen PO dengan penawaran harga, mengunduh file lampiran teknis produksi, meninjau target estimasi Delivery Date, serta menggunakan tombol Arrange Schedule untuk melakukan supervisi penjadwalan jika diperlukan.
+Halaman Tinjauan Kontrak Role Manager Divisi Sales, Quality, PPC, Development Engineering
+Gambar 6.  SEQ Gambar_6. \* ARABIC 34 Antarmuka Halaman Tinjauan Kontrak Role Manager Divisi Sales, Quality, PPC, Development Engineering
+Halaman ini merupakan pusat kolaborasi peninjauan kelayakan kontrak kerja sama (Contract Review Sheet) lintas departemen sebelum masuk fase produksi massal. Tabel menyajikan informasi komprehensif (No PO, Kode Produk, dan Nama Produk) serta kolom matriks status persetujuan dari empat pimpinan divisi (Manager Sales, Manager Quality, Manager PPC, Manager DE). Status visualisasi menggunakan ikon centang hijau untuk indikasi persetujuan selesai (Approved) dan ikon tanda seru kuning untuk menandakan dokumen menunggu verifikasi (Pending) agar keputusan manajerial terkoordinasi secara efisien.
+6.4 Pengujian Fungsional Sistem
+6.4.1 Uji coba structural
+Pengujian sistem ini bertujuan untuk mengetahui dan memastikan bahwa sistem yang dikembangkan telah sesuai dengan alur pelacakan pesanan (sales order tracking) di PT. Metinca Prima Industrial Works secara aktual. Hal ini dilakukan agar pengimplementasian dan penggunaan aplikasi dapat berjalan optimal dalam mendukung transparansi status pesanan, mempercepat proses penawaran dan negosiasi, serta mempermudah kolaborasi tinjauan kontrak lintas divisi secara real-time. Pengujian dilakukan secara langsung oleh aktor-aktor yang terlibat dalam proses bisnis penjualan dan produksi, yaitu Customer, Staff Sales, serta Manager Divisi (Sales, Quality, PPC, dan Development Engineering).
+Tabel 6.  SEQ Tabel_6. \* ARABIC 1 Uji coba structural
+Form/Halaman
+Hasil
+Halaman Register Customer
+Sesuai
+Halaman Login Customer
+Sesuai
+Halaman Dashboard Customer
+Sesuai
+Halaman Request Customer
+Sesuai
+Halaman Form Request Customer
+Sesuai
+Halaman Quotation Customer
+Sesuai
+Halaman Detail Quotation Customer
+Sesuai
+Halaman Form Purchase Order Customer
+Sesuai
+Halaman Purchase Order Customer
+Sesuai
+Halaman Account Customer
+Sesuai
+Halaman Login Staff Sales
+Sesuai
+Halaman Dashboard Staff Sales
+Sesuai
+Halaman Pricelist Product Staff Sales
+Sesuai
+Halaman Detail Request Staff Sales
+Sesuai
+Halaman Request Staff Sales
+Sesuai
+Halaman Quotation Staff Sales
+Sesuai
+Halaman Purchase Order External Staff Sales
+Sesuai
+Halaman Purchase Order Internal Staff Sales
+Sesuai
+Halaman Purchase Order Schedule Staff Sales
+Sesuai
+Halaman Tinjauan Kontrak Staff Sales
+Sesuai
+Halaman Login Role Manager Divisi
+Sesuai
+Halaman Dashboard Role Manager Divisi
+Sesuai
+Halaman User Management Role Manager Divisi
+Sesuai
+Halaman Pricelist Product Role Manager Divisi
+Sesuai
+Halaman Request Role Manager Divisi
+Sesuai
+Halaman Quotation Role Manager Divisi
+Sesuai
+Halaman Purchase Order Role Manager Divisi
+Sesuai
+Halaman Purchase Order Schedule Role Manager Divisi
+Sesuai
+Halaman Tinjauan Kontrak Role Manager Divisi
+Sesuai
+Uji coba Fungsional
+Pengujian fungsional dilakukan untuk memastikan bahwa seluruh fitur dan modul dalam sistem berjalan sesuai dengan spesifikasi kebutuhan yang telah direnkanakan. Fokus utama pengujian ini mencakup proses pendaftaran akun pelanggan, pengajuan sales request, manajemen dan negosiasi quotation, pemrosesan berkas purchase order beserta penjadwalan internal, hingga proses validasi tinjauan kontrak multi-divisi. Dengan pengujian ini, diharapkan setiap fungsi aplikasi dapat beroperasi dengan benar dalam memfasilitasi koordinasi kerja antar peran guna menjamin efektivitas pelacakan pesanan.
+Tabel 6.  SEQ Tabel_6. \* ARABIC 2 Uji coba Fungsional
+HALAMAN
+Menu/Button
+Hasil
+Customer
+Register Customer
+Tombol Register
+Berfungsi
+Login Customer
+Tombol Login
+Berfungsi
+Dashboard Customer
+Menampilkan Summary Cards (Quotation, PO, Amandement)
+Berfungsi
+Menampilkan Tabel Activity History
+Berfungsi
+Request Customer
+Filter & Pencarian Data Request
+Berfungsi
+Tombol New Request
+Berfungsi
+Form Request Customer
+Input Data Pemohon & Detail Proyek
+Berfungsi
+Tombol Submit Form
+Berfungsi
+Quotation Customer
+Menampilkan Daftar Penawaran & Status
+Berfungsi
+Tombol Export Data
+Berfungsi
+Detail Quotation Customer
+Tombol Negotiate (Ajukan Tawar-Menawar)
+Berfungsi
+Tombol Create PO
+Berfungsi
+Tombol Unduh PDF Penawaran
+Berfungsi
+Form Purchase Order Customer
+Input Nomor PO & Delivery Request
+Berfungsi
+Area Drag & Drop Unggah File PO
+Berfungsi
+Tombol Submit PO
+Berfungsi
+Account Customer
+Tombol Edit Profil & Detail Perusahaan
+Berfungsi
+Staff Sales
+Login Staff Sales
+Tombol Login Internal
+Berfungsi
+Dashboard Staff Sales
+Menampilkan Total Dokumen Aktif & Riwayat
+Berfungsi
+Pricelist Product Staff Sales
+Filter Pencarian Part Number / Article
+Berfungsi
+Aksi View, Edit, Delete Data Produk
+Berfungsi
+Detail Request Staff Sales
+Tombol Create Quotation
+Berfungsi
+Request Staff Sales
+Menampilkan Tabel Tugas & Tombol Detail
+Berfungsi
+Quotation Staff Sales
+Tombol Add Quotation Manual
+Berfungsi
+Pemantauan Label Status Transisi (Negotiating/PO)
+Berfungsi
+Purchase Order External
+Tombol Aksi Proses Internal
+Berfungsi
+Purchase Order Internal
+Kolom Cek Ketersediaan Barang (Pricelist/QC)
+Berfungsi
+Purchase Order Schedule
+Tombol Arrange Schedule
+Berfungsi
+Tinjauan Kontrak Staff Sales
+Input Nilai Kelayakan Komersial (Price & Qty)
+Berfungsi
+Role Manager Divisi
+Login Role Manager
+Tombol Login Hak Akses Khusus
+Berfungsi
+Dashboard Role Manager
+Menampilkan Status Activity Log per Divisi
+Berfungsi
+User Management
+Tombol Add User Pelanggan & Tombol Export
+Berfungsi
+Pricelist Product Manager
+Tombol Add Pricelist Baru & View PDF Drawing
+Berfungsi
+Request / Quotation / PO
+Monitoring Rekapitulasi & Detail Berkas
+Berfungsi
+Tinjauan Kontrak Manager
+Tombol Aksi Persetujuan Lembar Kontrak Lintas Divisi
+Berfungsi
+6.5 User Acceptance Test (UAT)
+Berikut hasil pengujian User Acceptance Test yang dilakukan oleh user sistem didapat temuan dan saran rekomendasi aplikasi :
+Nama User
+:
+Bella
+Jenis Kelamin
+:
+Perempuan
+Jabatan
+:
+Staff Sales
+Tabel 6.  SEQ Tabel_6. \* ARABIC 3 Tabel UAT Staff Sales
+No
+Tampilan Halaman Web /  Mobile
+Penemuan
+Rekomendasi
+1
+Partisipan berhasil login dengan menginput username dan password.
+Tidak ada kendala
+2
+Partisipan berhasil memahami tampilan pricelist product.
+Tidak ada kendala
+3
+Partisipan berhasil memahami tampilan request.
+Tidak ada kendala
+4
+Partisipan berhasil memahami tampilan quotation.
+Tidak ada kendala
+5
+Partisipan berhasil memahami tampilan purchase order.
+Tidak ada kendala
+6
+Partisipan berhasil memahami tampilan contract review sheet.
+Tidak ada kendala
+Kesimpulan Hasil UAT
+Berdasarkan hasil pengujian User Acceptance Test (UAT) yang dilakukan bersama perwakilan pengguna internal dari Departemen Penjualan PT. Metinca Prima Industrial Works, dapat disimpulkan bahwa antarmuka aplikasi dari sisi peran Staff Sales telah memenuhi kebutuhan fungsional operasional. Seluruh alur kerja komersial mulai dari pemantauan katalog harga, penerimaan draf request proyek, negosiasi berkas quotation, penguncian otomatis basis data Purchase Order, hingga pelacakan lembar persetujuan kelayakan kontrak lintas divisi dapat dioperasikan secara valid, stabil, dan dinilai layak untuk diimplementasikan.
+6.5.2   Saran Hasil dari UAT
+Berdasarkan hasil pelaksanaan User Acceptance Test (UAT), direkomendasikan untuk menambahkan modul catatan (remark) interaktif pada matriks persetujuan Contract Review Sheet agar para Manager lintas divisi dapat langsung memberikan umpan balik teknis secara spesifik di dalam sistem. Di samping itu, fungsionalitas penguncian otomatis data Purchase Order (PO) yang telah diajukan harus tetap dipertahankan untuk menjamin keamanan dan integritas basis data, dengan saran pengembangan lebih lanjut berupa integrasi notifikasi berbasis waktu nyata (real-time) guna mempercepat respon manajemen saat menghadapi pengajuan amandemen data pesanan dari pihak pelanggan
+BAB VIIKESIMPULAN DAN SARAN
+7.1 Kesimpulan
+Sistem pelacakan pesanan berbasis web dengan framework Laravel ini berhasil menyimpan dan melacak seluruh dokumen penjualan secara real-time serta transparan bagi customer, staff sales, dan manajer lintas divisi. Kehadiran sistem ini memberikan kemudahan bagi customer dalam memantau status Purchase Order (PO) yang telah mereka kirimkan secara mandiri dan akurat.
+7.2 Saran
+Untuk pengembangan sistem selanjutnya, direkomendasikan menambahkan fitur backup data otomatis untuk menjaga keamanan basis data. Selain itu, perlu dilakukan penyempurnaan pada alur penanganan amandemen PO, integrasi notifikasi real-time untuk mempercepat koordinasi, serta peningkatan sistem monitoring yang lebih interaktif bagi seluruh pengguna yang terlibat.
+DAFTAR PUSTAKA
+Kadir, A. (2014). Pengenalan Sistem Informasi (Ed. Rev.). Yogyakarta: Penerbit Andi.
+Narulita, S., Nugroho, A. D., & Abdillah, M. (2024). Analisis Proses Bisnis Manufaktur dan Sistem Distribusi. Jakarta: Penerbit Informatika.
+Permana, A. A. J., Apriyanto, Nirsal, Kule, Y., Raharja, M. A., Punne, M. R. R., Allo, N. T., Hernando, H., & Mahendra, G. S. (2024). Buku Ajar Pengantar Sistem Informasi. Sonpedia Publishing.
+Simanungkalit, J. H. U. P. (2019). Konsep Dasar Sistem Informasi (Modul ADPG4442). Universitas Terbuka.
+Soufitri, F. (2023). Konsep Sistem Informasi. PT Inovasi Pratama Internasional.
+Sutabri, T. (2016). Sistem Informasi Manajemen (Ed. Rev.). Yogyakarta: Penerbit Andi.
+DAFTAR RIWAYAT HIDUP
+Biodata Mahasiswa
+NIM: 2023240023
+Nama Lengkap:Adi Dwi Nugroho
+Tempat & Tanggal Lahir:  Demak, 18 Mei 2005
+Alamat lengkap:Jl. Tipar Cakung RT 05/ RW 05 , Cakung
+Barat, Kec.Cakung, Kota Jakarta Timur, DKI Jakarta.
+Riwayat Pendidikan Formal
+SDN 02 Cakung Barat, lulus Tahun 2017
+SMPN 144 Jakarta Timur, lulus tahun 2020
+SMKn 71 Jakarta Timur, lulus tahun 2023
+Riwayat Pengalaman Berorganisasi/Pekerjaan
+Praktik Kerja Lapangan di APKOMINDO bidang Internet of Things (IoT) dan Arduino, periode Oktober 2021 s.d Desember 2021.
+Pengurus UKM Kendo Universitas Darma Persada, periode 2024 s.d Saat ini.
+40216775565Jakarta, 23 juli 2026
+Saya yang bersangkutan.
+Adi Dwi Nugroho
+14097020507800
+LEMBAR KONSULTASI CAPSTONE PROJECT
+UNIVERSITAS DARMA PERSADA
+NIM
+: 2023240023
+Nama Lengkap
+: Adi Dwi Nugroho
+Dosen Pembimbing
+: Endang Ayu Susilawati, S.T,  M.MSi
+Judul Capstone Project
+: Pengembangan Aplikasi Sistem Informasi Pelacakan Status Pesanan Pelanggan Pada Divisi Purchasing Sales Marketing di Pt. Metinca Prima Industrial Works Jakarta
+No
+Tanggal Bimbingan
+Pokok Bahasan
+Paraf Dosen Pembimbing
+1
+3 Juni 2026
+Membahas Tentang Sistem Pelacakan dan Alur Penulisan
+2
+13 Juli 2026
+Pembahasan penulisan, Latar Belakang, Rumusan Masalah, Use Case Diagram
+3
+17 Juli 2026
+Pembahasan penulisan, Latar Belakang, Rumusan Masalah, Use Case Diagram dan aplikasi
+Bimbingan Capstone Project
+Dimulai pada tanggal : 3 Juni 2026
+Diakhiri pada tanggal : 17 Juli 2026
+Jumlah Pertemuan : 3
+2644140168910Disetujui oleh,Dosen PembimbingEndang Ayu Susilawati, S.T, M.MSi0Disetujui oleh,Dosen PembimbingEndang Ayu Susilawati, S.T, M.MSi
+Disetujui oleh,
+Dosen Pembimbing
+Endang Ayu Susilawati, S.T, M.MSi
+Disetujui oleh,
+Dosen Pembimbing
+Endang Ayu Susilawati, S.T, M.MSi
+20552014168800
+LEMBAR KONSULTASI CAPSTONE PROJECT
+UNIVERSITAS DARMA PERSADA
+NIM
+: 2023240023
+Nama Lengkap
+: Adi Dwi Nugroho
+Dosen Pembimbing
+: Endang Ayu Susilawati, S.T,  M.MSi.
+Judul Skripsi
+: Pengembangan Aplikasi Sistem Informasi Pelacakan Status Pesanan Pelanggan Pada Divisi Purchasing Sales Marketing di Pt. Metinca Prima Industrial Works Jakarta
+No
+Tanggal Bimbingan
+Pokok Bahasan
+Paraf Dosen Pembimbing
+1
+9 Juni 2026
+Membahas Tentang Alur Sistem Berjalan di PT metinca dan Bimbingan untuk aplikasinya
+Bimbingan Capstone Project
+Dimulai pada tanggal : 9 Juni 2026
+Diakhiri pada tanggal : 9 Juni 2026
+Jumlah Pertemuan : 1
+3169285116362Disetujui oleh,Pembimbing LapanganBella Ayu Ainingrum, S.Pd.0Disetujui oleh,Pembimbing LapanganBella Ayu Ainingrum, S.Pd.
+Disetujui oleh,
+Pembimbing Lapangan
+Bella Ayu Ainingrum, S.Pd.
+Disetujui oleh,
+Pembimbing Lapangan
+Bella Ayu Ainingrum, S.Pd.
+Surat Keterangan Pelaksanaan  Capstone Project
+LAMPIRAN
+1. Surat Keterangan Riset
+2.  Dokumen Masukan
+Purchase Order
+Lampiran A.   SEQ Lampiran_A._ \* ARABIC 1 Purchase Order
+2.  Dokumen Keluaran
+A. Tinjauan Kontrak
+Lampiran A.   SEQ Lampiran_A._ \* ARABIC 2 Tinjauan Kontrak
+HASIL WAWANCARA
+Pewawancara : Adi (Mahasiswa Sistem Informasi)
+Narasumber : Bu Bella (Staff Sales PT. Metinca Prima Industrial Works)
+Fokus Bahasan : Data Master Pricelist, Integrasi Alur QC, Validasi Lembar Tinjauan Kontrak, dan Logika Tracking Status
+Tujuan : Sinkronisasi kebutuhan operasional riil dengan spesifikasi fungsional sistem informasi usulan.
+(Adi) : Baik Bu, aspek efisiensi basis data akan kami prioritaskan. Selanjutnya, untuk modul master data daftar harga (pricelist), komponen kolom apa saja yang wajib tersedia untuk mempermudah pekerjaan tim sales?
+(Bu Bella) : Poin utama pencarian pada kartu data master harus menggunakan Nomor Artikel (Article Number) sebagai acuan baku. Untuk komponen harga, mohon dibagi secara spesifik menjadi 3 kolom, yaitu Casting Price (Harga Pengecoran), Machining Price (Harga Permesinan), dan Total Price (Total Harga). Pengisian Casting Price bersifat wajib, sedangkan Machining Price bersifat opsional tergantung ada tidaknya proses pembubutan produk. Kolom Total Price harus diprogram agar menjumlahkan kedua nilai tersebut secara otomatis agar pengguna tidak perlu menghitung manual lagi. Jangan lupa menambahkan kolom berat barang dalam satuan Kilogram (Kg), nomor gambar (drawing number), serta indeks revisi gambar.
+(Adi) : Mengenai kebutuhan kolom berat barang dan nomor gambar tersebut, bagaimana alur penanganan di dalam sistem jika sales menerima pesanan untuk produk baru yang belum terdaftar di pricelist?
+(Bu Bella) : Jika menerima PO untuk item barang baru yang spesifikasinya belum ada, alurnya wajib melibatkan divisi QC terlebih dahulu untuk mendaftarkan deskripsi teknisnya seperti part number, nomor gambar, indeks revisi gambar, serta berat Kg aktual produk ke dalam database mereka. Setelah divisi QC selesai menginput data teknis tersebut, pihak sales tinggal mencari kodenya di sistem, menarik data terintegrasi tersebut, dan melengkapinya dengan nominal harga penjualan. Namun, apabila item yang dipesan merupakan barang lama, sales bisa langsung melewatkan proses QC dan menarik data master yang sudah tersedia untuk mempercepat administrasi.
+(Adi) : Untuk modul Lembar Tinjauan Kontrak (Contract Review Sheet), mekanisme validasi dokumen dan aturan akses seperti apa yang perlu kami terapkan pada aplikasi?
+(Bu Bella) : Pihak sales memerlukan fitur untuk mengunggah berkas PDF PO asli langsung di dalam modul tinjauan kontrak. Tujuannya agar 4 Manajer Divisi yang bertugas memberikan persetujuan (approval) dapat langsung melihat dokumen PO pembanding melalui tombol aksi terintegrasi tanpa harus mencari di menu lain. Sistem juga harus mengizinkan sales menyunting nominal harga secara fleksibel di lembar kontrak jika ada penyesuaian khusus. Hal yang paling krusial, saat dokumen tinjauan kontrak ini dicetak fisik (print out) untuk diserahkan ke lantai produksi, nominal harga penjualan wajib disembunyikan atau ditutup otomatis oleh sistem karena informasi tersebut bersifat rahasia perusahaan dan hanya boleh diketahui oleh pihak sales.
+(Adi) : Poin terakhir mengenai visualisasi pelacakan pesanan pada sisi customer, bagaimana logika perubahan status dokumen PO tersebut diatur di dalam sistem?
+(Bu Bella) : Logika perubahan status pelacakan pesanan dirancang dalam tiga kondisi utama. Kondisi pertama, status diatur sebagai "PO Terkirim" ketika berkas PO eksternal dari email dimasukkan namun belum diproses lebih lanjut. Kondisi kedua, status otomatis diperbarui menjadi "PO Diterima" segera setelah Staff Sales berhasil membuat draf dokumen lembar tinjauan kontrak awal. Kondisi ketiga, status berubah menjadi "Dalam Proses Produksi" (Production) setelah dokumen tinjauan kontrak disetujui secara lengkap oleh 4 Manajer Divisi dan pihak sales menekan tombol konfirmasi akhir (final checklist) setelah berkoordinasi mengenai kesiapan lantai pabrik.

@@ -15,6 +15,10 @@ class UserController extends Controller
     //
     public function index(Request $request)
     {
+        if (!Auth::user()->isAdmin()) {
+            abort(403, 'Akses ditolak. User Management hanya dapat diakses oleh Administrator.');
+        }
+
         try {
             //code...
             $query = User::query();
@@ -34,6 +38,10 @@ class UserController extends Controller
 
     public function index_customer(Request $request)
     {
+        if (!Auth::user()->isAdmin()) {
+            abort(403, 'Akses ditolak. User Management hanya dapat diakses oleh Administrator.');
+        }
+
         $query = User::where('role', '=', 'customer');
 
         if ($request->filled('name')) {
@@ -56,6 +64,10 @@ class UserController extends Controller
      */
     public function export(Request $request)
     {
+        if (!Auth::user()->isAdmin()) {
+            abort(403, 'Akses ditolak. User Management hanya dapat diakses oleh Administrator.');
+        }
+
         $filters = $request->only(['role', 'name', 'email']);
         $filters['include_customers'] = false;
         $filename = 'users-' . now()->format('Ymd_His') . '.xlsx';
@@ -68,6 +80,10 @@ class UserController extends Controller
      */
     public function exportCustomers(Request $request)
     {
+        if (!Auth::user()->isAdmin()) {
+            abort(403, 'Akses ditolak. User Management hanya dapat diakses oleh Administrator.');
+        }
+
         $filters = $request->only(['name', 'email']);
         $filters['role'] = 'customer';
         $filename = 'customers-' . now()->format('Ymd_His') . '.xlsx';
@@ -77,13 +93,18 @@ class UserController extends Controller
 
     public function storeCustomer(Request $request, $requestProject)
     {
+        if (!Auth::user()->isAdmin() && !Auth::user()->isStaff() && !Auth::user()->isManager()) {
+            abort(403, 'Akses ditolak.');
+        }
+
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email',
             'password' => 'required|min:6',
             'role'     => 'nullable',
-            'company' => 'nullable',
-            'divisi' => 'nullable',
+            'company'  => 'nullable',
+            'divisi'   => 'nullable',
+            'plant'    => 'nullable',
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
@@ -102,14 +123,26 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        if (!Auth::user()->isAdmin()) {
+            abort(403, 'Akses ditolak. User Management hanya dapat diakses oleh Administrator.');
+        }
+
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email',
             'password' => 'required|min:6',
             'role'     => 'nullable',
-            'company' => 'nullable',
-            'divisi' => 'nullable'
+            'company'  => 'nullable',
+            'divisi'   => 'nullable',
+            'plant'    => 'nullable',
         ]);
+
+        // Business rules: Admin has no department, Staff is always Sales
+        if (($validated['role'] ?? '') === 'admin') {
+            $validated['divisi'] = null;
+        } elseif (($validated['role'] ?? '') === 'staff') {
+            $validated['divisi'] = 'sales';
+        }
 
         $validated['password'] = Hash::make($validated['password']);
         $createdUser = User::create($validated);
@@ -120,19 +153,35 @@ class UserController extends Controller
             'activity_time' => now()->format('Y-m-d H:i:s')
         ]);
 
-        return redirect()->route('users.index')->with('success', 'User created');
+        if (($createdUser->role ?? '') === 'customer') {
+            return redirect()->route('users.customer')->with('success', 'Data Customer berhasil ditambahkan');
+        }
+
+        return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan');
     }
 
     public function update(Request $request, User $user)
     {
+        if (!Auth::user()->isAdmin()) {
+            abort(403, 'Akses ditolak. User Management hanya dapat diakses oleh Administrator.');
+        }
+
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'email'    => 'required|email|unique:users,email,' . $user->id,
             'password' => 'nullable|min:6',
             'role'     => 'nullable',
-            'company' => 'nullable',
-            'divisi' => 'nullable'
+            'company'  => 'nullable',
+            'divisi'   => 'nullable',
+            'plant'    => 'nullable',
         ]);
+
+        // Business rules: Admin has no department, Staff is always Sales
+        if (($validated['role'] ?? '') === 'admin') {
+            $validated['divisi'] = null;
+        } elseif (($validated['role'] ?? '') === 'staff') {
+            $validated['divisi'] = 'sales';
+        }
 
         if (!empty($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
@@ -152,6 +201,10 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        if (!Auth::user()->isAdmin()) {
+            abort(403, 'Akses ditolak. User Management hanya dapat diakses oleh Administrator.');
+        }
+
         $userName = $user->name;
         $user->delete();
         \App\Models\HistoryActivity::create([
@@ -164,6 +217,10 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
+        if (!Auth::user()->isAdmin()) {
+            abort(403, 'Akses ditolak. User Management hanya dapat diakses oleh Administrator.');
+        }
+
         if ($user->role == 'customer') {
             return view('users.customer-edit-partial', compact('user'));
         } else {

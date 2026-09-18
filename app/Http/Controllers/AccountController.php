@@ -66,29 +66,54 @@ class AccountController extends Controller
         return view('account.edit', compact('user','account'));
     }
 
-    // Update account
+    // Update account & password
     public function update(Request $request)
     {
+        $user = Auth::user();
+
         $request->validate([
-            'phone'    => 'nullable|string|max:20',
-            'company'  => 'nullable|string|max:255',
-            'position' => 'nullable|string|max:255',
-            'address'  => 'nullable|string',
-            'city'     => 'nullable|string|max:100',
-            'zip'      => 'nullable|string|max:10',
-            'fax'      => 'nullable|string|max:20',
+            'phone'                     => 'nullable|string|max:20',
+            'company'                   => 'nullable|string|max:255',
+            'position'                  => 'nullable|string|max:255',
+            'address'                   => 'nullable|string',
+            'city'                      => 'nullable|string|max:100',
+            'zip'                       => 'nullable|string|max:10',
+            'fax'                       => 'nullable|string|max:20',
+            'current_password'          => 'nullable|string',
+            'new_password'              => 'nullable|string|min:6|confirmed',
         ]);
 
+        // Jika user mengisi password baru, validasi password saat ini
+        if ($request->filled('new_password')) {
+            if (empty($request->current_password)) {
+                return back()->withErrors(['current_password' => 'Password saat ini wajib diisi jika ingin mengubah password.'])->withInput();
+            }
+
+            if (!\Illuminate\Support\Facades\Hash::check($request->current_password, $user->password)) {
+                return back()->withErrors(['current_password' => 'Password saat ini tidak sesuai.'])->withInput();
+            }
+
+            $user->update([
+                'password' => \Illuminate\Support\Facades\Hash::make($request->new_password)
+            ]);
+
+            \App\Models\HistoryActivity::create([
+                'user_id' => $user->id,
+                'activity' => 'Mengubah password akun pribadi',
+                'activity_time' => now()->format('Y-m-d H:i:s')
+            ]);
+        }
+
         Account::updateOrCreate(
-            ['user_id' => Auth::id()],
+            ['user_id' => $user->id],
             $request->only(['phone', 'company', 'position', 'address', 'city', 'zip', 'fax'])
         );
 
         if ($request->filled('company')) {
-            Auth::user()->update(['company' => $request->company]);
+            $user->update(['company' => $request->company]);
         }
 
         return redirect()->route('account.show')
-            ->with('success', 'Account berhasil diupdate.');
+            ->with('success', 'Data akun dan password berhasil diperbarui.');
     }
 }

@@ -50,6 +50,16 @@ body {
     font-size: 1.3rem;
     padding: 20px 25px;
     border: none;
+    display: flex;
+    align-items: center;
+}
+
+.accordion-button i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    vertical-align: middle;
 }
 
 .accordion-button:not(.collapsed) {
@@ -65,6 +75,7 @@ body {
 
 .accordion-button::after {
     filter: brightness(0) invert(1);
+    margin-left: auto;
 }
 
 .accordion-body {

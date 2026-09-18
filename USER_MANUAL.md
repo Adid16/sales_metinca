@@ -12,7 +12,7 @@
    - 2.3 [Menerima & Menegosiasikan Penawaran Harga (Quotation & Negotiation)](#23-menerima--menegosiasikan-penawaran-harga-quotation--negotiation)
    - 2.4 [Menerbitkan Purchase Order (PO Pelanggan)](#24-menerbitkan-purchase-order-po-pelanggan)
    - 2.5 [Mengajukan Amandemen Pesanan (PO Amendment)](#25-mengajukan-amandemen-pesanan-po-amendment)
-   - 2.6 [Pelacakan Status Pesanan Publik (Public Order Tracking)](#26-pelacakan-status-pesanan-publik-public-order-tracking)
+   - 2.6 [Pelacakan Status Pesanan pada Portal Pelanggan (Customer Order Tracking)](#26-pelacakan-status-pesanan-pada-portal-pelanggan-customer-order-tracking)
 3. [PANDUAN PENGGUNA: STAFF SALES (SALES PIC)](#3-panduan-pengguna-staff-sales-sales-pic)
    - 3.1 [Klaim Penugasan Tiket (Claim / Assign Sales PIC)](#31-klaim-penugasan-tiket-claim--assign-sales-pic)
    - 3.2 [Pembuatan Penawaran Harga Resmi (Create Quotation)](#32-pembuatan-penawaran-harga-resmi-create-quotation)
@@ -33,6 +33,7 @@
    - 5.2 [Manajemen Master Data Produk & Floor Price](#52-manajemen-master-data-produk--floor-price)
    - 5.3 [Supervisi & Audit Log Transaksi](#53-supervisi--audit-log-transaksi)
 6. [FITUR TAMBAHAN: DUAL THEME (DARK MODE) & RESPONSIVE MOBILE](#6-fitur-tambahan-dual-theme-dark-mode--responsive-mobile)
+7. [RANGKUMAN MATRIKS STATUS PESANAN (STATUS REFERENCE)](#7-rangkuman-matriks-status-pesanan-status-reference)
 
 ---
 
@@ -42,7 +43,6 @@ Buku panduan ini disusun sebagai standar operasional prosedur (SOP) penggunaan *
 
 ### Alamat URL Sistem:
 - **Aplikasi Web**: `http://localhost:8000` atau `http://sales_metinca.test`
-- **Pelacakan Publik (Tanpa Login)**: `http://localhost:8000/customer/track`
 
 ---
 
@@ -100,16 +100,27 @@ Buku panduan ini disusun sebagai standar operasional prosedur (SOP) penggunaan *
 4. Klik **Kirim Amandemen**.
    > **Catatan Penting**:
    > - Setiap item pesanan dibatasi maksimal **2 kali amandemen**.
-   > - Jika pesanan sudah masuk tahap produksi (*In Production*), fitur amandemen otomatis **terkunci / diblokir** demi menjaga stabilitas lini cetak pabrik.
+   > - Kunci Produksi Parsial (*Per-Item Production Lock*): Fitur amandemen hanya terkunci pada sub-item yang sudah masuk tahap produksi (*In Production*). Sub-item lain pada PO yang sama yang masih berstatus *Review* tetap dapat diajukan amandemen.
 
 ---
 
-### 2.6 Pelacakan Status Pesanan Publik (Public Order Tracking)
-1. Buka tautan publik `/customer/track` tanpa perlu login.
-2. Masukkan **Nomor Purchase Order (PO No)** atau **Nomor Quotation**.
-3. Klik tombol **Lacak Status Pesanan**.
-4. Sistem akan menampilkan *progress bar* interaktif real-time:
-   - `Request Submitted` $\rightarrow$ `Quotation Processed` $\rightarrow$ `PO Received` $\rightarrow$ `PO Internal Verified` $\rightarrow$ `Contract Review 4 Divisions` $\rightarrow$ **`In Production`**.
+### 2.6 Pelacakan Status Pesanan pada Portal Pelanggan (Customer Order Tracking)
+1. Setelah login ke portal pelanggan, buka menu **Purchase Orders** atau **Dashboard**.
+2. Pada tabel daftar pesanan, Anda dapat memantau progres seluruh pesanan secara real-time melalui lencana status:
+   - **Sent / Draft**: PO resmi Anda telah masuk ke sistem dan sedang ditinjau Sales PIC.
+   - **Review**: Pesanan sedang dalam tahap verifikasi teknis 4 divisi (Sales, Quality, PPC, Design Engineering).
+   - **In Production**: Seluruh klausul kontrak seluruh item telah disetujui dan pesanan sedang aktif diproduksi di lantai pabrik.
+3. Klik tombol **Detail / View Progress** pada baris pesanan untuk melihat linimasa (*timeline* aktivitas), rincian item, dan status verifikasi per-item secara transparan.
+
+---
+
+### 2.7 Mengelola Profil & Mengubah Password Mandiri
+1. Klik avatar profil Anda di pojok kanan atas navbar, lalu pilih **Profile / Akun Saya**.
+2. Anda dapat memperbarui informasi nama kontak, telepon, dan alamat perusahaan.
+3. Untuk mengubah kata sandi:
+   - Masukkan **Password Saat Ini (Current Password)**.
+   - Masukkan **Password Baru** (minimal 6 karakter) dan **Konfirmasi Password Baru**.
+   - Klik **Simpan Perubahan**. Sistem akan mengenkripsi kata sandi baru Anda secara aman menggunakan algoritma Bcrypt.
 
 ---
 
@@ -176,9 +187,12 @@ Buku panduan ini disusun sebagai standar operasional prosedur (SOP) penggunaan *
 ---
 
 ### 3.7 Finalisasi Serah Terima ke Lini Produksi (In Production)
-1. Setelah seluruh 4 divisi manajerial memberikan tanda tangan digital (Status: `Approved`), tombol **Finalize to Production** akan aktif khusus untuk Sales PIC pemilik pesanan.
-2. Klik tombol **Finalize to Production**.
-3. Konfirmasi serah terima dokumen kerja. Status Kontrak, PO Internal, dan PO Customer akan serentak berubah menjadi **`In Production`**. Pesanan resmi terkunci dan berpindah ke wewenang departemen produksi pabrik.
+1. Setelah seluruh 4 divisi manajerial memberikan tanda tangan digital pada lembar kontrak sub-item (Status: `Approved`), tombol **Finalize to Production** akan aktif khusus untuk Sales PIC pemilik pesanan.
+2. Klik tombol **Finalize to Production** pada nomor item / Sub-PO terkait.
+3. **Mekanisme Finalisasi Parsial Sub-PO**:
+   - Status Kontrak dan status PO Internal untuk sub-item yang difinalisasi akan berubah menjadi **`In Production`**.
+   - Sub-item lain pada PO yang sama yang belum selesai diverifikasi atau masih dalam revisi **tidak akan terpengaruh** (tetap berstatus `Review` atau `Sent`).
+   - **Status PO Utama (Master PO)** akan tetap berstatus **`Review`** (mengambil status progress minimum) dan **HANYA** berubah menjadi **`In Production`** setelah **100% seluruh sub-item (misal 4/4 data)** telah difinalisasi masuk ke lini produksi.
 
 ---
 
@@ -194,7 +208,7 @@ Buku panduan ini disusun sebagai standar operasional prosedur (SOP) penggunaan *
 ### 4.1 Review Aspek Divisi Sales (Manager Sales)
 - **Menu Akses**: `Contract Review Sheet` $\rightarrow$ Filter `Sales Review`.
 - **Fokus Tinjauan**: Memastikan profitabilitas pesanan, kecukupan batas kredit/termin pembayaran pelanggan, dan klausul khusus komersial.
-- **Wewenang Khusus**: Memiliki tombol **Override Negotiation Limit** jika pelanggan membutuhkan perpanjangan putaran tawar-menawar harga.
+- **Wewenang Khusus**: Memiliki tombol **Override Negotiation Limit** jika pelanggan membutuhkan perpanjangan putaran tawar-menawar harga. *(Catatan: Manager Sales tidak memiliki akses ke User Management)*.
 
 ---
 
@@ -241,10 +255,11 @@ Buku panduan ini disusun sebagai standar operasional prosedur (SOP) penggunaan *
 
 ## 5. PANDUAN PENGGUNA: SUPER ADMIN
 
-### 5.1 Manajemen Pengguna (User Management)
+### 5.1 Manajemen Pengguna (User Management - Hak Eksklusif Super Admin)
+> **Hak Akses Eksklusif**: Menu **User Management** hanya dapat diakses oleh akun dengan peran **Super Admin**. Seluruh manajer divisi, staf, dan customer dibatasi total dari menu ini.
 1. Buka menu **User Management** pada sidebar:
    - **Data Customer**: Menambah, mengedit, atau menonaktifkan akun buyer dan menghubungkannya dengan profil perusahaan.
-   - **Data Employee**: Mengatur akun staf sales, manajer per divisi (Sales, Quality, PPC, Design Engineering), serta peran Super Admin.
+   - **Data Employee**: Mengatur akun staf sales, manajer per divisi (Sales, Quality, PPC, Design Engineering), penugasan cabang pabrik (*Jakarta, Bekasi, Salatiga*), serta peran Super Admin.
 2. Klik tombol **+ Add New User**, isi data dan pilih Role & Divisi yang sesuai.
 
 ---
@@ -281,7 +296,7 @@ Buku panduan ini disusun sebagai standar operasional prosedur (SOP) penggunaan *
 
 ---
 
-### 7. RANGKUMAN MATRIKS STATUS PESANAN (STATUS REFERENCE)
+## 7. RANGKUMAN MATRIKS STATUS PESANAN (STATUS REFERENCE)
 
 | Status Kode | Label Status | Makna Operasional |
 |---|---|---|

@@ -21,6 +21,7 @@ class PurchaseOrderInternal extends Model
         'pic_buyer',
         'company_buyer',
         'notes',
+        'status',
     ];
 
     protected $casts = [

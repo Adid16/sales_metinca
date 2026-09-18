@@ -51,6 +51,7 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, ShouldAu
             'Company',
             'Role',
             'Divisi',
+            'Plant / Cabang',
             'Created At',
         ];
     }
@@ -64,6 +65,7 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, ShouldAu
             $user->company,
             $user->role,
             $user->divisi,
+            $user->plant ?? 'Jakarta',
             optional($user->created_at)->format('Y-m-d H:i:s'),
         ];
     }

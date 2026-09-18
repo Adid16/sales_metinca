@@ -26,6 +26,13 @@ class AppServiceProvider extends ServiceProvider
     {
         Paginator::useBootstrapFive();
 
+        // Super-Admin Universal Bypass for all Gates and Policies
+        Gate::before(function (\App\Models\User $user, string $ability) {
+            if ($user->isAdmin()) {
+                return true;
+            }
+        });
+
         Gate::policy(Quotation::class, QuotationPolicy::class);
 
         ResetPassword::createUrlUsing(function (object $notifiable, string $token) {

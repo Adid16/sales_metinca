@@ -52,8 +52,9 @@ class QuotationSendNotification extends Notification
         return [
             'quotation_id' => $this->quotation->id,
             'quotation_no' => $this->quotation->quotation_no,
+            'order_no'     => $this->quotation->quotation_no,
             'status'       => $this->quotation->status,
-            'message'      => 'Quotation telah dikirim dan menunggu konfirmasi Anda.',
+            'message'      => 'Quotation #' . $this->quotation->quotation_no . ' telah dikirim oleh tim Sales. Silakan ditinjau.',
             'url'          => route('quotations.show', $this->quotation->id),
         ];
     }

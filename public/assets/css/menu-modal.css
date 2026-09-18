@@ -94,12 +94,24 @@
     height: 50px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     color: white;
     font-size: 1.5rem;
-    margin-bottom: 5px;
+    margin: 0 auto 5px auto !important;
+    line-height: 1 !important;
+    flex-shrink: 0;
+}
+
+.menu-icon i {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 .menu-item:hover .menu-icon {

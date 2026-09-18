@@ -2,11 +2,6 @@
 @extends('layouts.app')
 @section('title', 'PT. Metinca Prima Industrial Works')
  
-@push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/compiled/css/app.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/compiled/css/app-dark.css') }}">
-@endpush
- 
 @section('content')
  
 <div class="card shadow-sm mb-3">
@@ -61,15 +56,10 @@
  
 {{-- Tabel Item --}}
 <div class="card shadow-sm">
-    <div class="card-header py-2 d-flex justify-content-between align-items-center"
-        style="solid #198754; background:#f8f9fa;">
+    <div class="card-header py-2 d-flex justify-content-between align-items-center bg-light border-bottom">
         <h6 class="mb-0 fw-bold text-uppercase" style="font-size:0.78rem; letter-spacing:1px;">
-            <i class="bi bi-list-ul me-1"></i>Daftar Item PO Internal
-            {{-- <span class="badge bg-primary ms-2">{{ $purchaseOrder->internals->count() }} item</span> --}}
+            <i class="bi bi-list-ul me-1 text-primary"></i>Daftar Item PO Internal
         </h6>
-        {{-- <span class="fw-bold text-dark small">
-            Total: Rp {{ number_format($purchaseOrder->internals->sum('subtotal'), 0, ',', '.') }}
-        </span> --}}
     </div>
     <div class="card-body p-0">
 {{-- Daftar Item per Card Accordion --}}
@@ -85,7 +75,7 @@
                 <span class="badge bg-primary me-2">#{{ $i + 1 }}</span>
                 {{ $item->item }}
                 <span class="ms-3 text-muted small fw-normal">{{ $item->po_no ?? '' }}</span>
-                <span class="ms-auto me-3 fw-bold text-dark">
+                <span class="ms-auto me-3 fw-bold text-primary">
                     Rp {{ number_format($item->subtotal, 0, ',', '.') }}
                 </span>
             </button>
@@ -163,11 +153,10 @@
 
 {{-- Total --}}
 @if($purchaseOrder->internals->count() > 0)
-<div class="d-flex justify-content-between align-items-center border rounded p-3 mt-3" 
-    style="background:#f0f4ff;">
+<div class="d-flex justify-content-between align-items-center border rounded p-3 mt-3 grand-total-box">
     <span class="fw-bold">TOTAL ({{ $purchaseOrder->internals->count() }} item, 
         {{ $purchaseOrder->internals->sum('qty') }} qty)</span>
-    <span class="fw-bold fs-5 text-primary">
+    <span class="fw-bold fs-5 text-primary" id="grand-total">
         Rp {{ number_format($purchaseOrder->internals->sum('subtotal'), 0, ',', '.') }}
     </span>
 </div>
@@ -178,7 +167,7 @@
                 Edit
             </a>
             @endif
-            <a href="{{ route('purchase-orders-internal.index') }}" class="btn btn-sm btn-danger">
+            <a href="{{ route('purchase-orders-internal.index') }}" class="btn btn-sm btn-outline-secondary">
                 Back
             </a>
         </div>

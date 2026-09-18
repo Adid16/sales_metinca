@@ -6,10 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PT.METINCA PRIMA INDUSTRIAL WORKS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('assets/compiled/css/app.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="{{ asset('assets/css/homepage.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/menu-modal.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/homepage.css') }}?v={{ @filemtime(public_path('assets/css/homepage.css')) ?: '1.0.0' }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/menu-modal.css') }}?v={{ @filemtime(public_path('assets/css/menu-modal.css')) ?: '1.0.0' }}">
     @stack('styles')
 </head>
 

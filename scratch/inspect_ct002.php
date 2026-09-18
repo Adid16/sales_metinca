@@ -5,10 +5,12 @@ $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
 use App\Models\Contract;
 
-$c = Contract::where('contract_no', 'CT-2026-002')->first();
+$c = Contract::find(21);
 if ($c) {
-    echo "=== Requirements for {$c->contract_no} ===\n";
-    foreach ($c->requirements as $r) {
-        echo "[$r->requirement_from] $r->requirement => $r->requirement_value\n";
-    }
+    echo "=== Details for Contract {$c->id} ({$c->contract_no}) ===\n";
+    echo "Order No: {$c->order_no}\n";
+    echo "Status: {$c->status}\n";
+    echo "Rejected by Dept: {$c->rejected_by_dept}\n";
+    echo "Alasan Penolakan: {$c->alasan_penolakan}\n";
+    echo "Others Comment: {$c->others_comment}\n";
 }

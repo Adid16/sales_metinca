@@ -102,7 +102,7 @@
                     <div class="card shadow-sm border-0">
                         <div class="card-header py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <div class="d-flex align-items-center">
-                                <div class="avatar bg-primary-subtle text-primary rounded-circle p-2 me-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                                <div class="icon-box-circle bg-primary-subtle text-primary rounded-circle me-3" style="width: 40px; height: 40px;">
                                     <i class="bi bi-clock-history fs-5"></i>
                                 </div>
                                 <div>
@@ -110,10 +110,40 @@
                                     <small class="text-muted">Pemantauan rekam jejak aksi dan transaksi sistem secara real-time</small>
                                 </div>
                             </div>
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 small fw-semibold">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 small fw-semibold d-inline-flex align-items-center">
                                 <i class="bi bi-list-check me-1"></i>15 Aktivitas Terbaru
                             </span>
                         </div>
+
+                        {{-- Keterangan Indikator Warna Garis Samping (Border Highlight Baris) --}}
+                        <div class="px-4 py-2 bg-light border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div class="d-flex align-items-center flex-wrap gap-3 small">
+                                <span class="text-secondary fw-bold text-uppercase d-flex align-items-center" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                                    <i class="bi bi-palette-fill me-1.5 text-primary"></i>Keterangan Garis Samping (Sifat Aksi):
+                                </span>
+                                <div class="d-flex align-items-center gap-1.5">
+                                    <span class="d-inline-block rounded-pill bg-primary" style="width: 14px; height: 6px;"></span>
+                                    <span class="text-secondary" style="font-size: 0.8rem;"><strong class="text-dark">Biru:</strong> Input / Pembaruan Data</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-1.5">
+                                    <span class="d-inline-block rounded-pill bg-success" style="width: 14px; height: 6px;"></span>
+                                    <span class="text-secondary" style="font-size: 0.8rem;"><strong class="text-dark">Hijau:</strong> Disetujui / Masuk Produksi</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-1.5">
+                                    <span class="d-inline-block rounded-pill bg-danger" style="width: 14px; height: 6px;"></span>
+                                    <span class="text-secondary" style="font-size: 0.8rem;"><strong class="text-dark">Merah:</strong> Ditolak / Revisi / Hapus</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-1.5">
+                                    <span class="d-inline-block rounded-pill bg-warning" style="width: 14px; height: 6px;"></span>
+                                    <span class="text-secondary" style="font-size: 0.8rem;"><strong class="text-dark">Kuning:</strong> Proses Negosiasi</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-1.5">
+                                    <span class="d-inline-block rounded-pill bg-info" style="width: 14px; height: 6px;"></span>
+                                    <span class="text-secondary" style="font-size: 0.8rem;"><strong class="text-dark">Cyan:</strong> Pengiriman Notifikasi</span>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="card-body p-0">
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle mb-0">

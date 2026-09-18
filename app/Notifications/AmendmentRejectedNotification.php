@@ -29,8 +29,9 @@ class AmendmentRejectedNotification extends Notification
         return [
             'po_id'    => $this->po->id,
             'order_no' => $this->po->po_no,
-            'message'  => 'Pengajuan amandemen untuk PO ' . $this->po->po_no . ' ditolak. Alasan: ' . $this->reason,
+            'message'  => 'Pengajuan Amandemen PO #' . $this->po->po_no . ' ditolak. Alasan: ' . $this->reason,
             'url'      => route('purchase-orders.index'),
+            'category' => 'rejected',
         ];
     }
 }

@@ -131,7 +131,7 @@
                                 </a>
 
                                 {{-- TOMBOL KIRIM KETIKA STATUS MASIH CAN SEND --}}
-                                @if($quotation->canSend() && auth()->user()->isStaff() && auth()->user()->divisi == 'sales')
+                                @if($quotation->canSend() && (auth()->user()->isAdmin() || (auth()->user()->isStaff() && auth()->user()->divisi == 'sales')))
                                     <form method="POST" action="{{ route('quotations.send', $quotation->id) }}" class="d-inline">
                                         @csrf
                                         @method('PATCH')

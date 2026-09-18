@@ -70,7 +70,7 @@
                                 <a href="<?php echo e(route('requests-project.index')); ?>" class="btn btn-sm btn-danger">Clear</a>
                                 <button type="submit" formaction="<?php echo e(route('requests-project.export')); ?>" class="btn btn-success btn-sm btn-end text-end">Export</button>
                             <?php endif; ?>
-                            <?php if(auth()->user()->isCustomer()): ?>
+                            <?php if(auth()->user()->isCustomer() || auth()->user()->isAdmin()): ?>
                                 <a href="<?php echo e(route('requests-project.create')); ?>" class="btn btn-primary btn-sm"> New </a>
                             <?php endif; ?>
                         </div>
@@ -117,37 +117,104 @@
                                     <?php endif; ?>
                                 </center></td>
                                 <td><center>
-                                    <a href="<?php echo e(route('requests-project.show', $project->id)); ?>" class="btn btn-sm btn-info">         
+                                    <a href="<?php echo e(route('requests-project.show', $project->id)); ?>" class="btn btn-sm btn-info" title="Lihat Detail Request">         
                                         <i class="bi bi-eye-fill"></i>
                                     </a>
-                                    <?php if(auth()->user()->isAdmin() || (auth()->user()->role == 'staff' && auth()->user()->divisi == 'sales')): ?>                                        <?php if(!$project->assignment): ?>
-                                        
-                                            <form action="<?php echo e(route('requests-project.assign', $project->id)); ?>" method="POST" class="d-inline">                                        
-                                          <?php echo csrf_field(); ?>
-                                        
-                                                <button type="submit" class="btn btn-sm btn-primary"
-                                                    onclick="return confirm('Ambil request project ini?')">
-                                                    <i class="bi bi-plus-lg"></i>
-                                                </button>
-                                            </form>
-                                                <?php endif; ?>
+                                    <?php if(auth()->user()->isAdmin()): ?>
+                                        <button type="button" class="btn btn-sm btn-primary"
+                                            onclick="openAssignModal('<?php echo e(route('requests-project.assign', $project->id)); ?>', '<?php echo e($project->id); ?>', '<?php echo e($project->assignment->sales_id ?? ''); ?>', '<?php echo e(addslashes($project->subject ?? '')); ?>')"
+                                            title="<?php echo e($project->assignment ? 'Ganti Sales PIC' : 'Tugaskan Sales PIC'); ?>">
+                                            <i class="bi <?php echo e($project->assignment ? 'bi-person-gear' : 'bi-person-plus-fill'); ?>"></i>
+                                        </button>
+                                    <?php elseif(auth()->user()->role == 'staff' && auth()->user()->divisi == 'sales' && !$project->assignment): ?>
+                                        <form action="<?php echo e(route('requests-project.assign', $project->id)); ?>" method="POST" class="d-inline">                                        
+                                            <?php echo csrf_field(); ?>
+                                            <button type="submit" class="btn btn-sm btn-primary"
+                                                onclick="return confirm('Ambil request project ini?')"
+                                                title="Ambil / Klaim Request Project">
+                                                <i class="bi bi-plus-lg"></i>
+                                            </button>
+                                        </form>
                                     <?php endif; ?> 
-                                    
                                 </center></td>
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-    <tr>
-        <td colspan="9" class="text-center">No data available</td>
-    </tr>
-<?php endif; ?>
+                            <tr>
+                                <td colspan="9" class="text-center">No data available</td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
         
     </section>
+
+    <?php if(auth()->user()->isAdmin()): ?>
+        <!-- Modal Penugasan Sales PIC (Super-Admin) -->
+        <div class="modal fade" id="modalAssignSales" tabindex="-1" aria-labelledby="modalAssignSalesLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title fs-6" id="modalAssignSalesLabel">
+                            <i class="bi bi-person-check-fill me-1"></i> Penugasan Sales PIC
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="formAssignSalesModal" method="POST" action="">
+                        <?php echo csrf_field(); ?>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted small text-uppercase">Request Project</label>
+                                <input type="text" id="assignModalProjectInfo" class="form-control bg-light" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted small text-uppercase">Pilih Sales PIC</label>
+                                <select name="sales_id" id="assignModalSalesSelect" class="form-select" required>
+                                    <option value="" disabled selected>-- Pilih Karyawan Sales --</option>
+                                    <?php $__currentLoopData = $sales; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <option value="<?php echo e($s->id); ?>"><?php echo e($s->name); ?> (<?php echo e($s->email); ?>)</option>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary btn-sm px-3 fw-semibold">
+                                <i class="bi bi-check-lg me-1"></i> Simpan Penugasan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <?php $__env->startPush('scripts'); ?>
         <script src="<?php echo e(asset('assets/extensions/simple-datatables/umd/simple-datatables.js')); ?>"></script>
         <script src="<?php echo e(asset('assets/static/js/pages/simple-datatables.js')); ?>"></script>
+        <script>
+            function openAssignModal(actionUrl, projectId, currentSalesId, subject) {
+                const form = document.getElementById('formAssignSalesModal');
+                const info = document.getElementById('assignModalProjectInfo');
+                const select = document.getElementById('assignModalSalesSelect');
+                
+                if (form) form.action = actionUrl;
+                if (info) info.value = '#' + projectId + ' - ' + subject;
+                if (select) {
+                    if (currentSalesId) {
+                        select.value = currentSalesId;
+                    } else {
+                        select.selectedIndex = 0;
+                    }
+                }
+                
+                const modalEl = document.getElementById('modalAssignSales');
+                if (modalEl) {
+                    const modal = new bootstrap.Modal(modalEl);
+                    modal.show();
+                }
+            }
+        </script>
     <?php $__env->stopPush(); ?>
 <?php $__env->stopSection(); ?>
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\sales_metinca\resources\views/requests-project/index.blade.php ENDPATH**/ ?>

@@ -75,7 +75,7 @@ class AmendmentLimitAndProductionLockTest extends TestCase
         $storeResponse = $this->post(route('purchase-orders.store-amandement', $po->id), [
             'purchase_order_internal_id' => $internal->id,
             'alasan_amandemen'           => 'Perubahan spec teknis #1',
-            'attachments'                => UploadedFile::fake()->create('revisi_po_1.pdf', 200, 'application/pdf'),
+            'attachments'                => UploadedFile::fake()->createWithContent('revisi_po_1.pdf', '%PDF-1.4 dummy content'),
         ]);
         $storeResponse->assertRedirect(route('purchase-orders.index'));
 
@@ -95,7 +95,7 @@ class AmendmentLimitAndProductionLockTest extends TestCase
         $storeResponse = $this->post(route('purchase-orders.store-amandement', $po->id), [
             'purchase_order_internal_id' => $internal->id,
             'alasan_amandemen'           => 'Perubahan spec teknis #2',
-            'attachments'                => UploadedFile::fake()->create('revisi_po_2.pdf', 200, 'application/pdf'),
+            'attachments'                => UploadedFile::fake()->createWithContent('revisi_po_2.pdf', '%PDF-1.4 dummy content'),
         ]);
         $storeResponse->assertRedirect(route('purchase-orders.index'));
 
@@ -114,7 +114,7 @@ class AmendmentLimitAndProductionLockTest extends TestCase
         $storeResponse = $this->post(route('purchase-orders.store-amandement', $po->id), [
             'purchase_order_internal_id' => $internal->id,
             'alasan_amandemen'           => 'Percobaan amandemen ke-3',
-            'attachments'                => UploadedFile::fake()->create('revisi_po_3.pdf', 200, 'application/pdf'),
+            'attachments'                => UploadedFile::fake()->createWithContent('revisi_po_3.pdf', '%PDF-1.4 dummy content'),
         ]);
         $storeResponse->assertRedirect(route('purchase-orders.index'));
         $storeResponse->assertSessionHas('error');
@@ -136,7 +136,7 @@ class AmendmentLimitAndProductionLockTest extends TestCase
         $storeResponse = $this->post(route('purchase-orders.store-amandement', $po->id), [
             'purchase_order_internal_id' => $internal->id,
             'alasan_amandemen'           => 'Coba amandemen saat sedang produksi',
-            'attachments'                => UploadedFile::fake()->create('revisi_po_prod.pdf', 200, 'application/pdf'),
+            'attachments'                => UploadedFile::fake()->createWithContent('revisi_po_prod.pdf', '%PDF-1.4 dummy content'),
         ]);
         $storeResponse->assertRedirect(route('purchase-orders.index'));
         $storeResponse->assertSessionHas('error');

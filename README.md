@@ -79,13 +79,13 @@ Sistem menerapkan pembagian hak akses (*Role-Based Access Control*) yang ketat b
 
 | Role | Divisi | Tanggung Jawab & Hak Akses |
 |---|---|---|
-| **Super Admin** | *All* | Akses penuh (*super-privilege*) ke seluruh menu, manajemen pengguna, konfigurasi batas sistem, dan supervisi transaksi. |
-| **Manager** | `sales` | Supervisi portofolio seluruh staf sales, approval/penolakan harga khusus negosiasi, override kuota batas tawar, dan tanda tangan digital kontrak divisi sales. |
+| **Super Admin** | *All* | Akses penuh (*super-privilege*) ke seluruh modul sistem. **Satu-satunya role yang memiliki hak akses ke User Management** (`Data Customer` & `Data Employee`), konfigurasi batas sistem, override negosiasi, instant approval 4 divisi, dan supervisi transaksi. |
+| **Manager** | `sales` | Supervisi portofolio seluruh staf sales, approval/penolakan harga khusus negosiasi, override kuota batas tawar, dan tanda tangan digital kontrak divisi sales. *(Tidak memiliki akses ke User Management)*. |
 | **Manager** | `quality` | Peninjauan aspek mutu produk, toleransi ukuran, visual check, persyaratan sertifikat uji material (CoA/Mill Sheet), dan approval/penolakan klausul Quality. |
 | **Manager** | `ppc` | Peninjauan kapasitas lini produksi, ketersediaan bahan baku (*ingot/scrap*), estimasi lead time pengiriman, dan approval/penolakan klausul PPC. |
 | **Manager** | `design engineering` | Peninjauan gambar teknik (*drawing 2D/3D*), toleransi permesinan, komposisi bahan logam (FC/FCD), dan approval/penolakan klausul DE. |
 | **Staff** | `sales` | Mengambil tiket request (*claim assignment*), membuat & mengirim *Quotation*, merespons negosiasi harga, menginput PO Internal, mengelola lembar kontrak, hingga finalisasi pesanan ke tahap produksi. |
-| **Customer** | *Pelanggan* | Mengajukan *Request Project*, melihat & menawar penawaran harga (*Negotiate*), menerbitkan PO, mengajukan amandemen pesanan beserta alasannya, serta melacak status pesanan secara publik/internal. |
+| **Customer** | *Pelanggan* | Mengajukan *Request Project*, melihat & menawar penawaran harga (*Negotiate*), menerbitkan PO, mengajukan amandemen pesanan beserta alasannya, mengganti password mandiri, serta melacak status pesanan secara publik/internal. |
 
 ---
 
@@ -155,12 +155,34 @@ sequenceDiagram
 - **Batas Amandemen**: Maksimal 2 kali amandemen per item pesanan.
 - **Kunci Produksi (*Production Lock*)**: Amandemen otomatis dikunci jika pesanan sudah masuk tahap produksi (*In Production*).
 
-### F. Finalisasi Produksi oleh Sales PIC
-- Setelah 4 divisi memberikan persetujuan (status: `approved`), pesanan tidak langsung masuk produksi otomatis, melainkan menunggu verifikasi serah terima akhir oleh **Sales PIC**.
-- Finalisasi oleh Sales PIC akan mengubah status secara serentak ke **`production`** (*In Production*), mengunci data dari perubahan liar, dan mencatat riwayat audit trail.
+### F. Isolasi Sub-PO & Finalisasi Parsial ke Produksi (*Multi-Item Sub-PO Partial Finalization*)
+- **Siklus Mandiri Per Sub-PO**: Setiap item pesanan (*Sub-PO Internal*) memiliki lembar kontrak dan matriks persetujuan 4 divisi secara independen.
+- **Pencegahan Finalisasi Prematur**: Finalisasi satu sub-PO ke lini produksi oleh Sales PIC tidak akan menyeret item lain yang masih dalam proses verifikasi/revisi.
+- **Agregasi Status Master PO (*Earliest Progress Stage*)**: Status PO Utama dihitung secara dinamis mengambil tahapan paling awal/minimum dari seluruh sub-itemnya:
+  - Jika ada item yang belum diproses $\rightarrow$ Status PO Utama: `Sent`.
+  - Jika ada item yang masih dalam tahap persetujuan (misal: 2 item `In Production`, 2 item `Review`) $\rightarrow$ Status PO Utama: `Review` (badge kuning).
+  - Status PO Utama **HANYA** berubah menjadi **`In Production`** apabila **seluruh item (100%)** telah selesai difinalisasi ke tahap produksi (`production` / `done`).
+- **Kunci Produksi Per-Item (*Per-Item Production Lock*)**: Sub-PO yang masih berstatus `Review` tetap dapat diajukan amandemen oleh pelanggan, sedangkan sub-PO yang sudah `In Production` terkunci otomatis.
 
-### G. Pelacakan Status Publik (*Public Order Tracking*)
-- Pelanggan dapat melacak tahapan pesanan secara langsung melalui halaman pelacakan publik (`/customer/track`) hanya dengan memasukkan Nomor Purchase Order (PO No) tanpa harus login.
+### G. Hak Eksklusif Super Admin & Pembatasan User Management
+- **User Management Terisolasi**: Menu dan rute `User Management` (`Data Customer` dan `Data Employee`) dibatasi secara ketat **hanya dapat diakses oleh role Super Admin**.
+- **Perlindungan Non-Admin**: Role Manager Sales, Manager Divisi Teknis, Staff Sales, maupun Customer tidak dapat melihat menu User Management di sidebar dan otomatis diblokir (HTTP `403 Forbidden`) jika mencoba mengakses URL secara langsung.
+- **Hak Override Master**: Super Admin memiliki wewenang *instant approve* 4 divisi, penugasan ulang (*re-assign*) tiket Sales PIC, penambahan kuota negosiasi (*override quota*), dan audit log seluruh transaksi.
+
+### H. Sistem Notifikasi Transaksi Terpadu (*Real-Time Notification System*)
+- **Notifikasi Bel Navbar**: Dilengkapi lonceng notifikasi interaktif di top navbar dengan penanda badge jumlah notifikasi baru (*unread counter*) dan tombol *Mark all as read*.
+- **Lifecycle Otomatis**: Notifikasi terkirim otomatis pada setiap tahapan penting: penerimaan Request Project, penerbitan & negosiasi Quotation, penerbitan PO & PO Internal, pengajuan & persetujuan Amandemen, penolakan kontrak manajerial, approval 4 divisi, hingga serah terima produksi.
+
+### I. Konfigurasi Batas Sistem Dinamis (*Dynamic System Settings Service*)
+- **Sentralisasi Parameter Bisnis**: Batas aturan operasional dikelola secara terpusat melalui [`SystemSettingService.php`](file:///c:/laragon/www/sales_metinca/app/Services/SystemSettingService.php) dan tabel `system_settings`:
+  - `max_negotiation_limit`: Batas maksimal putaran penawaran negosiasi harga (Default: 6 kali / 3 putaran saling balas).
+  - `max_amandement_limit`: Batas maksimal pengajuan amandemen pesanan per item (Default: 2 kali per item PO).
+  - `min_price_margin_percentage`: Persentase toleransi margin harga dasar modal / floor price (Default: 10%).
+- **Managerial Override Kuota**: Manager Sales dapat memberikan kuota tambahan (`overrideNegotiationLimit`) per transaksi Quotation jika negosiasi memerlukan putaran tawar-menawar lebih lanjut.
+
+### J. Pelacakan Status Pesanan Terpadu & Keamanan Akun Pelanggan (Customer Portal)
+- Pelanggan yang telah login dapat melacak progres dan riwayat seluruh pesanan secara real-time melalui lencana status, linimasa riwayat aktivitas (*activity history*), serta status verifikasi per-item pada menu *Purchase Orders* dan *Dashboard*.
+- **Ganti Password Mandiri**: Pelanggan dapat memperbarui profil dan mengubah password akun secara mandiri melalui menu profil dengan verifikasi kata sandi lama dan enkripsi Bcrypt.
 
 ---
 
@@ -312,16 +334,28 @@ php artisan test
 ```
 
 ### Rangkuman Test Suite:
-1. **`EndToEndSalesPicLifecycleScopingTest`**:
+1. **`MultiItemPoPartialFinalizationTest`**:
+   - Memvalidasi isolasi finalisasi per item Sub-PO: finalisasi salah satu Sub-PO tidak memaksa item lain ke tahap produksi.
+   - Memvalidasi status agregat Master PO tetap `Review` dan hanya menjadi `In Production` jika seluruh sub-item (100%) telah berstatus produksi.
+   - Memvalidasi amandemen pelanggan tetap dapat diajukan pada item yang belum berstatus produksi.
+2. **`SuperAdminFullAccessTest`**:
+   - Memvalidasi hak eksklusif Super Admin terhadap User Management (Employee & Customer per plant) dan pemblokiran total (403) bagi Manager/Staff/Customer.
+   - Memvalidasi hak master Super Admin untuk instant approve 4 divisi, bypass penugasan, override kuota negosiasi, dan finalisasi kontrak.
+3. **`NotificationFeatureTest`**:
+   - Memvalidasi pengiriman notifikasi otomatis pada seluruh siklus transaksi (Request, Quotation, Nego, PO, Amandemen, Kontrak).
+   - Memvalidasi fitur baca notifikasi (*mark all as read*) dan perolehan badge counter unread.
+4. **`CustomerChangePasswordTest`**:
+   - Memvalidasi pembaharuan profil pelanggan dan penggantian kata sandi mandiri dengan validasi password lama & Bcrypt hash.
+5. **`EndToEndSalesPicLifecycleScopingTest`**:
    - Memvalidasi pembatasan akses staf sales non-PIC dari tahap Request Project, Quotation, Negosiasi, Purchase Order, PO Internal, hingga Contract Finalization.
    - Memvalidasi keberhasilan Sales PIC penanggung jawab dan manajerial dalam mengeksekusi pesanan.
-2. **`AmendmentLimitAndProductionLockTest`**:
+6. **`AmendmentLimitAndProductionLockTest`**:
    - Memvalidasi kuota pengajuan amandemen maksimal 2 kali per item.
    - Memvalidasi penguncian amandemen saat pesanan sudah masuk tahap `production`.
-3. **`ContractRejectionAndRevisionWorkflowTest`**:
+7. **`ContractRejectionAndRevisionWorkflowTest`**:
    - Memvalidasi alur penolakan manajer dengan alasan wajib dan mekanisme revisi bertarget (*targeted revision*).
    - Memvalidasi keharusan finalisasi oleh Sales PIC setelah persetujuan lengkap 4 divisi.
-4. **`PriceListAndApprovalWorkflowTest`**:
+8. **`PriceListAndApprovalWorkflowTest`**:
    - Memvalidasi kebebasan pelanggan menawar harga dan proteksi keras bagi tim sales dari penjualan di bawah harga dasar modal bahan & proses (*floor price*).
 
 **Status Pengujian Terbaru**:
@@ -329,11 +363,15 @@ php artisan test
 PASS Tests\Unit\ExampleTest
 PASS Tests\Feature\AmendmentLimitAndProductionLockTest
 PASS Tests\Feature\ContractRejectionAndRevisionWorkflowTest
+PASS Tests\Feature\CustomerChangePasswordTest
 PASS Tests\Feature\EndToEndSalesPicLifecycleScopingTest
 PASS Tests\Feature\ExampleTest
+PASS Tests\Feature\MultiItemPoPartialFinalizationTest
+PASS Tests\Feature\NotificationFeatureTest
 PASS Tests\Feature\PriceListAndApprovalWorkflowTest
+PASS Tests\Feature\SuperAdminFullAccessTest
 
-Tests:    7 passed (160 assertions)
+Tests:    15 passed (282 assertions)
 Status:   100% Passed
 ```
 

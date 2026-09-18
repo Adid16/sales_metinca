@@ -1,16 +1,11 @@
 @extends('layouts.app')
 @section('title', 'PT. Metinca Prima Industrial Works')
 
-@push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/compiled/css/app.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/compiled/css/app-dark.css') }}">
-@endpush
-
 @section('content')
 
 <div class="card shadow-sm mb-3">
     <div class="card-header d-flex bg-info justify-content-between align-items-center py-3">
-        <h5 class="mb-0 fw-bold text-dark">
+        <h5 class="mb-0 fw-bold text-white">
             <i class="bi bi-file-earmark-richtext-fill me-2"></i>
             Detail Item PO Internal
         </h5>
@@ -53,7 +48,7 @@
 
 {{-- Detail Item --}}
 <div class="card shadow-sm">
-    <div class="card-header py-2" style="solid #0d6efd; background:#f8f9fa;">
+    <div class="card-header py-2 bg-light border-bottom">
         <h6 class="mb-0 fw-bold text-uppercase" style="font-size:0.78rem; letter-spacing:1px; color:#0d6efd;">
             <i class="bi bi-box-seam me-1"></i>Detail Item
         </h6>
@@ -125,10 +120,11 @@
         </div>
     </div>
     <div class="d-flex justify-content-end px-3 mb-3 mt-2 gap-1">
-<a href="{{ route('purchase-orders-internal.edit', $internal->purchaseOrder->id) }}" 
-    class="btn btn-sm btn-warning fw-semibold">
-    Edit
-</a>        <a href="{{ route('purchase-orders-internal.index') }}" class="btn btn-sm btn-danger justify-content-end">
+        <a href="{{ route('purchase-orders-internal.edit', $internal->purchaseOrder->id) }}" 
+            class="btn btn-sm btn-warning fw-semibold">
+            Edit
+        </a>
+        <a href="{{ route('purchase-orders-internal.index') }}" class="btn btn-sm btn-outline-secondary justify-content-end">
            Back
         </a>
     </div>

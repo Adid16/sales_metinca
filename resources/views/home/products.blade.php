@@ -1,7 +1,7 @@
 @extends('layouts.home')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/products_page.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/products_page.css') }}?v={{ @filemtime(public_path('assets/css/products_page.css')) ?: '1.0.0' }}">
 @endpush
 
 @section('content')

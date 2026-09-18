@@ -3,8 +3,6 @@
 @section('title', 'PT. Metinca Prima Industrial Works')
  
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/compiled/css/app.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/compiled/css/app-dark.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 @endpush
  
@@ -13,13 +11,10 @@
 {{-- Info Header PO --}}
 <div class="card shadow-sm mb-3">
     <div class="card-header d-flex justify-content-between align-items-center py-3 
-        {{ $purchaseOrder->internals->count() > 0 ? 'bg-warning' : 'bg-primary' }}">
+        {{ $purchaseOrder->internals->count() > 0 ? 'bg-warning text-dark' : 'bg-primary text-white' }}">
         <h5 class="mb-0 fw-bold">
-            <i class="bi bi-file-earmark-plus-fill me-2"
-                style="color: {{ $purchaseOrder->internals->count() > 0 ? '#000' : '#fff' }} !important;"></i>
-            <span style="color: {{ $purchaseOrder->internals->count() > 0 ? '#000' : '#fff' }} !important;">
-                {{ $purchaseOrder->internals->count() > 0 ? 'Edit' : 'Input' }} PO Internal
-            </span>
+            <i class="bi bi-file-earmark-plus-fill me-2"></i>
+            {{ $purchaseOrder->internals->count() > 0 ? 'Edit' : 'Input' }} PO Internal
         </h5>
     </div>
     <div class="card-body py-3 px-4">
@@ -61,25 +56,25 @@
 
 {{-- BOX CATATAN AMANDEMEN ITEM (JIKA ADA) --}}
 @if(isset($contract) && ($contract->alasan_amandemen || $contract->catatan_sales))
-    <div class="card border-warning shadow-sm mb-3 alert-permanent" style="background-color: #fff9e6; border-left: 5px solid #ffc107 !important;">
+    <div class="card border-warning shadow-sm mb-3 alert-permanent bg-warning-subtle">
         <div class="card-body p-3 d-flex align-items-start">
             <i class="bi bi-exclamation-triangle-fill fs-4 me-3 text-warning"></i>
             <div class="w-100">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                    <h6 class="fw-bold mb-0 text-dark">
+                    <h6 class="fw-bold mb-0">
                         <i class="bi bi-pencil-square me-1"></i> Catatan Amandemen Item (Revisi #{{ $contract->amandement_no }})
                     </h6>
                     <span class="badge bg-warning text-dark">Amandemen Active</span>
                 </div>
                 
                 @if($contract->alasan_amandemen)
-                    <p class="mb-1 small text-dark">
+                    <p class="mb-1 small">
                         <strong>Alasan Amandemen Customer:</strong> {{ $contract->alasan_amandemen }}
                     </p>
                 @endif
                 
                 @if($contract->catatan_sales)
-                    <p class="mb-0 small text-dark">
+                    <p class="mb-0 small">
                         <strong>Catatan Tim Sales:</strong> {{ $contract->catatan_sales }}
                     </p>
                 @endif
@@ -90,9 +85,9 @@
  
 {{-- PDF Attachment --}}
 <div class="card shadow-sm mb-3">
-    <div class="card-header py-2" style="background:#e9ecef;">
-        <h6 class="mb-0 fw-bold text-uppercase" style="font-size:0.78rem; letter-spacing:1px; color:#6c757d;">
-            <i class="bi bi-paperclip me-1"></i>Dokumen PO dari Customer (Terbaru)
+    <div class="card-header py-2 bg-light border-bottom">
+        <h6 class="mb-0 fw-bold text-uppercase" style="font-size:0.78rem; letter-spacing:1px;">
+            <i class="bi bi-paperclip me-1 text-primary"></i>Dokumen PO dari Customer (Terbaru)
         </h6>
     </div>
     <div class="card-body p-2">
@@ -166,7 +161,7 @@
 
 {{-- Form Input Item --}}
 <div class="card shadow-sm">
-    <div class="card-header py-2" style="background:#e9ecef;">
+    <div class="card-header py-2 bg-light border-bottom">
         <h6 class="mb-0 fw-bold text-uppercase" style="font-size:0.78rem; letter-spacing:1px; color:#0d6efd;">
             <i class="bi bi-list-check me-1"></i>Detail Item PO Internal
             <small class="text-muted fw-normal text-lowercase ms-2">— terisi otomatis dari Quotation & Harga Negosiasi</small>
@@ -216,7 +211,7 @@
                             <input type="text" name="po_no[]" class="form-control form-control-sm bg-light fw-semibold" value="{{ $item->po_no ?? $itemPoNo ?? $purchaseOrder->po_no }}" placeholder="No PO">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label mb-1 fw-semibold small text-dark"><i class="bi bi-upc-scan text-info"></i> Article (Tekan Enter)</label>
+                            <label class="form-label mb-1 fw-semibold small"><i class="bi bi-upc-scan text-info"></i> Article (Tekan Enter)</label>
                             <input type="text" name="article[]" class="form-control form-control-sm form-article text-uppercase fw-semibold" value="{{ $item->article ?? '' }}" placeholder="Ketik Kode Artikel lalu tekan Enter">
                         </div>
                         <div class="col-md-6">
@@ -236,13 +231,13 @@
                             <input type="number" name="qty[]" class="form-control form-control-sm qty-input" value="{{ $item->qty }}" min="1" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label mb-1 fw-semibold small text-dark"><i class="bi bi-lock-fill text-secondary me-1"></i> Unit Price (Harga Kesepakatan) <span class="badge bg-secondary-subtle text-secondary border ms-1" style="font-size: 0.7rem;">Terkunci</span> <span class="text-danger">*</span></label>
-                            <input type="number" name="unit_price[]" class="form-control form-control-sm price-input bg-light fw-bold text-success border-success" value="{{ (float)$item->unit_price }}" min="0" step="0.01" readonly required>
+                            <label class="form-label mb-1 fw-semibold small"><i class="bi bi-lock-fill text-secondary me-1"></i> Unit Price (Harga Kesepakatan) <span class="badge bg-secondary-subtle text-secondary border ms-1" style="font-size: 0.7rem;">Terkunci</span> <span class="text-danger">*</span></label>
+                            <input type="number" name="unit_price[]" class="form-control form-control-sm price-input fw-bold text-success border-success" value="{{ (float)$item->unit_price }}" min="0" step="0.01" readonly required>
                             <small class="text-muted d-block mt-1" style="font-size: 0.72rem;"><i class="bi bi-shield-lock me-1"></i>Harga terkunci otomatis dari kesepakatan Quotation / Negosiasi</small>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label mb-1 fw-semibold small">Subtotal</label>
-                            <input type="text" class="form-control form-control-sm subtotal-cell bg-light fw-bold text-dark"
+                            <input type="text" class="form-control form-control-sm subtotal-cell fw-bold text-primary"
                                 value="Rp {{ number_format($item->subtotal ?? ($item->qty * $item->unit_price), 0, ',', '.') }}" readonly>
                         </div>
                         <div class="col-md-6">
@@ -313,7 +308,7 @@
                                 <input type="text" name="po_no[]" class="form-control form-control-sm bg-light fw-bold text-primary" value="{{ $rowPoNo }}" readonly>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label mb-1 fw-semibold small text-dark"><i class="bi bi-upc-scan text-info"></i> Article (Tekan Enter)</label>
+                                <label class="form-label mb-1 fw-semibold small"><i class="bi bi-upc-scan text-info"></i> Article (Tekan Enter)</label>
                                 <input type="text" name="article[]" class="form-control form-control-sm form-article text-uppercase fw-semibold" value="{{ $artCode }}" placeholder="Kode Artikel">
                             </div>
                             <div class="col-md-6">
@@ -333,13 +328,13 @@
                                 <input type="number" name="qty[]" class="form-control form-control-sm qty-input fw-semibold" value="{{ $qItemRow->qty }}" min="1" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label mb-1 fw-semibold small text-dark"><i class="bi bi-lock-fill text-secondary me-1"></i> Unit Price (Harga Kesepakatan) <span class="badge bg-secondary-subtle text-secondary border ms-1" style="font-size: 0.7rem;">Terkunci</span> <span class="text-danger">*</span></label>
-                                <input type="number" name="unit_price[]" class="form-control form-control-sm price-input bg-light fw-bold text-success border-success" value="{{ $finalPrice }}" min="0" step="0.01" readonly required>
+                                <label class="form-label mb-1 fw-semibold small"><i class="bi bi-lock-fill text-secondary me-1"></i> Unit Price (Harga Kesepakatan) <span class="badge bg-secondary-subtle text-secondary border ms-1" style="font-size: 0.7rem;">Terkunci</span> <span class="text-danger">*</span></label>
+                                <input type="number" name="unit_price[]" class="form-control form-control-sm price-input fw-bold text-success border-success" value="{{ $finalPrice }}" min="0" step="0.01" readonly required>
                                 <small class="text-muted d-block mt-1" style="font-size: 0.72rem;"><i class="bi bi-shield-lock me-1"></i>Harga terkunci otomatis dari kesepakatan Quotation / Negosiasi</small>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label mb-1 fw-semibold small text-muted">Subtotal</label>
-                                <input type="text" class="form-control form-control-sm subtotal-cell bg-light fw-bold text-dark" 
+                                <input type="text" class="form-control form-control-sm subtotal-cell fw-bold text-primary" 
                                     value="Rp {{ number_format($rowSubtotal, 0, ',', '.') }}" readonly>
                             </div>
                             <div class="col-md-6">
@@ -369,8 +364,8 @@
             </div>
 
             {{-- Grand Total --}}
-            <div class="border rounded p-3 mb-3 d-flex justify-content-between align-items-center" style="background:#f0f4ff;">
-                <span class="fw-bold text-dark fs-6"><i class="bi bi-calculator me-2 text-primary"></i>TOTAL MULTI-ITEMS</span>
+            <div class="border rounded p-3 mb-3 d-flex justify-content-between align-items-center grand-total-box">
+                <span class="fw-bold fs-6"><i class="bi bi-calculator me-2 text-primary"></i>TOTAL MULTI-ITEMS</span>
                 <span class="fw-bold fs-4 text-primary" id="grand-total">Rp 0</span>
             </div>
  
@@ -382,7 +377,7 @@
                 <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold">
                     <i class="bi bi-save me-1"></i>Save PO Internal
                 </button>
-                <a href="{{ route('purchase-orders.index') }}" class="btn btn-sm btn-light px-3">
+                <a href="{{ route('purchase-orders.index') }}" class="btn btn-sm btn-outline-secondary px-3">
                     Back
                 </a>
             </div>

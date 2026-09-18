@@ -23,7 +23,8 @@ class User extends Authenticatable
         'password',
         'company',
         'role',
-        'divisi'
+        'divisi',
+        'plant',
     ];
 
     /**
@@ -56,6 +57,7 @@ class User extends Authenticatable
 
     public function hasPermission($permission)
     {
+        if ($this->isAdmin()) return true;
         if (!$this->role) return false;
 
         return $this->role->permissions()

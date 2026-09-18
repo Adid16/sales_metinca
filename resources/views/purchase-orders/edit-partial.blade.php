@@ -1,6 +1,6 @@
-<div class="modal-header" style="background:lightblue;">
-    <h1 class="modal-title fs-5" id="staticBackdropLabel">Edit PO</h1>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="modal-header bg-primary text-white">
+    <h5 class="modal-title text-white" id="staticBackdropLabel"><i class="bi bi-pencil-square me-2"></i>Edit PO</h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
 </div>
 <form action="{{ route('purchase-orders.update',$purchase_order->id)}}" method="POST">
     @csrf

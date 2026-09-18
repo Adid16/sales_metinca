@@ -33,12 +33,14 @@ class ContractNotification extends Notification
      */
     public function toDatabase($notifiable)
     {
+        $contractNo = $this->contract->contract_no ?? ('CTR-' . $this->contract->order_no);
         return [
             'contract_id'   => $this->contract->id,
             'order_no'      => $this->contract->order_no,
             'customer_id'   => $this->contract->customer_id,
-            'message'       => 'Contract membutuhkan approval manager.',
+            'message'       => 'Draft Contract Review Sheet #' . $contractNo . ' (Order No: ' . $this->contract->order_no . ') membutuhkan persetujuan divisi Anda.',
             'url'           => route('contracts.show', $this->contract->id),
+            'category'      => 'contract',
         ];
     }
 

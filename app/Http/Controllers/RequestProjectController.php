@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\RequestProject;
 use App\Models\HistoryActivity;
+use App\Models\User;
+use App\Notifications\NewRequestProjectNotification;
+use App\Notifications\RequestProjectAssignedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 
 class RequestProjectController extends Controller
@@ -124,6 +126,20 @@ class RequestProjectController extends Controller
             'activity_time' => now()->format('Y-m-d H:i:s'),
         ]);
 
+        // Kirim Notifikasi Request Baru ke Admin dan Tim Sales (Staff Sales & Manager Sales)
+        $notifiableUsers = User::where('role', 'admin')
+            ->orWhere(function ($q) {
+                $q->whereIn('role', ['staff', 'manager'])->where('divisi', 'sales');
+            })
+            ->get();
+
+        foreach ($notifiableUsers as $recipient) {
+            if (Auth::check() && Auth::id() === $recipient->id) {
+                continue;
+            }
+            $recipient->notify(new NewRequestProjectNotification($project));
+        }
+
         return redirect()->back()->with('success', 'Project request created successfully.');
     }
     public function getByCustomer($id)
@@ -160,9 +176,8 @@ class RequestProjectController extends Controller
     public function show(RequestProject $requests_project)
     {
         $requestProject = $requests_project->load(['attachments', 'customer', 'assignment.sales']);
-        return view('requests-project.show', compact('requestProject'));
-
-
+        $sales = User::where('role', 'staff')->where('divisi', 'sales')->get();
+        return view('requests-project.show', compact('requestProject', 'sales'));
     }
 
     /**
@@ -212,23 +227,40 @@ class RequestProjectController extends Controller
     public function assign(Request $request, $id)
     {
         $project = RequestProject::findOrFail($id);
+        $user = Auth::user();
 
-        //mengecek apakah sudah ada yang assign
-        if ($project->assignment){
+        // Admin can re-assign anytime, Staff can only assign if unassigned
+        if ($project->assignment && !$user->isAdmin()) {
             return redirect()->back()->with('error', 'Project sudah diambil sales lain.');
         }
-        $project->assignment()->create([
-            'sales_id'=> Auth::id(),
-        ]);
+
+        $salesId = $request->input('sales_id', $user->id);
+
+        if ($project->assignment) {
+            $project->assignment->update([
+                'sales_id' => $salesId,
+            ]);
+        } else {
+            $project->assignment()->create([
+                'sales_id' => $salesId,
+            ]);
+        }
+
+        $assignedUser = User::find($salesId);
+        $assignedName = $assignedUser ? $assignedUser->name : $user->name;
 
         HistoryActivity::create([
-            'user_id'       => Auth::id(),
-            'activity'      => 'Sales PIC (' . Auth::user()->name . ') menerima tiket Request Project #' . $project->id . ' (' . ($project->subject ?? '-') . ')',
+            'user_id'       => $user->id,
+            'activity'      => ($user->isAdmin() ? 'Super-Admin menugaskan ' : 'Sales PIC (') . $assignedName . ') tiket Request Project #' . $project->id . ' (' . ($project->subject ?? '-') . ')',
             'activity_time' => now()->format('Y-m-d H:i:s'),
         ]);
 
-        return redirect()->back()->with('success', 'Project berhasil diterima.');
+        // Kirim notifikasi ke Sales PIC yang ditugaskan jika bukan dirinya sendiri yang menugaskan
+        if ($assignedUser && (!Auth::check() || Auth::id() !== $assignedUser->id)) {
+            $assignedUser->notify(new RequestProjectAssignedNotification($project));
+        }
 
+        return redirect()->back()->with('success', 'Project berhasil ditugaskan / diterima.');
     }
 
     /**

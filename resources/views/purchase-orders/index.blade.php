@@ -165,7 +165,7 @@
                     <tbody>
                         @forelse ($pos as $po)
                             @php
-                                $poStatus       = strtolower($po->status);
+                                $poStatus       = strtolower($po->effective_status ?? $po->status);
                                 $internalsCount = $po->internals ? $po->internals->count() : 0;
                                 $quotationCount = ($po->quotation && $po->quotation->items) ? $po->quotation->items->count() : 0;
                                 
@@ -218,7 +218,7 @@
                                 <td class="text-start">
                                     <div class="d-inline-flex align-items-center gap-1">
                                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fw-semibold">
-                                            <i class="bi bi-boxes me-1"></i>{{ $totalItemCount }} Item(s)
+                                             <i class="bi bi-boxes me-1"></i>{{ $totalItemCount }} Item(s)
                                         </span>
                                         @if($internalsCount > 0)
                                             <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fw-semibold">
@@ -246,10 +246,14 @@
                                         <span class="badge bg-danger text-white px-2 py-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>Amandemen</span>
                                     @elseif(in_array($poStatus, ['contract', 'approved']))
                                         <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2 py-1"><i class="bi bi-file-earmark-check me-1"></i>Contract</span>
+                                    @elseif($poStatus == 'review')
+                                        <span class="badge bg-warning-subtle text-dark border border-warning px-2 py-1"><i class="bi bi-search me-1 text-warning"></i>Review</span>
                                     @elseif($poStatus == 'production')
                                         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-gear-wide-connected me-1"></i>In Production</span>
+                                    @elseif(in_array($poStatus, ['done', 'completed', 'finished']))
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"><i class="bi bi-check-all me-1"></i>Done</span>
                                     @else
-                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"><i class="bi bi-send me-1"></i>{{ ucfirst($po->status) }}</span>
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"><i class="bi bi-send me-1"></i>{{ ucfirst($poStatus) }}</span>
                                     @endif
                                 </td>
                                 <td class="text-center">
@@ -447,15 +451,18 @@
                                                                         @else
                                                                             {{-- AKSI UNTUK CUSTOMER DI DALAM RINCIAN ITEM DROPDOWN --}}
                                                                             <button type="button" class="btn btn-xs btn-info text-white btn-show me-1 mb-1"
-                                                                                data-id="{{ $po->id }}" @if($internalItem) data-internal-id="{{ $internalItem->id }}" @endif data-bs-toggle="modal"
+                                                                                data-id="{{ $po->id }}" 
+                                                                                @if($internalItem) data-internal-id="{{ $internalItem->id }}" @endif
+                                                                                @if($qItemId) data-quotation-item-id="{{ $qItemId }}" @endif
+                                                                                data-item-index="{{ $subIdx }}"
+                                                                                data-bs-toggle="modal"
                                                                                 data-bs-target="#previewModal">
                                                                                 <i class="bi bi-eye"></i> Detail
                                                                             </button>
 
                                                                             @php
                                                                                 $isItemProduction = in_array(strtolower($itemContract->status ?? ''), ['production', 'done']) 
-                                                                                    || in_array(strtolower($internalItem->status ?? ''), ['production', 'done']) 
-                                                                                    || in_array($poStatus, ['production', 'done']);
+                                                                                    || in_array(strtolower($internalItem->status ?? ''), ['production', 'done']);
                                                                                 $itemAmendCount = (int) ($itemContract ? ($itemContract->amandement_no ?? 0) : 0);
                                                                                 $maxLimit = \App\Services\SystemSettingService::maxAmendmentLimit();
                                                                                 $isItemQuotaExceeded = ($itemAmendCount >= $maxLimit);
@@ -822,6 +829,8 @@
 
             const id = btn.dataset.id;
             const internalId = btn.dataset.internalId;
+            const quotationItemId = btn.dataset.quotationItemId;
+            const itemIndex = btn.dataset.itemIndex;
 
             modalShowContent.innerHTML = `
                 <div class="modal-body text-center py-5">
@@ -833,8 +842,12 @@
             `;
 
             let fetchUrl = `/purchase-orders/${id}`;
-            if (internalId) {
-                fetchUrl += `?internal_id=${internalId}`;
+            const params = [];
+            if (internalId) params.push(`internal_id=${encodeURIComponent(internalId)}`);
+            if (quotationItemId) params.push(`quotation_item_id=${encodeURIComponent(quotationItemId)}`);
+            if (itemIndex !== undefined) params.push(`item_index=${encodeURIComponent(itemIndex)}`);
+            if (params.length > 0) {
+                fetchUrl += `?${params.join('&')}`;
             }
 
             fetch(fetchUrl)

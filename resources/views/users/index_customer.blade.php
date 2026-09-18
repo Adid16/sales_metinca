@@ -110,20 +110,34 @@
                                                 id="email" placeholder="Email">
                                         </div>
 
-                                        <div class="form-group">
+                                        <div class="form-group mb-3">
                                             <label for="password">Password</label>
-                                            <input type="password" name="password" class="form-control form-control-sm"
-                                                id="password" placeholder="Password">
+                                            <div class="input-group">
+                                                <input type="password" name="password" class="form-control form-control-sm"
+                                                    id="newCustPassword" placeholder="Min. 6 karakter" required minlength="6">
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="togglePasswordVisibility('newCustPassword', this)" title="Lihat/Sembunyikan Password">
+                                                    <i class="bi bi-eye" id="newCustEye"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                        {{-- <input type="text" name="role" value="customer"> --}}
-                                        <div class="form-group">
+
+                                        <div class="form-group mb-3">
+                                            <label for="password_confirmation">Konfirmasi Password</label>
+                                            <div class="input-group">
+                                                <input type="password" name="password_confirmation" class="form-control form-control-sm"
+                                                    id="newCustPasswordConfirm" placeholder="Ulangi password" required minlength="6">
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="togglePasswordVisibility('newCustPasswordConfirm', this)" title="Lihat/Sembunyikan Password">
+                                                    <i class="bi bi-eye" id="newCustConfirmEye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group mb-3">
                                             <label for="role">Role</label>
-                                            {{-- <input type="text" name="role" value="Customer" class="form-control form-control-sm" id="role" readonly> --}}
                                             <fieldset class="form-group">
                                                 <select class="form-select form-select-sm" id="basicSelect"
                                                     name="role">
-                                                    <option selected>Select Role</option>
-                                                    <option value="customer">Customer</option>
+                                                    <option selected value="customer">Customer</option>
                                                 </select>
                                             </fieldset>
                                         </div>
@@ -202,6 +216,18 @@
         <script src="assets/static/js/pages/simple-datatables.js"></script>
         <script>
             // let dataTable = new simpleDatatables.DataTable("#table1");
+
+            function toggleNewCustPass(inputId, iconId) {
+                const input = document.getElementById(inputId);
+                const icon = document.getElementById(iconId);
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.replace('bi-eye', 'bi-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.replace('bi-eye-slash', 'bi-eye');
+                }
+            }
 
             // Edit button click event
             const editButtons = document.querySelectorAll('.btn-edit');

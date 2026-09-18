@@ -323,7 +323,14 @@
 
                     <div class="mt-4 text-end">                                
                         
-                        <?php if($isManagerOrAdmin && !in_array($contract->status, ['production', 'done'])): ?>
+                        <?php if(auth()->user()->isAdmin() && !in_array($contract->status, ['production', 'done'])): ?>
+                            <button type="button" data-bs-target="#rejectModal" data-bs-toggle="modal" class="btn btn-sm btn-danger px-3 shadow-sm me-1">
+                                <i class="bi bi-x-circle-fill me-1"></i> Super-Admin Reject / Revisi
+                            </button>
+                            <button type="button" class="btn btn-sm btn-success px-3 shadow-sm me-1 fw-bold" data-bs-toggle="modal" data-bs-target="#approveModal">
+                                <i class="bi bi-shield-check me-1"></i> Super-Admin Approve Divisi
+                            </button>
+                        <?php elseif($isManagerOrAdmin && !in_array($contract->status, ['production', 'done'])): ?>
                             <?php if($managerAlreadyApproved): ?>
                                 <span class="badge bg-success py-2 px-3 me-1 fs-6">
                                     <i class="bi bi-check-circle-fill me-1"></i> Divisi <?php echo e(strtoupper(auth()->user()->divisi ?? 'Manager')); ?> Sudah Approve
@@ -428,6 +435,19 @@
                 <?php echo method_field('PATCH'); ?>
                 
                 <div class="modal-body text-center">
+                    <?php if(auth()->user()->isAdmin()): ?>
+                        <div class="mb-3 text-start">
+                            <label class="form-label fw-bold text-dark small"><i class="bi bi-shield-lock-fill text-primary me-1"></i>Otoritas Super-Admin: Pilih Target Divisi yang Disetujui</label>
+                            <select name="target_divisi" class="form-select form-select-sm">
+                                <option value="all">👑 Super-Admin: Setujui Seluruh 4 Divisi Sekaligus (Instant Approve All)</option>
+                                <option value="sales" <?php echo e(!$contract->sales_approver ? 'selected' : ''); ?>>Manager Sales <?php echo e($contract->sales_approver ? '(Sudah Approve)' : '(Pending)'); ?></option>
+                                <option value="quality" <?php echo e(!$contract->quality_approver ? 'selected' : ''); ?>>Manager Quality (QC) <?php echo e($contract->quality_approver ? '(Sudah Approve)' : '(Pending)'); ?></option>
+                                <option value="ppc" <?php echo e(!$contract->ppc_approver ? 'selected' : ''); ?>>Manager PPC (PPIC) <?php echo e($contract->ppc_approver ? '(Sudah Approve)' : '(Pending)'); ?></option>
+                                <option value="design engineering" <?php echo e(!$contract->dev_engineering_approver ? 'selected' : ''); ?>>Manager Development Engineering (DE) <?php echo e($contract->dev_engineering_approver ? '(Sudah Approve)' : '(Pending)'); ?></option>
+                            </select>
+                        </div>
+                    <?php endif; ?>
+
                     <p class="mb-2 fw-bold text-dark">Silakan gambar atau upload foto tanda tangan Anda:</p>
                     
                     <div class="border rounded d-inline-block shadow-sm" style="background: #ffffff; border: 2px solid #dee2e6 !important;">
@@ -476,8 +496,19 @@
                 <div class="modal-body">
                     <div class="alert alert-warning alert-permanent py-2 small mb-3">
                         <i class="bi bi-info-circle-fill me-1"></i>
-                        Anda akan menolak spesifikasi kontrak ini sebagai <b>Manager <?php echo e(strtoupper(auth()->user()->divisi ?? '')); ?></b>. Silakan berikan alasan atau instruksi revisi yang jelas untuk Tim Sales.
+                        Anda akan menolak spesifikasi kontrak ini sebagai <b><?php echo e(auth()->user()->isAdmin() ? 'Super-Admin' : 'Manager ' . strtoupper(auth()->user()->divisi ?? '')); ?></b>. Silakan berikan alasan atau instruksi revisi yang jelas untuk Tim Sales.
                     </div>
+                    <?php if(auth()->user()->isAdmin()): ?>
+                        <div class="mb-3 text-start">
+                            <label class="form-label fw-bold text-dark small"><i class="bi bi-shield-lock-fill text-danger me-1"></i>Otoritas Super-Admin: Tolak Atas Nama Divisi</label>
+                            <select name="target_divisi" class="form-select form-select-sm">
+                                <option value="sales">Manager Sales</option>
+                                <option value="quality">Manager Quality (QC)</option>
+                                <option value="ppc">Manager PPC (PPIC)</option>
+                                <option value="design engineering">Manager Development Engineering (DE)</option>
+                            </select>
+                        </div>
+                    <?php endif; ?>
                     <div class="mb-3">
                         <label for="comment" class="form-label fw-bold small text-dark">Alasan Penolakan / Catatan Revisi <span class="text-danger">*</span></label>
                         <textarea name="comment" id="comment" class="form-control" rows="4" placeholder="Contoh: Spesifikasi material tidak sesuai standar drawing, harap direvisi..." required minlength="3"></textarea>

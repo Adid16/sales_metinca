@@ -35,14 +35,14 @@
 
                             {{-- BOX INFORMASI ITEM YANG SEDANG DIAMANDEMEN (PERMANENT CARD CONTAINER) --}}
                             @if(isset($selectedItem))
-                                <div class="card border border-primary shadow-sm mb-4 p-3 rounded bg-light-primary" style="background-color: #e7f3ff !important;">
+                                <div class="card border border-primary shadow-sm mb-4 p-3 rounded bg-light-primary">
                                     <div class="d-flex align-items-center mb-2">
                                         <i class="bi bi-box-seam-fill fs-5 text-primary me-2"></i>
                                         <h6 class="text-primary mb-0 fw-bold">Target Amandemen Item:</h6>
                                     </div>
-                                    <ul class="mb-0 small text-dark" style="list-style-type: none; padding-left: 0;">
+                                    <ul class="mb-0 small" style="list-style-type: none; padding-left: 0;">
                                         <li class="mb-1"><i class="bi bi-dash me-1 text-primary"></i><strong>No. PO External Item:</strong> <span class="badge bg-dark">{{ $itemPoNo }}</span></li>
-                                        <li class="mb-1"><i class="bi bi-dash me-1 text-primary"></i><strong>Nama Barang / Item:</strong> <span class="fw-bold text-dark">{{ $selectedItem->item }}</span></li>
+                                        <li class="mb-1"><i class="bi bi-dash me-1 text-primary"></i><strong>Nama Barang / Item:</strong> <span class="fw-bold">{{ $selectedItem->item }}</span></li>
                                         <li class="mb-1"><i class="bi bi-dash me-1 text-primary"></i><strong>Part No:</strong> <code>{{ $selectedItem->contract->part_no ?? $selectedItem->part_no ?? '-' }}</code></li>
                                         <li class="mb-1"><i class="bi bi-dash me-1 text-primary"></i><strong>Jumlah Qty Saat Ini:</strong> <span class="fw-semibold text-primary">{{ number_format($selectedItem->qty) }} pcs</span></li>
                                         @if(isset($contract))

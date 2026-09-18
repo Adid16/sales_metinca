@@ -9,6 +9,8 @@ use App\Models\PurchaseOrderInternal;
 use App\Models\ContractRequirement;
 use App\Models\HistoryActivity;
 use App\Models\Article;
+use App\Models\User;
+use App\Notifications\GenericSystemNotification;
 use App\Exports\PurchaseOrderExport;
 use App\Services\SystemSettingService;
 use Exception;
@@ -39,7 +41,7 @@ class PurchaseOrderController extends Controller
     {
         $filters = $request->only(['start_date', 'end_date', 'status', 'type']);
 
-        $query = PurchaseOrder::with(['customer', 'quotation.request.assignment.sales', 'internals', 'contracts']);
+        $query = PurchaseOrder::with(['customer', 'quotation.request.assignment.sales', 'quotation.items', 'internals.contract', 'internals.contracts', 'contracts']);
 
         $user = Auth::user();
         if ($user->role == 'customer') {
@@ -103,6 +105,13 @@ class PurchaseOrderController extends Controller
                 ELSE 8
             END ASC, created_at DESC
         ")->paginate(10)->appends($filters);
+
+        // Auto-heal data status master PO jika sebelumnya tersimpan 'production' padahal belum semua item masuk produksi
+        foreach ($pos as $p) {
+            if (strtolower($p->status) === 'production' && $p->effective_status !== 'production') {
+                $p->update(['status' => $p->effective_status]);
+            }
+        }
 
         return view('purchase-orders.index', compact('pos', 'filters'));
     }
@@ -177,11 +186,16 @@ class PurchaseOrderController extends Controller
         $contractStatus = $contract ? strtolower($contract->status ?? '') : null;
         $itemStatus     = $selectedItem ? strtolower($selectedItem->status ?? '') : null;
 
-        // KUNCI PRODUKSI: Jika status sudah masuk produksi / done, amandemen DILARANG TOTAL!
-        if (in_array($poStatus, ['production', 'done']) 
-            || ($contractStatus && in_array($contractStatus, ['production', 'done']))
-            || ($itemStatus && in_array($itemStatus, ['production', 'done']))) {
-            return redirect()->route('purchase-orders.index')->with('error', 'Item / Pesanan ini sudah masuk tahap produksi (In Production / Selesai) dan tidak dapat diajukan amandemen lagi.');
+        // KUNCI PRODUKSI: Jika status item / kontrak sudah masuk produksi / done, amandemen DILARANG!
+        if ($selectedItem || $contract) {
+            if (($contractStatus && in_array($contractStatus, ['production', 'done'])) 
+                || ($itemStatus && in_array($itemStatus, ['production', 'done']))) {
+                return redirect()->route('purchase-orders.index')->with('error', 'Item pesanan ini sudah masuk tahap produksi (In Production / Selesai) dan tidak dapat diajukan amandemen lagi.');
+            }
+        } else {
+            if (in_array($poStatus, ['production', 'done'])) {
+                return redirect()->route('purchase-orders.index')->with('error', 'Pesanan ini sudah masuk tahap produksi (In Production / Selesai) dan tidak dapat diajukan amandemen lagi.');
+            }
         }
 
         // KUNCI BATAS AMANDEMEN: Maksimal 2x amandemen
@@ -274,6 +288,29 @@ class PurchaseOrderController extends Controller
                 'activity_time' => now()->format('Y-m-d H:i:s')
             ]);
 
+            // 1. Notifikasi ke Sales PIC
+            $salesPic = $newPO->sales_pic;
+            if ($salesPic && Auth::id() !== $salesPic->id) {
+                $salesPic->notify(new GenericSystemNotification([
+                    'message'  => 'Customer telah menyetujui Quotation #' . ($newPO->quotation->quotation_no ?? '-') . ' dan menerbitkan PO #' . $newPO->po_no . '.',
+                    'url'      => route('purchase-orders.show', $newPO->id),
+                    'order_no' => $newPO->po_no,
+                    'category' => 'po',
+                ]));
+            }
+
+            // 2. Notifikasi ke Admin
+            $admins = User::where('role', 'admin')->get();
+            foreach ($admins as $admin) {
+                if (Auth::id() === $admin->id) continue;
+                $admin->notify(new GenericSystemNotification([
+                    'message'  => 'Customer telah menerbitkan PO #' . $newPO->po_no . ' untuk Quotation #' . ($newPO->quotation->quotation_no ?? '-') . '.',
+                    'url'      => route('purchase-orders.show', $newPO->id),
+                    'order_no' => $newPO->po_no,
+                    'category' => 'po',
+                ]));
+            }
+
             return redirect()->route('purchase-orders.index')->with('success', 'Berhasil mengajukan PO');
         } catch (Exception $e) {
             Log::error('Error : ' . $e->getMessage());
@@ -314,10 +351,17 @@ class PurchaseOrderController extends Controller
         }
 
         $internalId = $request->query('internal_id');
+        $quotationItemId = $request->query('quotation_item_id');
+        $itemIndex = $request->query('item_index');
         $selectedItem = null;
 
         if ($internalId) {
             $selectedItem = $po->internals->where('id', $internalId)->first();
+        } elseif ($quotationItemId && $po->quotation) {
+            $selectedItem = $po->quotation->items->where('id', $quotationItemId)->first();
+        } elseif ($itemIndex !== null && is_numeric($itemIndex)) {
+            $itemsList = $po->internals->count() > 0 ? $po->internals : ($po->quotation?->items ?? collect());
+            $selectedItem = $itemsList->values()->get((int)$itemIndex);
         }
 
         return view('purchase-orders.show-partial', compact('po', 'selectedItem'));
@@ -436,10 +480,15 @@ class PurchaseOrderController extends Controller
         $itemStatus     = $selectedItem ? strtolower($selectedItem->status ?? '') : null;
 
         // KUNCI PRODUKSI:
-        if (in_array($poStatus, ['production', 'done']) 
-            || ($contractStatus && in_array($contractStatus, ['production', 'done']))
-            || ($itemStatus && in_array($itemStatus, ['production', 'done']))) {
-            return redirect()->route('purchase-orders.index')->with('error', 'Item / Pesanan ini sudah masuk tahap produksi (In Production / Selesai) dan tidak dapat diajukan amandemen lagi.');
+        if ($selectedItem || $kontrakAwal) {
+            if (($contractStatus && in_array($contractStatus, ['production', 'done'])) 
+                || ($itemStatus && in_array($itemStatus, ['production', 'done']))) {
+                return redirect()->route('purchase-orders.index')->with('error', 'Item pesanan ini sudah masuk tahap produksi (In Production / Selesai) dan tidak dapat diajukan amandemen lagi.');
+            }
+        } else {
+            if (in_array($poStatus, ['production', 'done'])) {
+                return redirect()->route('purchase-orders.index')->with('error', 'Pesanan ini sudah masuk tahap produksi (In Production / Selesai) dan tidak dapat diajukan amandemen lagi.');
+            }
         }
 
         // ====================================================================
@@ -454,7 +503,7 @@ class PurchaseOrderController extends Controller
                 . 'Tidak dapat mengajukan amandemen baru untuk item ini.');
         }
 
-        DB::transaction(function () use ($request, $po, $internalId, $kontrakAwal) {
+        DB::transaction(function () use ($request, $po, $internalId, &$kontrakAwal) {
             if (!$kontrakAwal) {
                 $kontrakAwal = Contract::create([
                     'customer_id'                => $po->customer_id,
@@ -530,6 +579,43 @@ class PurchaseOrderController extends Controller
                 $po->save();
             }
         });
+
+        $amendmentNo = (int) ($kontrakAwal ? ($kontrakAwal->amandement_no ?? 1) : 1);
+
+        // 1. Notifikasi ke Sales PIC
+        $salesPic = $kontrakAwal?->sales_pic ?: $po->sales_pic;
+        if ($salesPic && Auth::id() !== $salesPic->id) {
+            $salesPic->notify(new GenericSystemNotification([
+                'message'  => 'Customer mengajukan Amandemen ke-' . $amendmentNo . ' untuk PO #' . $po->po_no . '.',
+                'url'      => route('purchase-orders.approval-amandement'),
+                'order_no' => $po->po_no,
+                'category' => 'amandement',
+            ]));
+        }
+
+        // 2. Notifikasi ke Manager Sales (Eskalasi Amandemen)
+        $managerSales = User::where('role', 'manager')->where('divisi', 'sales')->get();
+        foreach ($managerSales as $mgr) {
+            if (Auth::id() === $mgr->id) continue;
+            $mgr->notify(new GenericSystemNotification([
+                'message'  => 'Pengajuan amandemen PO #' . $po->po_no . ' memerlukan persetujuan Manager Sales.',
+                'url'      => route('purchase-orders.approval-amandement'),
+                'order_no' => $po->po_no,
+                'category' => 'amandement',
+            ]));
+        }
+
+        // 3. Notifikasi ke Admin
+        $admins = User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            if (Auth::id() === $admin->id) continue;
+            $admin->notify(new GenericSystemNotification([
+                'message'  => 'Customer mengajukan Amandemen ke-' . $amendmentNo . ' untuk PO #' . $po->po_no . '.',
+                'url'      => route('purchase-orders.approval-amandement'),
+                'order_no' => $po->po_no,
+                'category' => 'amandement',
+            ]));
+        }
 
         return redirect()->route('purchase-orders.index')->with('success', 'Pengajuan amandemen item berhasil dikirim dan menunggu persetujuan.');
     }
@@ -678,6 +764,16 @@ class PurchaseOrderController extends Controller
                 'activity_time' => now()
             ]);
         });
+
+        // Notifikasi ke Customer bahwa pengajuan amandemen telah disetujui
+        if ($po->customer) {
+            $po->customer->notify(new GenericSystemNotification([
+                'message'  => 'Pengajuan Amandemen untuk PO #' . $po->po_no . ' telah disetujui.',
+                'url'      => route('purchase-orders.index'),
+                'order_no' => $po->po_no,
+                'category' => 'approved',
+            ]));
+        }
 
         return redirect()->back()->with('success', 'Amandemen item berhasil disetujui. Status item dan data PO Internal telah diperbarui.');
     }

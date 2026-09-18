@@ -128,7 +128,6 @@ Route::middleware('guest')->group(function () {
         Route::get('/login', function () {
             return view('auth.login2');
         })->name('customer_home.login');
-        Route::get('/track', [\App\Http\Controllers\PurchaseOrderController::class, 'trackPublic'])->name('customer.track');
     });
 });
 Route::post('/requests-project', [RequestProjectController::class, 'store'])->name('requests-project.store');

@@ -131,7 +131,7 @@
                                 </a>
 
                                 
-                                <?php if($quotation->canSend() && auth()->user()->isStaff() && auth()->user()->divisi == 'sales'): ?>
+                                <?php if($quotation->canSend() && (auth()->user()->isAdmin() || (auth()->user()->isStaff() && auth()->user()->divisi == 'sales'))): ?>
                                     <form method="POST" action="<?php echo e(route('quotations.send', $quotation->id)); ?>" class="d-inline">
                                         <?php echo csrf_field(); ?>
                                         <?php echo method_field('PATCH'); ?>

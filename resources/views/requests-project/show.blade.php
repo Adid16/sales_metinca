@@ -73,40 +73,40 @@
                                     </button> --}}
                                 {{-- @else --}}
                                 
-                                   @if(auth()->user()->isAdmin() || (auth()->user()->isManager() && auth()->user()->divisi === 'sales') || (auth()->user()->isStaff() && !auth()->user()->isCustomer()))
-    {{-- CEK APAKAH PROJECT SUDAH DIAMBIL SALES ATAU BELUM & APAKAH QUOTATION SUDAH DIBUAT --}}
-    @if(!$requestProject->assignment)
-        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Project harus diambil terlebih dahulu dengan mengklik tombol (+) di halaman list!">
-            <button class="btn btn-secondary btn-sm" disabled>
-                <i class="bi bi-lock-fill"></i> Create Quotation (Belum Di-assign)
-            </button>
-        </span>
-    @elseif($requestProject->quotation)
-        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Penawaran harga (Quotation #{{ $requestProject->quotation->quotation_no }}) sudah pernah dibuat untuk request ini.">
-            <button class="btn btn-secondary btn-sm me-1" disabled>
-                <i class="bi bi-check-circle-fill text-success me-1"></i> Quotation Sudah Dibuat
-            </button>
-        </span>
-    @else
-        <a href="{{ route('quotations.create', ['request_id' => $requestProject->id]) }}" class="btn btn-primary btn-sm me-1">
-            <i class="bi bi-pencil"></i> Create Quotation
-        </a>
-    @endif
-@endif
-                                        
-                                        <a href="{{ route('requests-project.index') }}" class="btn btn-sm btn-end btn-secondary">
-                                            Back
+                                @if(auth()->user()->isAdmin() || (auth()->user()->isManager() && auth()->user()->divisi === 'sales') || (auth()->user()->isStaff() && !auth()->user()->isCustomer()))
+                                    {{-- CEK APAKAH PROJECT SUDAH DIAMBIL SALES ATAU BELUM & APAKAH QUOTATION SUDAH DIBUAT --}}
+                                    @if($requestProject->quotation)
+                                        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Penawaran harga (Quotation #{{ $requestProject->quotation->quotation_no }}) sudah pernah dibuat untuk request ini.">
+                                            <button class="btn btn-secondary btn-sm me-1" disabled>
+                                                <i class="bi bi-check-circle-fill text-success me-1"></i> Quotation Sudah Dibuat
+                                            </button>
+                                        </span>
+                                    @elseif(!$requestProject->assignment && !auth()->user()->isAdmin())
+                                        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Project harus diambil terlebih dahulu dengan mengklik tombol (+) di halaman list!">
+                                            <button class="btn btn-secondary btn-sm" disabled>
+                                                <i class="bi bi-lock-fill"></i> Create Quotation (Belum Di-assign)
+                                            </button>
+                                        </span>
+                                    @else
+                                        <a href="{{ route('quotations.create', ['request_id' => $requestProject->id]) }}" class="btn btn-primary btn-sm me-1">
+                                            <i class="bi bi-pencil"></i> Create Quotation
                                         </a>
-                                    
-
-                                {{-- @endif --}}
-
-                                @if (auth()->user()->isCustomer())
-                                    <button type="button" class="btn btn-danger btn-sm " data-bs-toggle="modal"
-                                        data-bs-target="#deleteModal">
-                                        <i class="bi bi-trash"></i> Delete
-                                    </button>
+                                    @endif
                                 @endif
+                                        
+                                @if (auth()->user()->isAdmin() || auth()->user()->isCustomer())
+                                    <form action="{{ route('requests-project.destroy', $requestProject->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus Request Project ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-danger btn-sm me-1">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
+                                    </form>
+                                @endif
+
+                                <a href="{{ route('requests-project.index') }}" class="btn btn-sm btn-end btn-secondary">
+                                    Back
+                                </a>
                             </div>
                         </div>
                                 @php
@@ -204,9 +204,33 @@
                                 <hr class="border-dark opacity-50 mt-0">
 
                             <h5 class="card-title mb-0">Receiver Request</h5>
-                                 <div class="row mb-2">
+                                 <div class="row mb-2 align-items-center">
                                     <div class="col-md-3">Sales Person</div>
-                                    <div class="col-md-4">{{ $requestProject->assignment->sales->name ?? 'N/A' }}</div>
+                                    <div class="col-md-7 d-flex align-items-center gap-2">
+                                        @if($requestProject->assignment)
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-person-check-fill me-1"></i>{{ $requestProject->assignment->sales->name }}
+                                            </span>
+                                        @else
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-exclamation-circle-fill me-1"></i>Belum Di-assign (Unassigned)
+                                            </span>
+                                        @endif
+
+                                        @if(auth()->user()->isAdmin())
+                                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.78rem;"
+                                                onclick="openAssignModal('{{ route('requests-project.assign', $requestProject->id) }}', '{{ $requestProject->id }}', '{{ $requestProject->assignment->sales_id ?? '' }}', '{{ addslashes($requestProject->subject ?? '') }}')">
+                                                <i class="bi bi-pencil-square me-1"></i>{{ $requestProject->assignment ? 'Ganti Sales PIC' : 'Tugaskan Sales PIC' }}
+                                            </button>
+                                        @elseif(auth()->user()->role == 'staff' && auth()->user()->divisi == 'sales' && !$requestProject->assignment)
+                                            <form action="{{ route('requests-project.assign', $requestProject->id) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-primary py-0 px-2" style="font-size: 0.78rem;" onclick="return confirm('Ambil request project ini?')">
+                                                    <i class="bi bi-hand-index-thumb me-1"></i>Ambil Tiket Ini
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 </div>
 
                                 <div class="row mb-2">
@@ -387,10 +411,15 @@
                                         <input type="text" name="username" class="form-control form-control-sm" id="Username" placeholder="Username">
                                     </div> --}}
 
-                        <div class="form-group">
-                            <label for="password">Password</label>
-                            <input type="password" name="password" class="form-control form-control-sm" id="password"
-                                placeholder="Password">
+                        <div class="form-group mb-2">
+                            <label for="passwordReqProj">Password</label>
+                            <div class="input-group input-group-sm">
+                                <input type="password" name="password" class="form-control form-control-sm" id="passwordReqProj"
+                                    placeholder="Password">
+                                <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordVisibility('passwordReqProj', this)" title="Lihat/Sembunyikan Password">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
                         </div>
                         {{-- <input type="text" name="role" value="customer"> --}}
                         <div class="form-group">
@@ -479,12 +508,69 @@
             </div>
         </div>
     </div>
+    @if(auth()->user()->isAdmin())
+        <!-- Modal Penugasan Sales PIC (Super-Admin) -->
+        <div class="modal fade" id="modalAssignSales" tabindex="-1" aria-labelledby="modalAssignSalesLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title fs-6" id="modalAssignSalesLabel">
+                            <i class="bi bi-person-check-fill me-1"></i> Penugasan Sales PIC
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="formAssignSalesModal" method="POST" action="">
+                        @csrf
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted small text-uppercase">Request Project</label>
+                                <input type="text" id="assignModalProjectInfo" class="form-control bg-light" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted small text-uppercase">Pilih Sales PIC</label>
+                                <select name="sales_id" id="assignModalSalesSelect" class="form-select" required>
+                                    <option value="" disabled selected>-- Pilih Karyawan Sales --</option>
+                                    @foreach($sales as $s)
+                                        <option value="{{ $s->id }}" {{ (isset($requestProject->assignment) && $requestProject->assignment->sales_id == $s->id) ? 'selected' : '' }}>
+                                            {{ $s->name }} ({{ $s->email }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary btn-sm px-3 fw-semibold">
+                                <i class="bi bi-check-lg me-1"></i> Simpan Penugasan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
 @endsection
 
 {{-- Untuk menggunakan javascript --}}
 @push('scripts')
     <script src="{{ asset('assets/static/js/pages/simple-datatables.js') }}"></script>
     <script>
+        function openAssignModal(actionUrl, projectId, currentSalesId, subject) {
+            const form = document.getElementById('formAssignSalesModal');
+            const info = document.getElementById('assignModalProjectInfo');
+            const select = document.getElementById('assignModalSalesSelect');
+            
+            if (form) form.action = actionUrl;
+            if (info) info.value = '#' + projectId + ' - ' + subject;
+            if (select && currentSalesId) select.value = currentSalesId;
+            
+            const modalEl = document.getElementById('modalAssignSales');
+            if (modalEl) {
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            }
+        }
+
         // Add any custom scripts here
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize tooltips if needed

@@ -16,8 +16,8 @@ class PermissionMiddleware
      */
     public function handle(Request $request, Closure $next, string $permission): Response
     {
-        if (!auth::check() || !auth::user()->hasPermission($permission)) {
-        abort(403, 'Unauthorized');
+        if (!Auth::check() || (!Auth::user()->isAdmin() && !Auth::user()->hasPermission($permission))) {
+            abort(403, 'Unauthorized');
         }
         return $next($request);
     }

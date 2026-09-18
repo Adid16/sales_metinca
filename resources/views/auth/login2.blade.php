@@ -94,8 +94,10 @@
             <div class="signup-link">
                 Have no account? <a href="/register">Sign up!</a>
             </div> 
-            <div class="signup-link">
-                {{-- For your login issue just email us in loginissue@gmail.com  --}}
+            <div class="signup-link text-muted mt-2" style="font-size: 0.85rem;">
+                Lupa password? Silakan hubungi Admin / Sales PT. Metinca Prima.
+            </div>
+            <div class="signup-link mt-2">
                 <a href="/customer">Homepage</a>
             </div>
         </div>

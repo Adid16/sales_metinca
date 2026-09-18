@@ -38,27 +38,145 @@ html[data-bs-theme="dark"] .app-page-title {
 }
 
 .burger-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: #435ebe;
-    font-size: 1.5rem;
-    text-decoration: none;
-    line-height: 1;
-    cursor: pointer;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    border-radius: 8px !important;
+    background: rgba(67, 94, 190, 0.08) !important;
+    color: #435ebe !important;
+    border: 1px solid rgba(67, 94, 190, 0.15) !important;
+    text-decoration: none !important;
+    line-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+.burger-btn i {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    font-size: 1.45rem !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.burger-btn:hover {
+    background: rgba(67, 94, 190, 0.16) !important;
+    color: #2b44a0 !important;
+    transform: scale(1.05);
 }
 
 html[data-bs-theme="dark"] .burger-btn {
+    background: #25283e;
     color: #93b0ff;
+    border-color: #383c5e;
 }
 
-/* Tablet & Mobile header adjustments */
+html[data-bs-theme="dark"] .burger-btn:hover {
+    background: #2e3352;
+    color: #c4d6ff;
+}
+
+/* ================= RESPONSIVE SIDEBAR & BACKDROP ================= */
+.sidebar-backdrop {
+    display: none;
+    pointer-events: none;
+}
+
+/* ================= MOBILE & TABLET SIDEBAR (< 1200px) ================= */
 @media (max-width: 1199.98px) {
+    .sidebar-backdrop {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
+        z-index: 998;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.25s ease, visibility 0.25s ease;
+        pointer-events: none;
+    }
+
+    .sidebar-backdrop.show,
+    body.sidebar-mobile-open .sidebar-backdrop {
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+    }
+
+    #sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        left: -300px !important;
+        width: 300px !important;
+        max-width: 85vw !important;
+        z-index: 1000 !important;
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: none !important;
+    }
+
+    #sidebar.active {
+        left: 0 !important;
+        box-shadow: 0 0 35px rgba(0, 0, 0, 0.35) !important;
+    }
+
+    #main {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+
     .layout-navbar .navbar-top {
         padding: 0.6rem 1rem;
     }
-    .app-page-title {
-        font-size: 1rem;
+}
+
+/* ================= DESKTOP COLLAPSIBLE SIDEBAR (>= 1200px) ================= */
+@media (min-width: 1200px) {
+    .sidebar-backdrop {
+        display: none !important;
+        pointer-events: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+    }
+
+    #sidebar {
+        width: 300px !important;
+        position: fixed !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        z-index: 100 !important;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    #main {
+        margin-left: 300px !important;
+        width: calc(100% - 300px) !important;
+        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    /* When sidebar is collapsed on desktop */
+    body.sidebar-collapsed #sidebar,
+    #app.sidebar-collapsed #sidebar {
+        transform: translateX(-300px) !important;
+    }
+
+    body.sidebar-collapsed #main,
+    #app.sidebar-collapsed #main {
+        margin-left: 0 !important;
+        width: 100% !important;
     }
 }
 

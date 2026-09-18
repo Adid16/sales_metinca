@@ -34,24 +34,26 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Handle logout (FORM SUBMIT)
+     * Handle logout (FORM SUBMIT OR GET)
      */
     public function destroy(Request $request)
     {
-        $user = Auth::user()->role;
-        $redirectRoute = match($user){
+        $userRole = Auth::user()?->role;
+        $redirectRoute = match($userRole){
             'admin' => 'login',
             'manager' => 'login',
             'staff' => 'login',
             'customer' => 'customer_home.login',
             default => 'login',
         };
-        Auth::guard('web')->logout();
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        if (Auth::check()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
-        // INI KUNCI → redirect ke login.blade.php
+        // INI KUNCI → redirect ke login
         return redirect()
             ->route($redirectRoute)
             ->with('success', 'Logout berhasil');
