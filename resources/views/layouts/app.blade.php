@@ -19,6 +19,7 @@
     @stack('styles')
     <link rel="stylesheet" href="{{ asset('assets/css/dark-theme-enhancements.css') }}?v={{ @filemtime(public_path('assets/css/dark-theme-enhancements.css')) ?: '1.0.0' }}">
     <link rel="stylesheet" href="{{ asset('assets/css/responsive-enhancements.css') }}?v={{ @filemtime(public_path('assets/css/responsive-enhancements.css')) ?: '1.0.0' }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/google-translate.css') }}?v={{ @filemtime(public_path('assets/css/google-translate.css')) ?: '1.0.0' }}">
 </head>
 
 <body>
@@ -45,23 +46,23 @@
                 </div>
                 <div class="sidebar-menu">
                     <ul class="menu">
-                        <li class="sidebar-title">Main</li>
+                        <li class="sidebar-title">{{ __('Main') }}</li>
 
                         <li class="sidebar-item {{ Route::is('dashboard') ? 'active' : '' }}">
                             <a href="/" class='sidebar-link'>
                                 <i class="bi bi-grid-fill"></i>
-                                <span>Dashboard</span>
+                                <span>{{ __('Dashboard') }}</span>
                             </a>
                         </li>
 
                         @if (auth()->user()->isAdmin() || auth()->user()->isManager() || !auth()->user()->isCustomer())
-                            <li class="sidebar-title">Master Data</li>
+                            <li class="sidebar-title">{{ __('Master Data') }}</li>
 
                             @if (auth()->user()->isAdmin())
                                 <li class="sidebar-item has-sub {{ Route::is('users*') ? 'active' : '' }}">
                                     <a href="#" class='sidebar-link'>
                                         <i class="bi bi-person-workspace"></i>
-                                        <span>User Management</span>
+                                        <span>{{ __('User Management') }}</span>
                                     </a>
                                     <ul class="submenu {{ Route::is('users*') ? 'submenu-open' : '' }}">
                                         <li class="submenu-item {{ Route::is('users.customer') ? 'active' : '' }}">
@@ -79,19 +80,19 @@
                                 <li class="sidebar-item {{ Route::is('articles*') ? 'active' : '' }}">
                                     <a href="{{ route('articles.index') }}" class='sidebar-link'>
                                         <i class="bi bi-box-seam-fill"></i>
-                                        <span>Pricelist Products</span>
+                                        <span>{{ __('Pricelist Products') }}</span>
                                     </a>
                                 </li>
                             @endif
                         @endif
 
-                        <li class="sidebar-title">Transaksi</li>
+                        <li class="sidebar-title">{{ __('Transaksi') }}</li>
 
                         @if(auth()->user()->isAdmin() || !(auth()->user()->isManager() && auth()->user()->divisi !== 'sales'))
                             <li class="sidebar-item {{ Route::is('requests-project*') ? 'active' : '' }}">
                                 <a href="{{ route('requests-project.index') }}" class='sidebar-link'>
                                     <i class="bi bi-send-plus-fill"></i>
-                                    <span>Request Project</span>
+                                    <span>{{ __('Request Projects') }}</span>
                                 </a>
                             </li>
                         @endif
@@ -99,7 +100,7 @@
                         <li class="sidebar-item {{ Route::is('quotations*') ? 'active' : '' }}">
                             <a href="{{ route('quotations.index') }}" class='sidebar-link'>
                                 <i class="bi bi-file-earmark-text-fill"></i>
-                                <span>Quotation</span>
+                                <span>{{ __('Quotations') }}</span>
                             </a>
                         </li>
 
@@ -128,14 +129,14 @@
                             <li class="sidebar-item {{ Route::is('purchase-orders*') ? 'active' : '' }}">
                                 <a href="{{ route('purchase-orders.index') }}" class='sidebar-link'>
                                     <i class="bi bi-file-earmark-richtext-fill"></i>
-                                    <span>Purchase Order</span>
+                                    <span>{{ __('Purchase Order') }}</span>
                                 </a>
                             </li>
                         @else
                             <li class="sidebar-item has-sub {{ Route::is('purchase-orders*') || Route::is('purchase-orders-internal*') ? 'active' : '' }}">
                                 <a href="#" class='sidebar-link'>
                                     <i class="bi bi-file-earmark-richtext-fill"></i>
-                                    <span>Purchase Order</span>
+                                    <span>{{ __('Purchase Order') }}</span>
                                 </a>
                                 <ul class="submenu {{ Route::is('purchase-orders*') || Route::is('purchase-orders-internal*') ? 'submenu-open' : '' }}">
                                     <li class="submenu-item {{ Route::is('purchase-orders.index') ? 'active' : '' }}">
@@ -148,7 +149,7 @@
 
                                     <li class="submenu-item {{ Route::is('purchase-orders.approval-amandement') ? 'active' : '' }}">
                                         <a href="{{ route('purchase-orders.approval-amandement') }}" class='submenu-link d-flex justify-content-between align-items-center'>
-                                            <span>PO Amandemen</span>
+                                            <span>PO {{ __('Amandemen') }}</span>
                                             @php
                                                 $pendingAmandement = \App\Models\Contract::where('status', 'amandement_pending')->count()
                                                     + \App\Models\PurchaseOrder::where('status', 'amandement_pending')->whereDoesntHave('contracts')->count();
@@ -164,18 +165,18 @@
                             <li class="sidebar-item {{ Route::is('contracts*') ? 'active' : '' }}">
                                 <a href="{{ route('contracts.index') }}" class='sidebar-link'>
                                     <i class="bi bi-collection-fill"></i>
-                                    <span>Contract Review Sheet</span>
+                                    <span>{{ __('Contract Review Sheet') }}</span>
                                 </a>
                             </li>
                         @endif
 
-                        <li class="sidebar-title">Account</li>
+                        <li class="sidebar-title">{{ __('Account') }}</li>
 
                         @if (auth()->user()->isCustomer())
                             <li class="sidebar-item {{ Route::is('account*') ? 'active' : '' }}">
                                 <a href="{{ route('account.show') }}" class='sidebar-link'>
                                     <i class="bi bi-person-circle"></i>
-                                    <span>My Account</span>
+                                    <span>{{ __('My Account') }}</span>
                                 </a>
                             </li>
                         @endif
@@ -186,7 +187,7 @@
                             </form>
                             <a href="#" onclick="event.preventDefault(); document.getElementById('sidebarLogoutForm').submit();" class='sidebar-link text-danger'>
                                 <i class="bi bi-box-arrow-left text-danger"></i>
-                                <span class="text-danger fw-semibold">Keluar</span>
+                                <span class="text-danger fw-semibold">{{ __('Logout') }}</span>
                             </a>
                         </li>
                     </ul>
@@ -206,6 +207,111 @@
 
                         <div class="header-top-right flex-shrink-0 ms-auto">
                             <div class="d-flex align-items-center gap-2 gap-md-3">
+                                {{-- GOOGLE TRANSLATE CUSTOM DROPDOWN --}}
+                                <div class="dropdown dropdown-language" title="Terjemahkan Bahasa (Google Translate)">
+                                    <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 dropdown-toggle py-1 px-2 border rounded-pill shadow-none" 
+                                            type="button" id="googleLangDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <span class="fs-6 lang-flag">🌐</span>
+                                        <span class="fw-bold small d-none d-sm-inline lang-label">ID</span>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2" aria-labelledby="googleLangDropdown" style="min-width: 220px; border-radius: 10px;">
+                                        <li class="dropdown-header text-uppercase small fw-bold px-3 py-1 text-muted d-flex align-items-center justify-content-between" style="font-size: 0.68rem; letter-spacing: 0.5px;">
+                                            <span><i class="bi bi-translate me-1 text-primary"></i> Google Translate</span>
+                                            <span class="badge bg-light text-primary border">Auto</span>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center justify-content-between py-2 px-3" 
+                                               href="#" onclick="changeSiteLanguage('id'); return false;" data-lang-code="id" data-lang-flag="🇮🇩" data-lang-label="ID">
+                                                <span class="d-flex align-items-center gap-2">
+                                                    <span>🇮🇩</span>
+                                                    <span class="fw-medium">Bahasa Indonesia</span>
+                                                </span>
+                                                <small class="text-muted" style="font-size: 0.72rem;">Asli</small>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center justify-content-between py-2 px-3" 
+                                               href="#" onclick="changeSiteLanguage('en'); return false;" data-lang-code="en" data-lang-flag="🇬🇧" data-lang-label="EN">
+                                                <span class="d-flex align-items-center gap-2">
+                                                    <span>🇬🇧</span>
+                                                    <span class="fw-medium">English</span>
+                                                </span>
+                                                <small class="text-muted" style="font-size: 0.72rem;">EN</small>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center justify-content-between py-2 px-3" 
+                                               href="#" onclick="changeSiteLanguage('ja'); return false;" data-lang-code="ja" data-lang-flag="🇯🇵" data-lang-label="JA">
+                                                <span class="d-flex align-items-center gap-2">
+                                                    <span>🇯🇵</span>
+                                                    <span class="fw-medium">日本語 (Japanese)</span>
+                                                </span>
+                                                <small class="text-muted" style="font-size: 0.72rem;">JA</small>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center justify-content-between py-2 px-3" 
+                                               href="#" onclick="changeSiteLanguage('de'); return false;" data-lang-code="de" data-lang-flag="🇩🇪" data-lang-label="DE">
+                                                <span class="d-flex align-items-center gap-2">
+                                                    <span>🇩🇪</span>
+                                                    <span class="fw-medium">Deutsch (German)</span>
+                                                </span>
+                                                <small class="text-muted" style="font-size: 0.72rem;">DE</small>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center justify-content-between py-2 px-3" 
+                                               href="#" onclick="changeSiteLanguage('zh-CN'); return false;" data-lang-code="zh-CN" data-lang-flag="🇨🇳" data-lang-label="ZH">
+                                                <span class="d-flex align-items-center gap-2">
+                                                    <span>🇨🇳</span>
+                                                    <span class="fw-medium">简体中文 (Chinese)</span>
+                                                </span>
+                                                <small class="text-muted" style="font-size: 0.72rem;">ZH</small>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center justify-content-between py-2 px-3" 
+                                               href="#" onclick="changeSiteLanguage('ar'); return false;" data-lang-code="ar" data-lang-flag="🇸🇦" data-lang-label="AR">
+                                                <span class="d-flex align-items-center gap-2">
+                                                    <span>🇸🇦</span>
+                                                    <span class="fw-medium">العربية (Arabic)</span>
+                                                </span>
+                                                <small class="text-muted" style="font-size: 0.72rem;">AR</small>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center justify-content-between py-2 px-3" 
+                                               href="#" onclick="changeSiteLanguage('es'); return false;" data-lang-code="es" data-lang-flag="🇪🇸" data-lang-label="ES">
+                                                <span class="d-flex align-items-center gap-2">
+                                                    <span>🇪🇸</span>
+                                                    <span class="fw-medium">Español</span>
+                                                </span>
+                                                <small class="text-muted" style="font-size: 0.72rem;">ES</small>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center justify-content-between py-2 px-3" 
+                                               href="#" onclick="changeSiteLanguage('fr'); return false;" data-lang-code="fr" data-lang-flag="🇫🇷" data-lang-label="FR">
+                                                <span class="d-flex align-items-center gap-2">
+                                                    <span>🇫🇷</span>
+                                                    <span class="fw-medium">Français</span>
+                                                </span>
+                                                <small class="text-muted" style="font-size: 0.72rem;">FR</small>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center justify-content-between py-2 px-3" 
+                                               href="#" onclick="changeSiteLanguage('ko'); return false;" data-lang-code="ko" data-lang-flag="🇰🇷" data-lang-label="KO">
+                                                <span class="d-flex align-items-center gap-2">
+                                                    <span>🇰🇷</span>
+                                                    <span class="fw-medium">한국어 (Korean)</span>
+                                                </span>
+                                                <small class="text-muted" style="font-size: 0.72rem;">KO</small>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+
                                 {{-- THEME TOGGLE (LIGHT / DARK MODE) --}}
                                 <div class="theme-toggle-navbar d-flex align-items-center gap-2" title="Ganti Mode Gelap / Terang">
                                     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -576,6 +682,11 @@
         </script>
         @stack('scripts')
         <!-- Need: Apexcharts -->
+
+        {{-- GOOGLE TRANSLATE HIDDEN ELEMENT & SCRIPTS --}}
+        <div id="google_translate_element" style="display:none;"></div>
+        <script src="{{ asset('assets/js/google-translate.js') }}?v={{ @filemtime(public_path('assets/js/google-translate.js')) ?: '1.0.0' }}"></script>
+        <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
 </body>
 

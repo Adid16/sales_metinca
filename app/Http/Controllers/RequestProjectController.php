@@ -163,7 +163,17 @@ class RequestProjectController extends Controller
 
     public function detail($id)
     {
-        $request = RequestProject::with(['attachments','customer'])->find($id);
+        $request = RequestProject::with(['attachments','customer'])->findOrFail($id);
+        if (Auth::user()->isCustomer() && $request->customer_id !== Auth::id()) {
+            return response()->json(['error' => 'Akses ditolak.'], 403);
+        }
+
+        if (!request()->wantsJson() && !request()->ajax()) {
+            $requestProject = $request->load(['assignment.sales']);
+            $sales = User::where('role', 'staff')->where('divisi', 'sales')->get();
+            return view('requests-project.show', compact('requestProject', 'sales'));
+        }
+
         return response()->json([
             'success' => true,
             'data' => $request
@@ -175,6 +185,10 @@ class RequestProjectController extends Controller
      */
     public function show(RequestProject $requests_project)
     {
+        if (Auth::user()->isCustomer() && $requests_project->customer_id !== Auth::id()) {
+            abort(403, 'Akses ditolak. Anda tidak memiliki izin untuk melihat request project ini.');
+        }
+
         $requestProject = $requests_project->load(['attachments', 'customer', 'assignment.sales']);
         $sales = User::where('role', 'staff')->where('divisi', 'sales')->get();
         return view('requests-project.show', compact('requestProject', 'sales'));
@@ -186,6 +200,10 @@ class RequestProjectController extends Controller
     public function edit($id)
     {
         $project = RequestProject::findOrFail($id);
+        if (Auth::user()->isCustomer() && $project->customer_id !== Auth::id()) {
+            abort(403, 'Akses ditolak. Anda tidak memiliki izin untuk mengedit request project ini.');
+        }
+
         return view('requests-project.edit', compact('project'));
     }
 
@@ -194,6 +212,10 @@ class RequestProjectController extends Controller
      */
     public function update(Request $request, RequestProject $requests_project)
     {
+        if (Auth::user()->isCustomer() && $requests_project->customer_id !== Auth::id()) {
+            abort(403, 'Akses ditolak. Anda tidak memiliki izin untuk mengubah request project ini.');
+        }
+
         $validated = $request->validate([
             'email' => 'required|email',
             'subject' => 'required',

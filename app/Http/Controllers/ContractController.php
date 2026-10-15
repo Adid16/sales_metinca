@@ -339,7 +339,7 @@ class ContractController extends Controller
                     $contract->requirements()->create([
                         'requirement_from'  => $item['requirement_from'],
                         'requirement'       => $item['requirement'],
-                        'requirement_value' => $item['requirement_value'] ?? null,
+                        'requirement_value' => !empty($item['requirement_value']) ? $item['requirement_value'] : '-',
                     ]);
                 }
             }
@@ -363,6 +363,11 @@ class ContractController extends Controller
 
     public function show(Contract $contract)
     {
+        $user = Auth::user();
+        if ($user->role === 'customer' && $contract->customer_id !== $user->id) {
+            abort(403, 'Akses ditolak. Anda tidak memiliki izin untuk melihat kontrak ini.');
+        }
+
         $contract->load([
             'customer.account',
             'quotation.request.assignment.sales',
@@ -894,7 +899,12 @@ class ContractController extends Controller
 
     public function generatePdf($contractId)
     {
-        $contract = Contract::with(['requirements'])->find($contractId);
+        $contract = Contract::with(['requirements'])->findOrFail($contractId);
+        $user = Auth::user();
+        if ($user->role === 'customer' && $contract->customer_id !== $user->id) {
+            abort(403, 'Akses ditolak. Anda tidak memiliki izin untuk mengunduh dokumen kontrak ini.');
+        }
+
         $requirements = $contract->requirements;
 
         $isAuthorized = Auth::user()->role == 'admin' || strtolower(Auth::user()->divisi) == 'sales';

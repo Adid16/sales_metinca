@@ -24,9 +24,14 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\PurchaseOrderItemController;
 use App\Http\Controllers\PurchaseOrderInternalController;
 use App\Http\Controllers\NegotiateController;
+use App\Http\Controllers\LocalizationController;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+
+// Localization & Multi-Currency Switcher Routes (Accessible globally)
+Route::get('/set-locale/{locale}', [LocalizationController::class, 'setLocale'])->name('set.locale');
+Route::get('/set-currency/{currency}', [LocalizationController::class, 'setCurrency'])->name('set.currency');
 
 Route::get('/', function () {
     if (Auth::check()) {

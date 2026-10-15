@@ -41,7 +41,6 @@
                             <th><center>Index</center></th>
                             <th><center>Berat (Kg)</center></th>
                             <th><center>Material</center></th>
-                            {{-- HEADER HARGA DISERSEDERHANAKAN --}}
                             <th><center>Price</center></th>
                             <th><center>Drawing PDF</center></th>
                             <th><center>Created At</center></th>
@@ -59,7 +58,6 @@
                                 <td><center>{{ $article->berat ? number_format($article->berat, 2) . ' Kg' : '-' }}</center></td>
                                 <td>{{ $article->material ?? '-' }}</td>
                                 
-                                {{-- SEKARANG HANYA MENAMPILKAN TOTAL PRICE SAJA --}}
                                 <td><center><strong>Rp {{ number_format($article->price, 0, ',', '.') }}</strong></center></td>
 
                                 <td><center>

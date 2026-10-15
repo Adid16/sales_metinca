@@ -13,7 +13,8 @@
 <div class="card detail-card">
         <div class="card-header bg-primary text-white py-3">
             <h5 class="card-title mb-0">
-                <i class="bi bi-send-plus-fill"></i> Request Projects
+                <i class="bi bi-send-plus-fill"></i> <?php echo e(__('Request Projects')); ?>
+
             </h5>
         </div>
 
@@ -66,12 +67,12 @@
             
                         <div class="col-12 col-sm-6 col-lg-4 d-flex flex-wrap gap-1">
                             <?php if(auth()->user()->isAdmin() || auth()->user()->isManager() || (auth()->user()->role == 'staff' && auth()->user()->divisi == 'sales') || auth()->user()->isCustomer()): ?>
-                                <button type="submit" class="btn btn-sm btn-secondary">Filter</button>
-                                <a href="<?php echo e(route('requests-project.index')); ?>" class="btn btn-sm btn-danger">Clear</a>
-                                <button type="submit" formaction="<?php echo e(route('requests-project.export')); ?>" class="btn btn-success btn-sm btn-end text-end">Export</button>
+                                <button type="submit" class="btn btn-sm btn-secondary"><?php echo e(__('Filter')); ?></button>
+                                <a href="<?php echo e(route('requests-project.index')); ?>" class="btn btn-sm btn-danger"><?php echo e(__('Clear')); ?></a>
+                                <button type="submit" formaction="<?php echo e(route('requests-project.export')); ?>" class="btn btn-success btn-sm btn-end text-end"><?php echo e(__('Export')); ?></button>
                             <?php endif; ?>
                             <?php if(auth()->user()->isCustomer() || auth()->user()->isAdmin()): ?>
-                                <a href="<?php echo e(route('requests-project.create')); ?>" class="btn btn-primary btn-sm"> New </a>
+                                <a href="<?php echo e(route('requests-project.create')); ?>" class="btn btn-primary btn-sm"> <?php echo e(__('Add')); ?> </a>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -90,7 +91,7 @@
                             <th><center>Subject</center></th>
                             <th><center>Request Date</center></th>
                             <th><center>Sales PIC</center></th>
-                            <th><center>Action</center></th>
+                            <th><center><?php echo e(__('Action')); ?></center></th>
                         </tr>
                     </thead>
                     <tbody>

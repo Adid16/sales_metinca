@@ -37,7 +37,7 @@
                                             <div class="col-md-3">Quotation</div>
                                                 <div class="col-md-6 mb-2">
                                                     <input type="text" class="form-control form-control-sm bg-light fw-semibold"
-                                                        value="{{ $selectedQuotation->quotation_no }}" readonly>
+                                                        value="{{ $selectedQuotation?->quotation_no ?? '' }}" readonly>
                                                 </div>
                                             </div>
     

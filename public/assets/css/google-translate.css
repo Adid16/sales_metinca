@@ -1,0 +1,60 @@
+/* ==========================================================================
+   Google Translate Complete Cleanup
+   Hides the top banner bar, removes top padding/offset, and removes tooltips
+   ========================================================================== */
+
+/* 1. Hide the Google Translate banner iframe completely */
+.goog-te-banner-frame,
+.goog-te-banner-frame.skiptranslate,
+iframe.goog-te-banner-frame,
+iframe.skiptranslate,
+.VIpgJd-ZVi9C-bOHAno-CobnVe,
+.VIpgJd-ZVi9C-OR9Cathfa-b12me,
+iframe[id^=":"] {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0px !important;
+    width: 0px !important;
+    max-height: 0px !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    top: -9999px !important;
+    left: -9999px !important;
+}
+
+/* 2. Prevent body from being pushed down */
+html,
+body {
+    top: 0px !important;
+    position: static !important;
+    margin-top: 0px !important;
+    padding-top: 0px !important;
+    transform: none !important;
+}
+
+/* 3. Hide Google popups, tooltips, and translation balloon frames */
+#goog-gt-tt,
+.goog-te-balloon-frame,
+.goog-tooltip,
+.goog-tooltip:hover,
+.VIpgJd-yAWNEb-VIpgJd-fmcmS-sn54Q {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+/* 4. Remove highlight hover on translated texts */
+.goog-text-highlight {
+    background-color: transparent !important;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: inherit !important;
+}
+
+/* 5. Ensure the original google element is hidden */
+#google_translate_element {
+    display: none !important;
+}

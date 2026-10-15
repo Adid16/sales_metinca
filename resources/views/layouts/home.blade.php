@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="{{ asset('assets/css/homepage.css') }}?v={{ @filemtime(public_path('assets/css/homepage.css')) ?: '1.0.0' }}">
     <link rel="stylesheet" href="{{ asset('assets/css/menu-modal.css') }}?v={{ @filemtime(public_path('assets/css/menu-modal.css')) ?: '1.0.0' }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/google-translate.css') }}?v={{ @filemtime(public_path('assets/css/google-translate.css')) ?: '1.0.0' }}">
     @stack('styles')
 </head>
 
@@ -46,7 +47,75 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('home.contact') }}">Contact</a>
                     </li>
-                    
+
+                    {{-- Google Translate Custom Dropdown --}}
+                    <li class="nav-item dropdown dropdown-language">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-1" href="#" id="homeGoogleLangDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Google Translate">
+                            <span class="lang-flag">🌐</span>
+                            <span class="small fw-semibold lang-label">ID</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2" aria-labelledby="homeGoogleLangDropdown" style="min-width: 210px; border-radius: 10px;">
+                            <li class="dropdown-header small text-muted text-uppercase fw-bold d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-translate text-primary me-1"></i> Google Translate</span>
+                                <span class="badge bg-light text-primary border">Auto</span>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center justify-content-between py-2" href="#" onclick="changeSiteLanguage('id'); return false;" data-lang-code="id" data-lang-flag="🇮🇩" data-lang-label="ID">
+                                    <span>🇮🇩 Bahasa Indonesia</span>
+                                    <small class="text-muted">Asli</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center justify-content-between py-2" href="#" onclick="changeSiteLanguage('en'); return false;" data-lang-code="en" data-lang-flag="🇬🇧" data-lang-label="EN">
+                                    <span>🇬🇧 English</span>
+                                    <small class="text-muted">EN</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center justify-content-between py-2" href="#" onclick="changeSiteLanguage('ja'); return false;" data-lang-code="ja" data-lang-flag="🇯🇵" data-lang-label="JA">
+                                    <span>🇯🇵 日本語 (Japanese)</span>
+                                    <small class="text-muted">JA</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center justify-content-between py-2" href="#" onclick="changeSiteLanguage('de'); return false;" data-lang-code="de" data-lang-flag="🇩🇪" data-lang-label="DE">
+                                    <span>🇩🇪 Deutsch (German)</span>
+                                    <small class="text-muted">DE</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center justify-content-between py-2" href="#" onclick="changeSiteLanguage('zh-CN'); return false;" data-lang-code="zh-CN" data-lang-flag="🇨🇳" data-lang-label="ZH">
+                                    <span>🇨🇳 简体中文 (Chinese)</span>
+                                    <small class="text-muted">ZH</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center justify-content-between py-2" href="#" onclick="changeSiteLanguage('ar'); return false;" data-lang-code="ar" data-lang-flag="🇸🇦" data-lang-label="AR">
+                                    <span>🇸🇦 العربية (Arabic)</span>
+                                    <small class="text-muted">AR</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center justify-content-between py-2" href="#" onclick="changeSiteLanguage('es'); return false;" data-lang-code="es" data-lang-flag="🇪🇸" data-lang-label="ES">
+                                    <span>🇪🇸 Español</span>
+                                    <small class="text-muted">ES</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center justify-content-between py-2" href="#" onclick="changeSiteLanguage('fr'); return false;" data-lang-code="fr" data-lang-flag="🇫🇷" data-lang-label="FR">
+                                    <span>🇫🇷 Français</span>
+                                    <small class="text-muted">FR</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center justify-content-between py-2" href="#" onclick="changeSiteLanguage('ko'); return false;" data-lang-code="ko" data-lang-flag="🇰🇷" data-lang-label="KO">
+                                    <span>🇰🇷 한국어 (Korean)</span>
+                                    <small class="text-muted">KO</small>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
                     <li class="nav-item">
                         <a class="nav-link" data-bs-target="#metincaAppsModal" data-bs-toggle="modal" href="#"><i
                                 class="bi bi-grid-3x3-gap-fill me-2"></i></a>
@@ -565,6 +634,11 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     @stack('scripts')
+
+    {{-- GOOGLE TRANSLATE HIDDEN ELEMENT & SCRIPTS --}}
+    <div id="google_translate_element" style="display:none;"></div>
+    <script src="{{ asset('assets/js/google-translate.js') }}?v={{ @filemtime(public_path('assets/js/google-translate.js')) ?: '1.0.0' }}"></script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 
 </html>
